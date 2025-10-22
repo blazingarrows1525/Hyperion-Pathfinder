@@ -1,0 +1,51 @@
+FastAPI and Server
+
+fastapi
+uvicorn[standard]
+python-multipart
+
+Pydantic (often used by FastAPI/LangChain, ensure version compatibility if needed)
+
+pydantic
+
+Environment Variables
+
+python-dotenv
+
+LangGraph and LangChain Core
+
+langgraph
+langchain
+
+Azure SDK for GitHub AI Model
+
+azure-ai-inference
+azure-core
+
+PDF Processing
+
+pypdf
+
+Embeddings
+
+sentence-transformers
+torch # Required by sentence-transformers
+
+Vector Store
+
+faiss-cpu # Use faiss-gpu if you have CUDA installed and configured
+
+Data Handling
+
+pandas
+numpy
+
+Machine Learning & Visualization (for pre-processing steps)
+
+scikit-learn
+matplotlib
+seaborn
+
+Utilities
+
+tqdm # For progress bars in pre-processing scripts
