@@ -1,117 +1,295 @@
-SRM Career Catalyst - Resume Analyzer
+# SRM Career Catalyst  
+### Intelligent Resume Analysis Engine
 
-This project provides a web-based tool for SRMIST students to analyze their resumes against job descriptions, leveraging AI and data derived from successful alumni placements.
+SRM Career Catalyst is an advanced, **data-driven backend system** designed to analyze student resumes against job descriptions. Unlike standard keyword matchers, this system leverages a **Knowledge Genome** built from the resumes of **successfully placed alumni** to provide **context-aware, actionable feedback**.
 
-Note: This version is stateless. It does not store user history between sessions. Each analysis is independent.
+The platform integrates **Traditional NLP**, **Unsupervised Machine Learning**, and **Generative AI** to uncover real-world placement patterns and guide students toward improved placement outcomes.
 
-Project Structure
+---
 
+## 🧠 Key Idea
+
+> *"Compare a student not to a job description alone, but to the profiles of alumni who actually got placed."*
+
+---
+
+## 🏗️ System Architecture
+
+```mermaid
+graph TD
+    A[Raw Alumni Resume PDFs] --> B["PDF & Text Extraction (PyPDF + Regex)"]
+    
+    B --> C["NLP Entity Recognition (spaCy - Skills, Orgs, Dates)"]
+    B --> D["Achievement Analysis (GenAI - Metrics Extraction)"]
+    B --> E["Text Vectorization (SentenceTransformers)"]
+    
+    E --> F["Career Archetype Discovery (K-Means Clustering)"]
+    
+    C --> G[("Metadata Store")]
+    D --> G
+    F --> H[("FAISS Vector Store + Metadata")]
+    
+    I[Student Resume PDF] --> J[Resume Extraction Node]
+    K[Job Description Text] --> L[RAG Retrieval Node]
+    
+    L -->|Semantic Query| H
+    H -->|Relevant Archetypes & Alumni Examples| M[GenAI Reasoning Node]
+    J -->|Structured Resume Data| M
+    
+    M --> N["Actionable Feedback Report (Markdown Output)"]
+    
+    style A fill:#e1f5ff
+    style I fill:#e1f5ff
+    style K fill:#e1f5ff
+    style N fill:#d4edda
+    style G fill:#fff3cd
+    style H fill:#fff3cd
+```
+
+---
+
+## 🔍 Phase 1: Offline Data Pipeline
+
+This phase builds the **intelligence layer** of the system.
+
+### 1. Data Extraction
+- Converts unstructured alumni resume PDFs into structured text.
+- Tools: `PyPDF`, `Regex`
+
+### 2. Entity Recognition
+- Extracts skills, organizations, roles, and timelines.
+- Model: `spaCy (en_core_web_lg)`
+
+### 3. Achievement Analysis
+- Uses GenAI to identify **quantifiable achievements**.
+- Example:
+  - `"Reduced latency by 20ms"` → `Speed / Performance`
+- Model: `gpt-4o-mini` (via GitHub AI + Azure SDK)
+
+### 4. Archetype Discovery
+- Converts resumes into dense embeddings.
+- Uses **K-Means clustering** to discover natural career archetypes.
+- No manual labels required initially.
+
+### 5. Vector Store Creation
+- Embeddings and metadata indexed using **FAISS**.
+- Enables high-speed semantic retrieval during inference.
+
+---
+
+## ⚡ Phase 2: Online Inference Engine
+
+This phase exposes the system as a **REST API**.
+
+### Workflow
+1. **Request Handling**
+   - Resume PDF + Job Description received via FastAPI.
+
+2. **Orchestration**
+   - Workflow managed using **LangGraph**:
+     - Extraction → Retrieval → Reasoning
+
+3. **RAG (Retrieval-Augmented Generation)**
+   - Retrieves the most relevant alumni archetypes from FAISS.
+
+4. **Synthesis**
+   - GenAI compares student profile against:
+     - Successful alumni patterns
+     - Required job skills
+     - Quantified achievements
+
+5. **Output**
+   - Markdown-formatted feedback
+   - Skill gaps
+   - Missing metrics
+   - Resume improvement suggestions
+
+---
+
+## 🛠️ Technology Stack
+
+### Core
+- **Language:** Python 3.9+
+- **API:** FastAPI, Uvicorn
+- **Workflow:** LangGraph, LangChain
+
+### AI & ML
+- **Generative AI:** GitHub AI (openai/gpt-4o-mini)
+- **NLP:** spaCy (NER)
+- **ML:** Scikit-Learn (K-Means, TF-IDF)
+- **Embeddings:** Sentence-Transformers (`all-MiniLM-L6-v2`)
+
+### Storage & Processing
+- **Vector DB:** FAISS (CPU)
+- **Data:** Pandas, NumPy
+- **PDF Parsing:** PyPDF, Regex
+
+---
+
+## 📂 Project Structure
+
+```
 Placement-Project/
-│
-├── data/
-│   └── raw_resumes/        # Folder containing original alumni resume PDFs (Used by pre-processing)
-│
-├── processed_data/         # Folder containing outputs from pre-processing scripts
-│   ├── resume_text_data.csv
-│   ├── resume_cleaned_data.csv
-│   ├── resume_embedded_data.csv
-│   ├── resume_embeddings.npy
-│   └── resume_clustered_data.csv
-│
-├── vector_store/           # Folder containing the final FAISS index and metadata
+├── processed_data/
+│   ├── structured_resumes.csv
+│   ├── resumes_with_metrics.csv
+│   ├── clustered_resumes.csv
+│   ├── embeddings.npy
+│   └── archetype_insights.json
+├── vector_store/
 │   ├── srm_resumes.index
 │   └── srm_resumes.pkl
-│
-├── .env                    # Stores your Google API Key (ignored by git)
-├── requirements.txt        # Python dependencies
-├── process_resumes.py      # Script 1: PDF to Text
-├── clean_text.py           # Script 2: Text Cleaning
-├── vectorize_resumes.py    # Script 3: Text to Embeddings
-├── cluster_and_visualize.py # Script 4: Clustering & Visualization
-├── label_clusters.py       # Script 5: Cluster Interpretation
-├── build_vector_store.py   # Script 6: Create FAISS Index
-├── models.py               # Pydantic models (GraphState)
-├── services.py             # Core logic functions (LLM calls, RAG, etc.)
-├── graph.py                # LangGraph workflow definition
-├── main.py                 # FastAPI backend server
-└── index.html              # Frontend HTML/JS chatbot interface
+├── data/
+│   └── raw_resumes/
+├── extract_resume_data.py
+├── analyze_achievements.py
+├── cluster_resumes.py
+├── label_archetypes.py
+├── build_vector_store.py
+├── services.py
+├── graph.py
+├── models.py
+├── main.py
+├── requirements.txt
+└── .env
+```
 
+---
 
-Setup
+## 🚀 Setup & Installation
 
-Clone the Repository:
+### 1. Prerequisites
+- Python **3.9+**
+- GitHub Account (for Personal Access Token)
 
-git clone <your-repo-url>
-cd Placement-Project
+### 2. Environment Setup
 
-
-Create Virtual Environment:
-
+```bash
 python -m venv .venv
-# Activate (Windows PowerShell):
+
+# Windows
 .\.venv\Scripts\Activate.ps1
-# Activate (Mac/Linux):
-# source .venv/bin/activate
 
+# Mac/Linux
+source .venv/bin/activate
+```
 
-Install Dependencies:
+### 3. Install Dependencies
 
+```bash
 pip install -r requirements.txt
+```
 
+### 4. Download NLP Models
 
-Set Up API Key:
+```bash
+python -m spacy download en_core_web_lg
+```
 
-Get a Google AI (Gemini) API key from Google AI Studio.
+### 5. Configuration
+Create a `.env` file in the project root:
 
-Create a file named .env in the Placement-Project root folder.
+```env
+GITHUB_TOKEN="your_github_pat_token_here"
+```
 
-Add your API key to the .env file:
+---
 
-GOOGLE_API_KEY=YOUR_API_KEY_HERE
+## ⚙️ Execution Guide (Building the Knowledge Base)
 
+### Step 1: Extract Resume Data
 
-Pre-processing (If not done already):
+```bash
+python extract_resume_data.py
+```
 
-Place all alumni resume PDFs into the data/raw_resumes/ folder.
+### Step 2: Analyze Achievements (GenAI)
 
-Run the pre-processing scripts in order (1-6):
+```bash
+python analyze_achievements.py
+```
 
-python process_resumes.py
-python clean_text.py
-python vectorize_resumes.py
-# Run cluster_and_visualize.py once to generate elbow plot
-python cluster_and_visualize.py
-# --- Examine elbow_plot.png, choose OPTIMAL_K, edit the script ---
-# Run again with OPTIMAL_K set
-python cluster_and_visualize.py
-python label_clusters.py
-# --- Examine keywords, edit ARCHETYPE_MAP in build_vector_store.py ---
+### Step 3: Clustering
+
+**Run 1: Generate elbow plot**
+
+```bash
+python cluster_resumes.py
+```
+
+- Inspect `elbow_plot.png`
+- Update `OPTIMAL_K` in the script
+
+**Run 2: Final clustering**
+
+```bash
+python cluster_resumes.py
+```
+
+### Step 4: Label Archetypes
+
+**Run 1: Inspect keywords**
+
+```bash
+python label_archetypes.py
+```
+
+- Update `ARCHETYPE_LABELS`
+
+**Run 2: Save labeled insights**
+
+```bash
+python label_archetypes.py
+```
+
+### Step 5: Build Vector Store
+
+```bash
 python build_vector_store.py
+```
 
+---
 
-Running the Application
+## ⚡ Running the API Server
 
-Start the Backend Server:
-
-Make sure your virtual environment is active.
-
-Run the FastAPI server from the Placement-Project root folder:
-
+```bash
 python -m uvicorn main:app --reload
+```
 
+Server runs at:
 
-The server will start, typically on http://127.0.0.1:8000. Keep this terminal running.
+```
+http://127.0.0.1:8000
+```
 
-Open the Frontend:
+---
 
-In your file explorer, navigate to the Placement-Project folder.
+## 📡 API Documentation
 
-Double-click the index.html file. This will open the chatbot interface in your default web browser.
+### Endpoint
 
-Use the Application:
+```
+POST /analyze
+```
 
-Paste a job description into the text area.
+### Parameters
+- **job_description** (Query Parameter): Full job description text
+- **resume_file** (Body): Student resume PDF
 
-Upload your resume PDF.
+### Response
+- Streaming Markdown text
+- Alumni archetype comparison
+- Skill gap analysis
+- Actionable resume recommendations
 
-Click "Analyze Resume".
+---
+
+## 🎯 Outcome
+
+SRM Career Catalyst moves beyond resume screening and into career intelligence, enabling students to align their profiles with real-world placement success patterns.
+
+---
+
+## 📜 License
+
+For academic and research use. Extendable for institutional deployment.

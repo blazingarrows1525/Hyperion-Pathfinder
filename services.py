@@ -211,6 +211,7 @@ def generate_feedback(state: GraphState) -> GraphState:
         You are an expert SRM University Career Coach analyzing a student's resume.
         The target role seems to be related to '{state.get('target_archetype', 'General')}'.
         Analyze the user's resume against their target job description and these examples from successfully placed SRM alumni.
+        Also mention where these things are been compared to alumni's resumes.
 
         Provide feedback in this structure ONLY (use Markdown):
         **1. Overall Score (out of 100):** [Your Score Here]

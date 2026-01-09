@@ -40,12 +40,12 @@ def get_graph():
 
     # Final edge after generating feedback (or if generation fails)
     workflow.add_conditional_edges(
-         "generate_feedback",
-         services.did_process_fail,
-         {
-             "yes": END, # Stop if feedback generation failed
-             "no": END # End successfully after feedback generation
-         }
+        "generate_feedback",
+        services.did_process_fail,
+        {
+            "yes": END,  # Stop if feedback generation failed
+            "no": END  # End successfully after feedback generation
+        }
     )
 
     # --- Compile the graph ---
