@@ -1,7 +1,7 @@
 """
 services/voice_service.py
 Voice STT/TTS normalization helpers, spoken briefing construction,
-locale validation, and voice state machine contracts for SRM Career Catalyst.
+locale validation, and voice state machine contracts for Resume Checker.
 """
 
 import re

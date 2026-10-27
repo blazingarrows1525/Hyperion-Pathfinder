@@ -1,6 +1,6 @@
 # Production Deployment & Readiness Checklist
 
-**Project**: SRM Career Catalyst  
+**Project**: Resume Checker  
 **Target Environments**: Local Development, On-Premises Campus Server, Render Web Service  
 **Version**: 1.0.0  
 
@@ -10,7 +10,7 @@
 
 Before deploying or releasing any new build, complete each checkpoint in order:
 
-- [x] **1. Empirical Data Audit**: Verified that `vector_store/srm_resumes.index` and `srm_resumes.pkl` contain exactly 226 vectors matching `data_manifest.json`.
+- [x] **1. Empirical Data Audit**: Verified that `vector_store/benchmark_resumes.index` and `benchmark_resumes.pkl` contain exactly 226 vectors matching `data_manifest.json`.
 - [x] **2. Distance Metric Consistency**: Vector norms verified to be $1.0000 \pm 0.0000$; FAISS distance conversion formula $\cos = 1 - \frac{D_{L2\_sq}}{2}$ validated.
 - [x] **3. Automated Test Suite**: All 13 unit tests in `tests/test_pipeline.py` pass without warnings or failures.
 - [x] **4. Report Schema Invariants**: `scripts/evaluate_reports.py` passes all schema, bounds, summation, and PII checks.
@@ -63,4 +63,4 @@ If an unexpected runtime regression occurs:
    ```bash
    uvicorn main:app --host 127.0.0.1 --port 8000
    ```
-3. The underlying vector index (`vector_store/srm_resumes.index`) is backwards-compatible and does not require re-indexing.
+3. The underlying vector index (`vector_store/benchmark_resumes.index`) is backwards-compatible and does not require re-indexing.

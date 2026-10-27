@@ -1,5 +1,5 @@
 # Data Audit & Corpus Lineage Report
-**Project:** SRM Career Catalyst  
+**Project:** Resume Checker  
 **Date:** October 26, 2026  
 **Auditor:** Principal Machine Learning & NLP Reviewer  
 **Status:** VERIFIED ON DISK
@@ -10,9 +10,9 @@
 
 A critical discrepancy was identified in the project documentation:
 - **Historical Claim (README):** Stated the knowledge base was built from *"1,200+ resumes of successfully placed alumni"*.
-- **Verified Ground Truth on Disk:** The actual serialized vector store in [vector_store/srm_resumes.index](file:///c:/Users/ASUS/Desktop/resume%20expert/SRM_Resume_Expert/vector_store/srm_resumes.index) and [vector_store/srm_resumes.pkl](file:///c:/Users/ASUS/Desktop/resume%20expert/SRM_Resume_Expert/vector_store/srm_resumes.pkl) contains **exactly 226 resumes**.
+- **Verified Ground Truth on Disk:** The actual serialized vector store in [vector_store/benchmark_resumes.index](file:///c:/Users/ASUS/Desktop/vector_store/benchmark_resumes.index) and [vector_store/benchmark_resumes.pkl](file:///c:/Users/ASUS/Desktop/vector_store/benchmark_resumes.pkl) contains **exactly 226 resumes**.
 - **Source Inspection:**
-  - The directories `Resumes/` and `processed_data/` do not exist in the working repository; both are explicitly ignored in [.gitignore](file:///c:/Users/ASUS/Desktop/resume%20expert/SRM_Resume_Expert/.gitignore) (`Resumes/`, `processed_data/`, `data/`).
+  - The directories `Resumes/` and `processed_data/` do not exist in the working repository; both are explicitly ignored in [.gitignore](file:///c:/Users/ASUS/Desktop/.gitignore) (`Resumes/`, `processed_data/`, `data/`).
   - The 1,200+ figure represents an aspirational institutional target or an uncommitted raw historical folder from prior exploratory batches.
   - **Decision:** All user-facing statistics, calculations, diagnostics, and documentation must truthfully report the verified count of **226 alumni records**. Fabricated claims of 1,200+ records have been excised.
 
@@ -22,8 +22,8 @@ A critical discrepancy was identified in the project documentation:
 
 | Property | Measured Value | Verification Method |
 | :--- | :--- | :--- |
-| **FAISS Index File** | `vector_store/srm_resumes.index` (349,034 bytes) | Disk verification |
-| **FAISS Metadata File** | `vector_store/srm_resumes.pkl` (829,423 bytes) | Disk verification |
+| **FAISS Index File** | `vector_store/benchmark_resumes.index` (349,034 bytes) | Disk verification |
+| **FAISS Metadata File** | `vector_store/benchmark_resumes.pkl` (829,423 bytes) | Disk verification |
 | **Total Stored Vectors ($N$)** | **226** | `index.ntotal` via `faiss.read_index` |
 | **Vector Dimension ($d$)** | **384** | `index.d` (matches `all-MiniLM-L6-v2`) |
 | **FAISS Index Class** | `faiss.IndexIDMap` wrapping `faiss.IndexFlatL2` | Python runtime inspection |

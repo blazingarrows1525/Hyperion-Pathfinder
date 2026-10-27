@@ -1,6 +1,6 @@
 # Privacy, Security & Data Handling Policy
 
-**Project**: SRM Career Catalyst  
+**Project**: Resume Checker  
 **Version**: 1.0.0  
 **Scope**: Resume PDF Ingestion, PII Redaction, Vector Storage, LLM Boundaries, and Audit Logging  
 
@@ -8,7 +8,7 @@
 
 ## 1. Core Principles of Data Minimization
 
-Student resumes contain sensitive personally identifiable information (PII), including contact phone numbers, personal email addresses, home addresses, dates of birth, and identity markers. SRM Career Catalyst enforces strict data minimization protocols:
+Student resumes contain sensitive personally identifiable information (PII), including contact phone numbers, personal email addresses, home addresses, dates of birth, and identity markers. Resume Checker enforces strict data minimization protocols:
 
 1. **Transient Processing Only**: Candidate resume PDFs submitted to `/analyze` are held strictly in memory during execution. No uploaded resume files or extracted raw text are written to disk or persisted in databases without explicit student opt-in.
 2. **Server-Side Secret Isolation**: LLM API keys (`OPENAI_API_KEY`), tokens, and internal paths are never transmitted to frontend clients, included in HTTP responses, or embedded in client-side code.
@@ -48,6 +48,6 @@ The offline knowledge genome (226 indexed alumni resumes) underwent rigorous PII
 
 ## 4. Ethical AI & Fairness Declarations
 
-- **Decision-Support Tool, Not an Automated Hiring System**: SRM Career Catalyst is a guidance and preparation system for students. It does not decide interview shortlisting or hiring outcomes.
+- **Decision-Support Tool, Not an Automated Hiring System**: Resume Checker is a guidance and preparation system for students. It does not decide interview shortlisting or hiring outcomes.
 - **Zero Demographic Bias**: Demographic attributes (gender, age, ethnicity, caste, religion, disability) are neither extracted nor used in scoring or archetype classification.
 - **Missing Evidence $\neq$ Confirmed Absence**: When a skill is absent from a resume, the report states "Skill not detected in uploaded resume," rather than claiming the candidate lacks the capability.

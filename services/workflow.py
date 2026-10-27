@@ -283,7 +283,7 @@ def generate_feedback(state: GraphState) -> GraphState:
     new_state["resume_markups"] = [m.model_dump() for m in resume_markups]
 
     # 5. LLM Synthesis or Local Fallback
-    system_prompt = f"""You are the SRM University Career Catalyst placement benchmarking engine.
+    system_prompt = f"""You are the Resume Checker placement benchmarking engine.
 Your role is to explain evidence and synthesize actionable resume improvements.
 The candidate's profile is aligned with the '{target_arch}' career archetype.
 The deterministic alignment score is {overall_score}/100 based on verified rubric criteria.

@@ -1,6 +1,6 @@
 /**
  * ==============================================================================
- * SRM CAREER CATALYST — MASTER CLIENT CONTROLLER & ARCHITECTURE
+ * RESUME CHECKER — MASTER CLIENT CONTROLLER & ARCHITECTURE
  * Three.js 3D Constellation, 18-Framework Prompt Studio, Glassdoor Placement
  * Intelligence, Streaming AI Resume Analyzer & Accessible Interaction Lab
  * ==============================================================================
@@ -113,7 +113,7 @@ const promptFrameworksRegistry = [
     expansion: 'Context, Logic, Expectations, Action, Restriction',
     bestFor: 'Detailed, structured research with fewer ambiguities.',
     sample: {
-      Context: 'Senior year CSE student at SRM targeting Tier-1 AI Research/ML Engineer campus placements.',
+      Context: 'Senior year CSE student targeting Tier-1 AI Research/ML Engineer campus placements.',
       Logic: 'Need to isolate metric-driven project bullet points that distinguish academic prototypes from production-ready systems.',
       Expectations: 'Provide a structured tabular breakdown contrasting weak vs strong achievement statements.',
       Action: 'Audit my computer vision and LLM project descriptions.',
@@ -268,7 +268,7 @@ const promptFrameworksRegistry = [
       Research: 'Investigating impact of fine-tuning small LLMs (Llama 3 8B) for automated resume skill gap extraction.',
       Hypothesis: 'LoRA fine-tuning will outperform zero-shot GPT-4o-mini on proprietary university resume phrasing by >15% F1.',
       Objectives: 'Benchmark token efficiency, latency, and extraction precision.',
-      Development: 'Construct 500 labeled SRM resume-JD pairs with verified ground truth.',
+      Development: 'Construct 500 labeled benchmark resume-JD pairs with verified ground truth.',
       Execution: 'Train with HuggingFace TRL and evaluate with ROUGE/BERTScore.',
       Synthesis: 'Summarize deployment trade-offs in an academic conference format.'
     },
@@ -353,11 +353,11 @@ const promptFrameworksRegistry = [
     expansion: 'Task, Request, Action, Context, Example',
     bestFor: 'Comprehensive task definition with grounding reference examples.',
     sample: {
-      Task: 'Draft cold outreach LinkedIn messages to SRM alumni at Microsoft.',
+      Task: 'Draft cold outreach LinkedIn messages to industry engineers at Microsoft.',
       Request: 'Write 3 personalized message variants under 300 characters each.',
-      Action: 'Emphasize mutual alumni connection and interest in Azure Core Systems.',
+      Action: 'Emphasize engineering background and interest in Azure Core Systems.',
       Context: 'Applying for campus off-campus referral for SDE-1.',
-      Example: 'Reference example: "Hi [Name], as a fellow SRM CSE senior inspired by your work on Azure networking..."'
+      Example: 'Reference example: "Hi [Name], inspired by your work on Azure networking..."'
     },
     fields: [
       { key: 'Task', label: 'T — Task', placeholder: 'What task is being tackled?' },
@@ -1970,7 +1970,7 @@ function runDemoAnalysis() {
 * **Quantifiable Metrics:** Including achievements like *"reduced response latency by 35%"* directly parallels successful candidates placed at **Microsoft** and **Amazon**.
 
 **3. Actionable Recommendations:**
-* **Highlight High-Throughput & Distributed Cache Patterns:** Placed SRM alumni in this cluster heavily emphasize distributed memory caching (Redis, Memcached) and message broker decoupling (Kafka / RabbitMQ). Add these to your primary project descriptions.
+* **Highlight High-Throughput & Distributed Cache Patterns:** Placed engineers in this cluster heavily emphasize distributed memory caching (Redis, Memcached) and message broker decoupling (Kafka / RabbitMQ). Add these to your primary project descriptions.
 * **Deepen Cloud Infrastructure Context:** Emphasize container orchestration (Kubernetes or AWS ECS) rather than basic Docker standalone usage, reflecting the target role's production deployment requirements.
 * **Quantify Architectural Impact:** Explicitly link system architectural choices to business throughput (e.g., *"Scaled database queries to 10k+ QPS with read-replicas"*).
 
@@ -2367,7 +2367,7 @@ function renderCompanyDirectory() {
         </div>
         <div>
           <div class="c-stat-val">${c.alumniCount} Placed</div>
-          <div class="c-stat-label">SRM Alumni</div>
+          <div class="c-stat-label">Placed Alumni</div>
         </div>
       </div>
 
@@ -2741,7 +2741,7 @@ function triggerConfetti() {
 // ==============================================================================
 function initThemeSwitcher() {
   const themeBtn = document.getElementById('btn-theme-toggle');
-  const savedTheme = localStorage.getItem('srm_theme') || 'cyber';
+  const savedTheme = localStorage.getItem('resume_checker_theme') || 'cyber';
   setTheme(savedTheme);
 
   if (themeBtn) {
@@ -2759,11 +2759,11 @@ function setTheme(theme) {
   if (theme === 'ceramic') {
     document.documentElement.setAttribute('data-theme', 'ceramic');
     if (themeLabel) themeLabel.textContent = 'Theme: Minimalist Light';
-    localStorage.setItem('srm_theme', 'ceramic');
+    localStorage.setItem('resume_checker_theme', 'ceramic');
   } else {
     document.documentElement.removeAttribute('data-theme');
     if (themeLabel) themeLabel.textContent = 'Theme: Minimalist Dark';
-    localStorage.setItem('srm_theme', 'cyber');
+    localStorage.setItem('resume_checker_theme', 'cyber');
   }
 
   // Re-sync Three.js scene fog and clear colors if active
@@ -3444,7 +3444,7 @@ function exportDraftAsMarkdown() {
 
   const score = appState.analyzer.extractedScore || 'N/A';
   const rev = appState.resumeDraft.currentRevisionId || 'rev_0';
-  const mdContent = `# SRM Career Catalyst — Tailored Resume Draft (${rev})
+  const mdContent = `# Resume Checker — Tailored Resume Draft (${rev})
 Export Date: ${new Date().toLocaleString()}
 Placement Alignment Score: ${score}/100
 Note: Exported from in-browser tailoring session. Original PDF layout is preserved separately.
@@ -4005,7 +4005,7 @@ function generateGroundedCoachReply(question, framework = '') {
     return `As per the RACE (Role, Action, Context, Expectation) framework:
 • Role: Executive Career Coach & Placement Evaluator.
 • Action: Quantify your project metrics and define interface boundary ownership.
-• Context: Campus placements at SRM evaluate distributed systems scale and concurrency handling.
+• Context: Technical campus placements evaluate distributed systems scale and concurrency handling.
 • Expectation: Replace subjective phrasing with measurable latency improvements (e.g. from 240ms to 125ms).`;
   }
   if (fw === 'STAR') {
@@ -4023,7 +4023,7 @@ function generateGroundedCoachReply(question, framework = '') {
   }
   if (fw === 'CLEAR') {
     return `As per the CLEAR (Context, Logic, Expectations, Action, Restriction) framework:
-• Context: SRM Placement Preparation for Core SDE / AI Engineering roles.
+• Context: Technical Placement Preparation for Core SDE / AI Engineering roles.
 • Logic: High-impact metrics establish authentic technical credibility over generic skill lists.
 • Expectations: Provide measurable throughput and scale benchmarks.
 • Action: Update your primary project descriptions to cite concrete testing depth.
@@ -4077,7 +4077,7 @@ function parseAndHydrateStructuredReport(streamBuffer) {
 }
 
 function hydrateDemoStructuredReport() {
-  const demoResumeText = `SRM INSTITUTE OF SCIENCE AND TECHNOLOGY
+  const demoResumeText = `INSTITUTE OF TECHNOLOGY
 Kattankulathur, Chennai | B.Tech Computer Science & Engineering (2021-2025)
 
 EXPERIENCE & PROJECTS
@@ -4226,7 +4226,7 @@ function initDesignheadController() {
   const btnMax = document.getElementById('btn-designhead-maximalist');
   if (!btnMin || !btnMax) return;
 
-  const savedMode = localStorage.getItem('srm_designhead_mode') || 'maximalist';
+  const savedMode = localStorage.getItem('resume_checker_mode') || 'maximalist';
   setDesignheadMode(savedMode, false);
 
   btnMin.addEventListener('click', () => setDesignheadMode('minimalist', true));
@@ -4251,7 +4251,7 @@ function setDesignheadMode(mode, triggerToast = true) {
     if (triggerToast) showToast('Designhead: Maximalist Cyberpunk Mode Activated', 'success');
   }
 
-  localStorage.setItem('srm_designhead_mode', mode);
+  localStorage.setItem('resume_checker_mode', mode);
 
   if (typeof update3DSceneAesthetic === 'function') {
     update3DSceneAesthetic(mode);
@@ -4360,7 +4360,7 @@ function updateLLMProviderFormView(providerId) {
   if (providerId === 'neural_local') {
     if (keyGroup) keyGroup.style.display = 'none';
     if (endpointGroup) endpointGroup.style.display = 'none';
-    if (modelInput) modelInput.value = 'srm-career-catalyst-neural-v2';
+    if (modelInput) modelInput.value = 'resume-checker-neural-v2';
     if (descEl) descEl.textContent = 'Zero-latency, zero-cost deterministic synthesis with all 18 prompt engineering frameworks. 100% offline & privacy-safe.';
   } else if (providerId === 'gemini') {
     if (keyGroup) keyGroup.style.display = 'block';

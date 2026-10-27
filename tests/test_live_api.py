@@ -20,7 +20,7 @@ def test_analyze_endpoint():
         b"/Resources << /Font << /F1 << /Type /Font /Subtype /Type1 /BaseFont /Helvetica >> >> >> >>\nendobj\n"
         b"4 0 obj\n<< /Length 210 >>\nstream\nBT\n/F1 12 Tf\n50 700 Td\n"
         b"(Senior Software Engineer with 4 years Python, C++, and Docker experience. "
-        b"Built microservices with 10k QPS and 99.9% uptime. Education: SRM Institute of Science and Technology.) Tj\n"
+        b"Built microservices with 10k QPS and 99.9% uptime. Education: Institute of Technology.) Tj\n"
         b"ET\nendstream\nendobj\nxref\n0 5\n0000000000 65535 f \n0000000009 00000 n \n0000000058 00000 n \n"
         b"0000000115 00000 n \n0000000282 00000 n \ntrailer\n<< /Size 5 /Root 1 0 R >>\nstartxref\n514\n%%EOF"
     )

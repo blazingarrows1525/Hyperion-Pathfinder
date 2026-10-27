@@ -16,8 +16,8 @@ from services.embedding import encode_query
 
 
 STORE_DIR = os.path.join(os.path.dirname(__file__), "..", "vector_store")
-FAISS_PATH = os.path.join(STORE_DIR, "srm_resumes.index")
-META_PATH = os.path.join(STORE_DIR, "srm_resumes.pkl")
+FAISS_PATH = os.path.join(STORE_DIR, "benchmark_resumes.index")
+META_PATH = os.path.join(STORE_DIR, "benchmark_resumes.pkl")
 
 
 @lru_cache(maxsize=1)

@@ -41,8 +41,8 @@ embeddings_input_path = os.path.join('processed_data', 'resume_embeddings.npy')
 
 # Output directory for the final vector store
 store_output_dir = 'vector_store'
-faiss_index_path = os.path.join(store_output_dir, 'srm_resumes.index')
-metadata_path = os.path.join(store_output_dir, 'srm_resumes.pkl')
+faiss_index_path = os.path.join(store_output_dir, 'benchmark_resumes.index')
+metadata_path = os.path.join(store_output_dir, 'benchmark_resumes.pkl')
 # ---------------------
 
 import json

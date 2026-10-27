@@ -130,7 +130,7 @@ def run_self_test():
 
     # Test Case 2: Adversarial report with unredacted PII and contradiction
     adversarial_sample = dict(valid_sample)
-    adversarial_sample["feedback_markdown"] = "Contact candidate at student@srmist.edu.in"
+    adversarial_sample["feedback_markdown"] = "Contact candidate at candidate@university.edu"
     adversarial_sample["missing_required_skills"] = ["Python"]
     result_adv = validate_report_dict(adversarial_sample)
     print(f"Test 2 (Adversarial Report Rejection): {'PASSED' if not result_adv['is_valid'] else 'FAILED'}")

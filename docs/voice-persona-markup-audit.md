@@ -1,4 +1,4 @@
-# SRM Career Catalyst: Voice Assistant, Executive Review, and Interactive Resume Tailoring
+# Resume Checker: Voice Assistant, Executive Review, and Interactive Resume Tailoring
 ## System Architecture & Technical Audit (Milestone 0)
 
 **Document Release:** 1.0.0  
@@ -9,7 +9,7 @@
 
 ### 1. Repository Layout & Module Boundaries
 
-- **Repository Root:** `c:\Users\ASUS\Desktop\resume expert\SRM_Resume_Expert`
+- **Repository Root:** `.`
 - **Active Frontend Entrypoints:**
   - `index.html`: Unified semantic layout with Three.js canvas, Glassdoor placement intelligence, 18 Prompt Framework Studio, Analyzer Workspace, and Dialogs.
   - `styles.css`: Vanilla CSS design system featuring Neumorphism (soft UI depth, concave/convex surfaces, tactile inset/outset shadows), ceramic & minimalist monochrome palette (`#090a0f` base, `#ffffff` accents, `#94a3b8` borders).
@@ -31,7 +31,7 @@
 ### 2. Runtime Environment & Package Dependencies
 
 - **Python Runtime:** Python 3.10.11 (AMD64 Windows, MSC v.1929 64 bit)
-- **Virtual Environment:** `c:\Users\ASUS\Desktop\resume expert\SRM_Resume_Expert\.venv`
+- **Virtual Environment:** `.\.venv`
 - **Dependency Manager:** `pip` (`requirements.txt`)
 - **Key Package Versions:**
   - `fastapi`: 0.139.2

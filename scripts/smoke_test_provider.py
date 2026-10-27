@@ -16,7 +16,7 @@ from services.llm_provider import get_llm_provider, OpenAICompatibleProvider, Lo
 
 def run_smoke_test():
     print("=" * 60)
-    print("  SRM Career Catalyst — LLM Provider Smoke Test")
+    print("  Resume Checker — LLM Provider Smoke Test")
     print("=" * 60)
 
     provider = get_llm_provider()

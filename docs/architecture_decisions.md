@@ -1,5 +1,5 @@
 # Architecture Decision Records (ADRs)
-**Project:** SRM Career Catalyst  
+**Project:** Resume Checker  
 **Status:** Active  
 
 ---
@@ -7,7 +7,7 @@
 ## ADR-001: Vector Normalization, Distance Metric & Exact Cosine Search
 
 ### Context
-`services.py` encodes user queries with `normalize_embeddings=True` ($\|q\|_2 = 1.0$), while the original store was built as `faiss.IndexFlatL2`. Audit measurements revealed that the vectors stored in `srm_resumes.index` also have unit norms ($\|v\|_2 = 1.0$).
+`services.py` encodes user queries with `normalize_embeddings=True` ($\|q\|_2 = 1.0$), while the original store was built as `faiss.IndexFlatL2`. Audit measurements revealed that the vectors stored in `benchmark_resumes.index` also have unit norms ($\|v\|_2 = 1.0$).
 For unit vectors:
 $$\|u - v\|_2^2 = 2 - 2(u \cdot v) = 2 - 2 \cos(u, v)$$
 $$\cos(u, v) = 1 - \frac{\|u - v\|_2^2}{2}$$

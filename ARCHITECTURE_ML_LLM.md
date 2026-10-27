@@ -1,4 +1,4 @@
-# SRM Career Catalyst: Comprehensive ML, NLP & LLM Architecture Specification
+# Resume Checker: Comprehensive ML, NLP & LLM Architecture Specification
 
 **Version:** 2.0.0-PROD  
 **Target Audience:** ML Engineers, AI Researchers, Backend Architects, and Prompt Engineers  
@@ -8,7 +8,7 @@
 
 ## 1. End-to-End System Architecture
 
-SRM Career Catalyst operates on a dual-pipeline topology:
+Resume Checker operates on a dual-pipeline topology:
 1. **Offline Knowledge Extraction & Unsupervised Genome Pipeline:** Converts heterogeneous student/alumni PDF resumes into cleaned corpora, dense vector embeddings, clustered career archetypes, and an indexed FAISS vector database.
 2. **Online Real-Time Inference & LangGraph RAG Workflow:** Ingests live candidate resume PDFs and target job descriptions (JDs), executes stateless PDF extraction, retrieves semantically aligned alumni precedents, and generates structured benchmarking reports via GitHub AI Inference (`openai/gpt-4o-mini`).
 
@@ -20,7 +20,7 @@ graph TD
         C -->|vectorize_resumes.py (all-MiniLM-L6-v2)| D["resume_embeddings.npy (226 x 384)"]
         D -->|cluster_resumes.py (K-Means k=5)| E["resume_clustered_data.csv"]
         E -->|label_clusters.py (TF-IDF)| F["Archetype Keywords (50/cluster)"]
-        E & D -->|build_vector_store.py| G["vector_store/srm_resumes.index & .pkl"]
+        E & D -->|build_vector_store.py| G["vector_store/benchmark_resumes.index & .pkl"]
     end
 
     subgraph "ONLINE PIPELINE (FastAPI + LangGraph + LLM)"
@@ -72,8 +72,8 @@ graph TD
 - **Key Functions:**
   1. `load_models_and_store()`:
      - Implements `@lru_cache(maxsize=1)` singleton pattern.
-     - Reads `vector_store/srm_resumes.index` via `faiss.read_index`.
-     - Deserializes `vector_store/srm_resumes.pkl` via `pickle.load`.
+     - Reads `vector_store/benchmark_resumes.index` via `faiss.read_index`.
+     - Deserializes `vector_store/benchmark_resumes.pkl` via `pickle.load`.
      - Initializes `SentenceTransformer('all-MiniLM-L6-v2')`.
   2. `get_github_ai_client()`:
      - Implements `@lru_cache(maxsize=1)`.
@@ -91,7 +91,7 @@ graph TD
      - Inspects top-1 valid index to determine `target_archetype`.
      - Loops through retrieved indices and collects up to 3 alumni resume text snippets matching `target_archetype`.
   5. `generate_feedback(state: GraphState) -> GraphState`:
-     - Constructs structured prompt with `SystemMessage` (SRM Career Coach persona, Markdown layout enforcement) and `UserMessage` (Resume + JD + Alumni snippets).
+     - Constructs structured prompt with `SystemMessage` (Resume Career Coach persona, Markdown layout enforcement) and `UserMessage` (Resume + JD + Alumni snippets).
      - Dispatches synchronous completion to `openai/gpt-4o-mini` on GitHub Models.
      - Sets `state["feedback"] = response.choices[0].message.content`.
   6. `did_process_fail(state: GraphState) -> str`:
@@ -203,13 +203,13 @@ graph TD
       'archetype': str     # Mapped archetype label
     }, ...]
     ```
-- **Output:** `vector_store/srm_resumes.index` and `vector_store/srm_resumes.pkl`.
+- **Output:** `vector_store/benchmark_resumes.index` and `vector_store/benchmark_resumes.pkl`.
 
 ---
 
 ## 3. Verified Data Distribution & Statistical Metrics
 
-Real data verified directly from `vector_store/srm_resumes.index` and `srm_resumes.pkl`:
+Real data verified directly from `vector_store/benchmark_resumes.index` and `benchmark_resumes.pkl`:
 
 | Cluster ID | Archetype Taxonomy Label | Resume Count | Proportion (%) | Primary Distinguishing Competencies |
 | :---: | :--- | :---: | :---: | :--- |
@@ -235,7 +235,7 @@ Real data verified directly from `vector_store/srm_resumes.index` and `srm_resum
   $$D_{L2}(u, v) = \|u - v\|_2 = \sqrt{\sum_{i=1}^{384} (u_i - v_i)^2}$$
 - **Online Query Embedding:** Generated with `normalize_embeddings=True`:
   $$\|q\|_2 = 1.0$$
-- **Issue:** The saved alumni vectors in `srm_resumes.index` were **not** normalized prior to index insertion in `build_vector_store.py`. While Euclidean distance on unnormalized vectors preserves magnitude (e.g., word frequency/document density), querying with a unit vector causes directional skewing.
+- **Issue:** The saved alumni vectors in `benchmark_resumes.index` were **not** normalized prior to index insertion in `build_vector_store.py`. While Euclidean distance on unnormalized vectors preserves magnitude (e.g., word frequency/document density), querying with a unit vector causes directional skewing.
 - **Recommendation:** Convert both indexing and search to Inner Product (`IndexFlatIP`) with strict unit normalization ($\|v\|_2 = 1$), which mathematically guarantees exact Cosine Similarity:
   $$\text{Cosine Similarity}(u, v) = \frac{u \cdot v}{\|u\|_2 \|v\|_2} = u_{norm} \cdot v_{norm}$$
 
@@ -258,9 +258,9 @@ Real data verified directly from `vector_store/srm_resumes.index` and `srm_resum
 ### 5.2 Current Prompt Strategy (`services.py`)
 - **System Prompt:**
   ```text
-  You are an expert SRM University Career Coach analyzing a student's resume.
+  You are an expert Career Intelligence Engine Career Coach analyzing a student's resume.
   The target role seems to be related to '{target_archetype}'.
-  Analyze the user's resume against their target job description and these examples from successfully placed SRM alumni.
+  Analyze the user's resume against their target job description and these examples from successfully placed placed alumni.
   Also mention where these things are been compared to alumni's resumes.
 
   Provide feedback in this structure ONLY (use Markdown):
@@ -304,7 +304,7 @@ You can use the following curated prompts to implement the next technical milest
 ### 🚀 PROMPT 1: Structured Pydantic Output & True Token Streaming in LangGraph
 
 ```text
-Act as a Principal AI Engineer. In the existing repository 'c:\Users\ASUS\Desktop\resume expert\SRM_Resume_Expert', upgrade the LangGraph workflow and FastAPI backend to support true token-by-token streaming and Pydantic structured output.
+Act as a Principal AI Engineer. In the existing repository '.', upgrade the LangGraph workflow and FastAPI backend to support true token-by-token streaming and Pydantic structured output.
 
 Requirements:
 1. File models.py:
@@ -335,7 +335,7 @@ Requirements:
 ### 🚀 PROMPT 2: Hybrid Search (BM25 + FAISS Dense Vector) & Majority Vote Archetype Classifier
 
 ```text
-Act as a Senior Machine Learning Engineer. In 'c:\Users\ASUS\Desktop\resume expert\SRM_Resume_Expert', overhaul the retrieval and archetype classification engine to eliminate vector normalization mismatch and classification fragility.
+Act as a Senior Machine Learning Engineer. In '.', overhaul the retrieval and archetype classification engine to eliminate vector normalization mismatch and classification fragility.
 
 Requirements:
 1. File build_vector_store.py:
@@ -365,7 +365,7 @@ Requirements:
 ### 🚀 PROMPT 3: Automated Offline Evaluation & Similarity Scoring Pipeline
 
 ```text
-Act as an NLP Evaluation Specialist. In 'c:\Users\ASUS\Desktop\resume expert\SRM_Resume_Expert', build an offline evaluation harness to benchmark resume-to-JD match accuracy without calling external LLM APIs.
+Act as an NLP Evaluation Specialist. In '.', build an offline evaluation harness to benchmark resume-to-JD match accuracy without calling external LLM APIs.
 
 Requirements:
 1. Create a new script 'evaluate_matching.py':

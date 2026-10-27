@@ -1,7 +1,7 @@
-# 🚀 SRM Career Catalyst — Master System Architecture & Production Specification
+# 🚀 Resume Checker — Master System Architecture & Production Specification
 
 > **Intelligent Placement Benchmarking Engine, Alumni Knowledge Genome, Hybrid Retrieval & LLM Career Coach**  
-> *Academic and Enterprise Placement Intelligence System for SRM Institute of Science and Technology*
+> *Academic and Enterprise Placement Intelligence System for Institute of Technology*
 
 [![FastAPI](https://img.shields.io/badge/FastAPI-0.115+-009688.svg?style=flat&logo=fastapi)](http://127.0.0.1:8000/docs)
 [![LangGraph](https://img.shields.io/badge/LangGraph-StateGraph-FF6F00.svg?style=flat)](https://github.com/langchain-ai/langgraph)
@@ -37,13 +37,13 @@
 Conventional Applicant Tracking Systems (ATS) and commercial resume review tools evaluate candidate resumes using **static keyword frequency** against a target Job Description (JD). This approach fails campus placements because:
 - Keyword density does not correlate with actual hiring outcomes.
 - Candidates receive generic advice without knowing *which* specific metrics, architectures, or technical depths successfully converted to placement offers.
-- Historical institutional placement patterns (e.g., what SRM alumni did to get placed at Google, Microsoft, Amazon, Cisco, Goldman Sachs) are completely ignored.
+- Historical institutional placement patterns (e.g., what placed alumni did to get placed at Google, Microsoft, Amazon, Cisco, Goldman Sachs) are completely ignored.
 
-### The Solution: SRM Career Catalyst
-**SRM Career Catalyst** introduces an institutional **Alumni Knowledge Genome** built from a benchmark corpus of successfully placed graduates. Rather than calculating keyword density in isolation:
+### The Solution: Resume Checker
+**Resume Checker** introduces an institutional **Alumni Knowledge Genome** built from a benchmark corpus of successfully placed graduates. Rather than calculating keyword density in isolation:
 1. **Unsupervised Genome Discovery:** Extracts 384-dimensional dense semantic embeddings of placed alumni resumes, discovers natural **Career Archetypes** using K-Means clustering, and labels each cluster using TF-IDF n-gram feature extraction.
 2. **Hybrid RAG Retrieval:** Given a candidate's resume PDF and a target Job Description, the engine performs **Dense Cosine Vector Search** and **BM25Okapi Lexical Retrieval**, fusing candidates via **Reciprocal Rank Fusion (RRF, $k=60$)** to identify relevant placed alumni profiles.
-3. **Deterministic Heuristic Rubric:** Calculates an objective 0–100 alignment score based on a versioned rubric ([scoring_rubric.json](file:///c:/Users/ASUS/Desktop/resume%20expert/SRM_Resume_Expert/scoring_rubric.json)). **This score is explicitly defined as a heuristic alignment diagnostic, not a probability of being hired.**
+3. **Deterministic Heuristic Rubric:** Calculates an objective 0–100 alignment score based on a versioned rubric ([scoring_rubric.json](file:///c:/Users/ASUS/Desktop/scoring_rubric.json)). **This score is explicitly defined as a heuristic alignment diagnostic, not a probability of being hired.**
 4. **Autonomous LangGraph Orchestration:** A multi-step LangGraph state machine extracts PDF tokens, redacts personal PII, aligns candidates with alumni precedents, and generates structured recommendations validated against Pydantic v2 schemas.
 5. **Rich 3D Web Experience:** A responsive web client featuring a Three.js WebGL constellation, Glassdoor-grade Company Intelligence directory, full 18-framework Prompt Studio, 8-button interaction lab, and truthful backend status monitoring.
 
@@ -95,10 +95,10 @@ flowchart TD
 
 ### Resolution of Historical Documentation Discrepancies
 An empirical audit was conducted to resolve discrepancies between earlier marketing documentation ("1,200+ resumes") and the actual serialized artifacts:
-- **Verified Corpus Count**: Exactly **226 alumni resumes** exist in [vector_store/srm_resumes.index](file:///c:/Users/ASUS/Desktop/resume%20expert/SRM_Resume_Expert/vector_store/srm_resumes.index) and [vector_store/srm_resumes.pkl](file:///c:/Users/ASUS/Desktop/resume%20expert/SRM_Resume_Expert/vector_store/srm_resumes.pkl).
+- **Verified Corpus Count**: Exactly **226 alumni resumes** exist in [vector_store/benchmark_resumes.index](file:///c:/Users/ASUS/Desktop/vector_store/benchmark_resumes.index) and [vector_store/benchmark_resumes.pkl](file:///c:/Users/ASUS/Desktop/vector_store/benchmark_resumes.pkl).
 - **Corpus Grounding**: The original training PDFs and intermediate CSVs (`Resumes/`, `processed_data/`) were gitignored during development. All product metrics, manifests, and frontend charts have been strictly aligned to the verified count of **226**.
 
-### Archetype Distribution ([data_manifest.json](file:///c:/Users/ASUS/Desktop/resume%20expert/SRM_Resume_Expert/data_manifest.json))
+### Archetype Distribution ([data_manifest.json](file:///c:/Users/ASUS/Desktop/data_manifest.json))
 
 | Cluster ID | Archetype Label | Count | Share | Primary Anchor Skills |
 | :---: | :--- | :---: | :---: | :--- |
@@ -153,7 +153,7 @@ vote_weight = 1.0 / (rank + 1.0) * cosine_similarity
 
 The alignment engine cleanly separates objective heuristic scoring from subjective LLM text generation. **The score is never generated by an LLM prompt.**
 
-### 6.1 Versioned Scoring Rubric ([scoring_rubric.json](file:///c:/Users/ASUS/Desktop/resume%20expert/SRM_Resume_Expert/scoring_rubric.json))
+### 6.1 Versioned Scoring Rubric ([scoring_rubric.json](file:///c:/Users/ASUS/Desktop/scoring_rubric.json))
 
 | Component Key | Component Name | Max Points | Evaluation Criteria |
 | :--- | :--- | :---: | :--- |
@@ -164,7 +164,7 @@ The alignment engine cleanly separates objective heuristic scoring from subjecti
 | `resume_completeness`| Formatting & Completeness | **10** | Standard section headers, readability, and structural hygiene |
 | **Total** | **Heuristic Alignment Score** | **100** | **Sum of component points (0–100)** |
 
-### 6.2 Canonical Skill Taxonomy ([skill_taxonomy.json](file:///c:/Users/ASUS/Desktop/resume%20expert/SRM_Resume_Expert/skill_taxonomy.json))
+### 6.2 Canonical Skill Taxonomy ([skill_taxonomy.json](file:///c:/Users/ASUS/Desktop/skill_taxonomy.json))
 Includes 40+ canonical technologies across 7 categories (Languages, ML/AI, Web, Cloud, Databases, DevOps, Core CS). Features alias mapping:
 - `scikit-learn` $\leftarrow$ `sklearn`, `scikit learn`
 - `PostgreSQL` $\leftarrow$ `postgres`, `psql`
@@ -184,7 +184,7 @@ Includes 40+ canonical technologies across 7 categories (Languages, ML/AI, Web, 
 ### Retirement of GitHub Models Endpoint
 The legacy endpoint `https://models.github.ai/inference` was officially retired by GitHub on July 30, 2026. The codebase has been fully decoupled from hardcoded endpoints.
 
-### Unified OpenAI v1 Compatible Provider ([services/llm_provider.py](file:///c:/Users/ASUS/Desktop/resume%20expert/SRM_Resume_Expert/services/llm_provider.py))
+### Unified OpenAI v1 Compatible Provider ([services/llm_provider.py](file:///c:/Users/ASUS/Desktop/services/llm_provider.py))
 Supports standard OpenAI-compatible endpoints including:
 1. **Azure AI Foundry / Azure OpenAI** (`OPENAI_BASE_URL=https://<resource>.openai.azure.com/openai/v1`)
 2. **Direct OpenAI API** (`OPENAI_BASE_URL=https://api.openai.com/v1`)
@@ -263,7 +263,7 @@ The system implements all **18 specialized prompt engineering frameworks** acros
 
 ## 10. Interactive 3D Web Portal, Minimalist Palette & Floating Spatial UI in Depth
 
-The SRM Career Catalyst frontend utilizes an ultra-modern, **minimalist black, white, grey, and light colours** design system paired with multi-tiered **floating spatial UIs in depth**.
+The Resume Checker frontend utilizes an ultra-modern, **minimalist black, white, grey, and light colours** design system paired with multi-tiered **floating spatial UIs in depth**.
 
 ### 10.1 Minimalist Monochrome & Soft Theming
 - **Minimalist Dark (Obsidian & Carbon, default)**: Deep obsidian canvas (`#060608`) and smoky carbon surfaces (`#0e0e12`, `#121216`) with high-contrast pure white typography (`#FFFFFF`), titanium silver accents (`#E4E4E7`), and soft directional shadows (`box-shadow: 8px 8px 20px rgba(0,0,0,0.92), -6px -6px 16px rgba(255,255,255,0.09)`).
@@ -296,13 +296,13 @@ Located within the Button Interaction Lab (`#buttons-lab`):
 4. **Surface Geometry Preview**: Real-time switcher previewing Flat, Raised Convex, Sunken Concave, and Indented Inset surfaces.
 
 ### 10.4 Glassdoor-Grade Company Intelligence Directory
-- Placement dossiers for major SRM recruiters (Amazon, Microsoft, Google, Cisco, TCS Digital, Goldman Sachs), detailing CTC ranges, interview rounds, top hiring roles, and alumni focus topics.
+- Placement dossiers for major top recruiters (Amazon, Microsoft, Google, Cisco, TCS Digital, Goldman Sachs), detailing CTC ranges, interview rounds, top hiring roles, and alumni focus topics.
 
 ---
 
 ## 11. Evaluation Protocol, Benchmarks & Test Suite
 
-### 11.1 Offline Retrieval Benchmark ([docs/evaluation_results.json](file:///c:/Users/ASUS/Desktop/resume%20expert/SRM_Resume_Expert/docs/evaluation_results.json))
+### 11.1 Offline Retrieval Benchmark ([docs/evaluation_results.json](file:///c:/Users/ASUS/Desktop/docs/evaluation_results.json))
 Evaluated across 10 diverse job descriptions spanning all 5 career archetypes:
 
 | Retrieval Method | Archetype Match Accuracy | Avg Query Latency | Notes |
@@ -373,8 +373,8 @@ Test 2 (Adversarial Report Rejection): PASSED
 ### 13.1 Installation
 ```powershell
 # Clone the repository
-git clone https://github.com/your-repo/srm-career-catalyst.git
-cd srm-career-catalyst/SRM_Resume_Expert
+git clone https://github.com/your-repo/resume-checker.git
+cd resume-checker
 
 # Create virtual environment
 python -m venv .venv
@@ -424,16 +424,16 @@ python -m http.server 8080 --bind 127.0.0.1
 
 ## 14. Architecture Documentation Links
 
-- [Architecture Decisions Record (ADR 001 - 004)](file:///c:/Users/ASUS/Desktop/resume%20expert/SRM_Resume_Expert/docs/architecture_decisions.md)
-- [Empirical Data Audit & Corpus Lineage](file:///c:/Users/ASUS/Desktop/resume%20expert/SRM_Resume_Expert/docs/data_audit.md)
-- [Evaluation Protocol & Benchmark Methodology](file:///c:/Users/ASUS/Desktop/resume%20expert/SRM_Resume_Expert/docs/evaluation_protocol.md)
-- [Privacy, Security & Data Handling Policy](file:///c:/Users/ASUS/Desktop/resume%20expert/SRM_Resume_Expert/docs/privacy_and_data_handling.md)
-- [Production Deployment & Readiness Checklist](file:///c:/Users/ASUS/Desktop/resume%20expert/SRM_Resume_Expert/docs/deployment_checklist.md)
-- [Voice, Persona Review & Markup Audit](file:///c:/Users/ASUS/Desktop/resume%20expert/SRM_Resume_Expert/docs/voice-persona-markup-audit.md)
-- [Data Manifest](file:///c:/Users/ASUS/Desktop/resume%20expert/SRM_Resume_Expert/data_manifest.json)
-- [Skill Taxonomy](file:///c:/Users/ASUS/Desktop/resume%20expert/SRM_Resume_Expert/skill_taxonomy.json)
-- [Scoring Rubric](file:///c:/Users/ASUS/Desktop/resume%20expert/SRM_Resume_Expert/scoring_rubric.json)
-- [Prompt Frameworks Registry](file:///c:/Users/ASUS/Desktop/resume%20expert/SRM_Resume_Expert/prompt_frameworks.json)
+- [Architecture Decisions Record (ADR 001 - 004)](file:///c:/Users/ASUS/Desktop/docs/architecture_decisions.md)
+- [Empirical Data Audit & Corpus Lineage](file:///c:/Users/ASUS/Desktop/docs/data_audit.md)
+- [Evaluation Protocol & Benchmark Methodology](file:///c:/Users/ASUS/Desktop/docs/evaluation_protocol.md)
+- [Privacy, Security & Data Handling Policy](file:///c:/Users/ASUS/Desktop/docs/privacy_and_data_handling.md)
+- [Production Deployment & Readiness Checklist](file:///c:/Users/ASUS/Desktop/docs/deployment_checklist.md)
+- [Voice, Persona Review & Markup Audit](file:///c:/Users/ASUS/Desktop/docs/voice-persona-markup-audit.md)
+- [Data Manifest](file:///c:/Users/ASUS/Desktop/data_manifest.json)
+- [Skill Taxonomy](file:///c:/Users/ASUS/Desktop/skill_taxonomy.json)
+- [Scoring Rubric](file:///c:/Users/ASUS/Desktop/scoring_rubric.json)
+- [Prompt Frameworks Registry](file:///c:/Users/ASUS/Desktop/prompt_frameworks.json)
 
 ---
 

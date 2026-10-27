@@ -83,7 +83,7 @@ BENCHMARK_JDS = [
 
 def evaluate_retrievers():
     print("=" * 70)
-    print("  SRM Career Catalyst — Offline Retrieval Benchmark Evaluation")
+    print("  Resume Checker — Offline Retrieval Benchmark Evaluation")
     print("=" * 70)
 
     modes = ["dense_only", "sparse_only", "hybrid_rrf"]

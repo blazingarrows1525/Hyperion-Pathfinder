@@ -228,7 +228,7 @@ class IntelligentLocalProvider(LLMProvider):
 
     @property
     def model_name(self) -> str:
-        return "srm-career-catalyst-neural-v2"
+        return "resume-checker-neural-v2"
 
     def complete(self, messages: List[Dict[str, str]], model: Optional[str] = None) -> str:
         return self._synthesize(messages)
@@ -328,15 +328,15 @@ class IntelligentLocalProvider(LLMProvider):
                 f"- **Specific**: Master distributed caching (Redis) and Docker containerization for {target_role}.\n"
                 f"- **Measurable**: Deploy 2 end-to-end full stack projects with documented 90%+ unit test coverage.\n"
                 f"- **Achievable**: Dedicate 10 hours weekly to LeetCode Medium system patterns and mock interviews.\n"
-                f"- **Relevant**: Target SRM alumni hiring patterns at Super Dream tier companies.\n"
+                f"- **Relevant**: Target verified hiring patterns at top-tier tech companies.\n"
                 f"- **Time-bound**: Complete profile optimization and mock rounds within 21 days."
             )
         else:
             # Default structured coaching
             return (
-                f"**Institutional Placement Coach Directive ({persona})**:\n\n"
+                f"**Industry Placement Coach Directive ({persona})**:\n\n"
                 f"Regarding your query on '{query[:60]}...':\n"
-                f"1. **Architectural Grounding**: For {target_role}, SRM alumni who succeeded at companies like Cisco, Amazon, and Microsoft emphasized production ownership over boilerplate tutorials.\n"
+                f"1. **Architectural Grounding**: For {target_role}, candidates who succeeded at companies like Cisco, Amazon, and Microsoft emphasized production ownership over boilerplate tutorials.\n"
                 f"2. **Quantified Evidence**: Every bullet point in your project portfolio must answer: *What was the baseline? What technical choice did you make? What was the measured outcome?*\n"
                 f"3. **Next Action Step**: Review the highlighted gaps in the In-Document Resume Tailor and apply surgical metric rewrites."
             )
@@ -345,7 +345,7 @@ class IntelligentLocalProvider(LLMProvider):
         return (
             f"### Comprehensive Placement Intelligence Audit\n\n"
             f"**1. Core Profile Alignment & Architectural Strengths:**\n"
-            f"* Candidate demonstrates strong foundational engineering competency aligned with SRM Alumni Cluster benchmarks for **{target_role}**.\n"
+            f"* Candidate demonstrates strong foundational engineering competency aligned with benchmark hiring profiles for **{target_role}**.\n"
             f"* Clear project execution evidence across modern full-stack / backend design paradigms.\n\n"
             f"**2. High-Priority Strategic Optimizations:**\n"
             f"* **Quantify Performance Proof:** Replace descriptive duty summaries with quantitative metrics (e.g. latency reductions, queries per second, dataset scales, or throughput improvements).\n"
@@ -381,7 +381,7 @@ def get_available_providers() -> List[Dict[str, Any]]:
             "description": "Zero-latency, zero-cost deterministic synthesis with all 18 prompt frameworks.",
             "is_ready": True,
             "requires_key": False,
-            "default_model": "srm-career-catalyst-neural-v2"
+            "default_model": "resume-checker-neural-v2"
         },
         {
             "id": "gemini",

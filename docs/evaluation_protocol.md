@@ -1,6 +1,6 @@
 # Evaluation Protocol & Offline Benchmark Methodology
 
-**Project**: SRM Career Catalyst — Intelligent Placement Benchmarking Engine  
+**Project**: Resume Checker — Intelligent Placement Benchmarking Engine  
 **Version**: 1.0.0  
 **Scope**: Retrieval, Archetype Classification, Skill Alignment, and LLM Groundedness  
 

@@ -1,6 +1,6 @@
 """
 main.py
-FastAPI gateway for SRM Career Catalyst.
+FastAPI gateway for Resume Checker.
 Provides /health diagnostics, streaming analysis, executive persona review,
 exact span resume tailoring, conversational voice coach, and audio transcription.
 """
@@ -52,7 +52,7 @@ import services.pdf_ingestion as pdf_ingest
 load_dotenv()
 
 app = FastAPI(
-    title="SRM Career Catalyst API",
+    title="Resume Checker API",
     version="2.1.0",
     description="Placement Intelligence, Executive Persona Review & In-Document Resume Tailoring Engine"
 )
@@ -89,7 +89,7 @@ async def serve_index():
     index_path = os.path.join(os.path.dirname(__file__), "index.html")
     if os.path.exists(index_path):
         return FileResponse(index_path, media_type="text/html")
-    return JSONResponse({"service": "SRM Career Catalyst", "status": "running"})
+    return JSONResponse({"service": "Resume Checker", "status": "running"})
 
 @app.get("/styles.css")
 async def serve_styles():
@@ -142,7 +142,7 @@ async def health_check():
 
     return {
         "status": "healthy" if has_graph else "degraded",
-        "service": "SRM Career Catalyst Inference Engine",
+        "service": "Resume Checker Inference Engine",
         "version": "2.1.0",
         "provider_configured": provider.is_configured(),
         "provider_class": provider.__class__.__name__,
@@ -164,7 +164,7 @@ async def health_check():
 @app.get("/")
 async def root():
     return {
-        "message": "SRM Career Catalyst Backend API v2.1 is running.",
+        "message": "Resume Checker Backend API v2.1 is running.",
         "docs_url": "/docs",
         "health_url": "/health"
     }
@@ -423,7 +423,7 @@ async def coach_chat(req: CoachChatRequest):
     fw_info = FRAMEWORKS_MAP.get(framework_id)
     fw_applied = fw_info["id"] if fw_info else None
 
-    system_prompt = f"""You are the SRM Career Catalyst conversational career coach acting as: {persona_meta['title']}.
+    system_prompt = f"""You are the Resume Checker conversational career coach acting as: {persona_meta['title']}.
 The candidate has asked a question about their resume analysis for the target role: {req.target_role}.
 Current Deterministic Alignment Score: {req.current_score or 'Evaluated'}/100.
 Matched Skills: {', '.join(req.matched_skills[:6]) if req.matched_skills else 'Standard Profile'}.

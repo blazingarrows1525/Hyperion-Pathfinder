@@ -1,6 +1,6 @@
 services:
   - type: web
-    name: srm-career-catalyst-backend
+    name: resume-checker-backend
     env: python
     region: singapore # or ohio, frankfurt, etc.
     buildCommand: pip install -r requirements.txt

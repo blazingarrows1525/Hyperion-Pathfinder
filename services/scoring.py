@@ -132,7 +132,7 @@ def calculate_deterministic_score(
 
     return {
         "overall_score": total_score,
-        "rubric_id": rubric.get("rubric_id", "SRM-ALIGN-v1.0"),
+        "rubric_id": rubric.get("rubric_id", "RESUME-CHECKER-ALIGN-v1.0"),
         "score_label": "Resume-to-Job Alignment (Heuristic)",
         "disclaimer": rubric.get("disclaimer"),
         "breakdown": breakdown

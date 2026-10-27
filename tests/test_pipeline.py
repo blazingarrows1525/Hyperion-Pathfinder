@@ -1,6 +1,6 @@
 """
 tests/test_pipeline.py
-Automated Unit, Integration, and Invariant Verification Suite for SRM Career Catalyst.
+Automated Unit, Integration, and Invariant Verification Suite for Resume Checker.
 """
 
 import os
@@ -41,9 +41,9 @@ class TestPDFIngestion(unittest.TestCase):
             validate_pdf_bytes(b"NOT_A_PDF_DOCUMENT_CONTENT")
 
     def test_pii_redaction(self):
-        raw = "Contact me at student@srmist.edu.in or +91 9876543210. Visit https://portfolio.com."
+        raw = "Contact me at student@university.edu or +91 9876543210. Visit https://portfolio.com."
         redacted = redact_pii(raw)
-        self.assertNotIn("student@srmist.edu.in", redacted)
+        self.assertNotIn("student@university.edu", redacted)
         self.assertNotIn("9876543210", redacted)
         self.assertNotIn("https://portfolio.com", redacted)
         self.assertIn("[EMAIL_REDACTED]", redacted)
@@ -56,7 +56,7 @@ class TestPDFIngestion(unittest.TestCase):
         Summary
         Experienced software engineer.
         Education
-        B.Tech in Computer Science, SRM Institute of Science and Technology.
+        B.Tech in Computer Science, Institute of Technology.
         Skills
         Python, C++, PyTorch, Docker.
         Projects
@@ -159,7 +159,7 @@ class TestArchetypesAndScoring(unittest.TestCase):
             "preferred_skills": ["Kubernetes"]
         }
         sections = {
-            "education": "SRM B.Tech in CSE",
+            "education": "B.Tech in CSE",
             "experience": "ML Intern at startup",
             "projects": "Engineered model with 92% accuracy and 15ms latency.",
             "skills": "Python, PyTorch, Docker"

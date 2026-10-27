@@ -60,11 +60,11 @@ class TestUnicodeAndOffsetConversion(unittest.TestCase):
 class TestDocumentSnapshotAndHashing(unittest.TestCase):
 
     def test_snapshot_creation_and_hash_integrity(self):
-        raw = "Contact: test@srmist.edu.in. Summary: Experienced in C++ and Python."
+        raw = "Contact: test@university.edu. Summary: Experienced in C++ and Python."
         snapshot = create_document_snapshot(raw, document_id="doc_123")
         
         # Assert PII is redacted
-        self.assertNotIn("test@srmist.edu.in", snapshot.canonical_display_text)
+        self.assertNotIn("test@university.edu", snapshot.canonical_display_text)
         self.assertIn("[EMAIL_REDACTED]", snapshot.canonical_display_text)
         
         # Hash matches SHA-256 of display text
