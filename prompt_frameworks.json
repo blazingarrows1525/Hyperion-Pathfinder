@@ -1,0 +1,167 @@
+{
+  "version": "1.0.0",
+  "frameworks": [
+    {
+      "id": "CLEAR",
+      "name": "CLEAR Framework",
+      "group": "Research & Structured Work",
+      "acronym": "Context, Logic, Expectations, Action, Restriction",
+      "best_use": "Detailed, structured research with fewer ambiguities.",
+      "fields": ["Context", "Logic", "Expectations", "Action", "Restriction"],
+      "recommended_scenarios": ["research", "system_architecture", "deep_analysis"]
+    },
+    {
+      "id": "SMART",
+      "name": "SMART Framework",
+      "group": "Research & Structured Work",
+      "acronym": "Specific, Measurable, Achievable, Relevant, Time-bound",
+      "best_use": "Focused, measurable placement and learning objectives.",
+      "fields": ["Specific", "Measurable", "Achievable", "Relevant", "Time-bound"],
+      "recommended_scenarios": ["placement_goal", "study_plan", "measurable_plan"]
+    },
+    {
+      "id": "QUEST",
+      "name": "QUEST Framework",
+      "group": "Research & Structured Work",
+      "acronym": "Question, Understanding, Expectation, Scope, Time",
+      "best_use": "Narrowing a broad topic into actionable questions.",
+      "fields": ["Question", "Understanding", "Expectation", "Scope", "Time"],
+      "recommended_scenarios": ["broad_inquiry", "exploratory_research"]
+    },
+    {
+      "id": "GUIDE",
+      "name": "GUIDE Framework",
+      "group": "Research & Structured Work",
+      "acronym": "Goal, Understanding, Information, Direction, Evaluation",
+      "best_use": "Step-by-step skill-learning plans and research breakdowns.",
+      "fields": ["Goal", "Understanding", "Information", "Direction", "Evaluation"],
+      "recommended_scenarios": ["skill_roadmap", "stepwise_learning"]
+    },
+    {
+      "id": "FOCUS",
+      "name": "FOCUS Framework",
+      "group": "Research & Structured Work",
+      "acronym": "Function, Outcome, Criteria, Underlying Assumptions, Strategy",
+      "best_use": "Concise pruning of unnecessary details and architectural assumptions.",
+      "fields": ["Function", "Outcome", "Criteria", "Underlying Assumptions", "Strategy"],
+      "recommended_scenarios": ["concise_pruning", "criteria_evaluation"]
+    },
+    {
+      "id": "IDEA",
+      "name": "IDEA Framework",
+      "group": "Research & Structured Work",
+      "acronym": "Intent, Details, Examples, Adjustments",
+      "best_use": "Iterative rewriting and refinement of technical narratives.",
+      "fields": ["Intent", "Details", "Examples", "Adjustments"],
+      "recommended_scenarios": ["iterative_refinement", "bullet_tuning"]
+    },
+    {
+      "id": "RISEN",
+      "name": "RISEN Framework",
+      "group": "Research & Structured Work",
+      "acronym": "Requirement, Information, Strategy, Evaluation, Negotiation",
+      "best_use": "Structured requirements analysis and trade-off negotiations.",
+      "fields": ["Requirement", "Information", "Strategy", "Evaluation", "Negotiation"],
+      "recommended_scenarios": ["tradeoff_analysis", "project_specification"]
+    },
+    {
+      "id": "RHODES",
+      "name": "RHODES Framework",
+      "group": "Research & Structured Work",
+      "acronym": "Research, Hypothesis, Objectives, Development, Execution, Synthesis",
+      "best_use": "Hypothesis-driven technical experiments and architecture planning.",
+      "fields": ["Research", "Hypothesis", "Objectives", "Development", "Execution", "Synthesis"],
+      "recommended_scenarios": ["hypothesis_experiment", "ml_architecture"]
+    },
+    {
+      "id": "CREATE",
+      "name": "CREATE Framework",
+      "group": "Research & Structured Work",
+      "acronym": "Conceptualize, Research, Experiment, Analyze, Transform, Evaluate",
+      "best_use": "Ideation, prototyping, and end-to-end project conception.",
+      "fields": ["Conceptualize", "Research", "Experiment", "Analyze", "Transform", "Evaluate"],
+      "recommended_scenarios": ["prototyping", "capstone_ideation"]
+    },
+    {
+      "id": "RACE",
+      "name": "RACE Framework",
+      "group": "Task & Response Structuring",
+      "acronym": "Role, Action, Context, Expectation",
+      "best_use": "Role-conditioned tasks with clear behavioral boundaries.",
+      "fields": ["Role", "Action", "Context", "Expectation"],
+      "recommended_scenarios": ["role_conditioning", "career_coaching"]
+    },
+    {
+      "id": "TAG",
+      "name": "TAG Framework",
+      "group": "Task & Response Structuring",
+      "acronym": "Task, Action, Goal",
+      "best_use": "Compact, direct instructions for rapid execution.",
+      "fields": ["Task", "Action", "Goal"],
+      "recommended_scenarios": ["quick_task", "micro_instruction"]
+    },
+    {
+      "id": "TRACE",
+      "name": "TRACE Framework",
+      "group": "Task & Response Structuring",
+      "acronym": "Task, Request, Action, Context, Example",
+      "best_use": "Comprehensive technical briefs with concrete output examples.",
+      "fields": ["Task", "Request", "Action", "Context", "Example"],
+      "recommended_scenarios": ["technical_brief", "example_driven"]
+    },
+    {
+      "id": "CARE",
+      "name": "CARE Framework",
+      "group": "Task & Response Structuring",
+      "acronym": "Context, Action, Result, Example",
+      "best_use": "Experience storytelling and behavioral case answers.",
+      "fields": ["Context", "Action", "Result", "Example"],
+      "recommended_scenarios": ["behavioral_story", "leadership_example"]
+    },
+    {
+      "id": "PAR",
+      "name": "PAR Framework",
+      "group": "Task & Response Structuring",
+      "acronym": "Problem, Action, Result",
+      "best_use": "Tightening project bullets with metric-driven impact.",
+      "fields": ["Problem", "Action", "Result"],
+      "recommended_scenarios": ["bullet_point_rewriting", "resume_bullets"]
+    },
+    {
+      "id": "STAR",
+      "name": "STAR Framework",
+      "group": "Task & Response Structuring",
+      "acronym": "Situation, Task, Action, Result",
+      "best_use": "Standard interview narratives and competency evidence.",
+      "fields": ["Situation", "Task", "Action", "Result"],
+      "recommended_scenarios": ["interview_preparation", "behavioral_round"]
+    },
+    {
+      "id": "APE",
+      "name": "APE Framework",
+      "group": "Task & Response Structuring",
+      "acronym": "Action, Purpose, Expectation",
+      "best_use": "Direct commands focused on specific output deliverables.",
+      "fields": ["Action", "Purpose", "Expectation"],
+      "recommended_scenarios": ["direct_action", "task_alignment"]
+    },
+    {
+      "id": "CRISPE",
+      "name": "CRISPE Framework",
+      "group": "Task & Response Structuring",
+      "acronym": "Capacity, Insight, Statement, Personality, Experiment",
+      "best_use": "Expert persona generation and controlled style experiments.",
+      "fields": ["Capacity", "Insight", "Statement", "Personality", "Experiment"],
+      "recommended_scenarios": ["expert_persona", "style_experiment"]
+    },
+    {
+      "id": "RTF",
+      "name": "RTF Framework",
+      "group": "Task & Response Structuring",
+      "acronym": "Role, Task, Finish",
+      "best_use": "Minimalist single-pass execution prompts.",
+      "fields": ["Role", "Task", "Finish"],
+      "recommended_scenarios": ["minimalist_execution", "quick_format"]
+    }
+  ]
+}

@@ -45,9 +45,14 @@ faiss_index_path = os.path.join(store_output_dir, 'srm_resumes.index')
 metadata_path = os.path.join(store_output_dir, 'srm_resumes.pkl')
 # ---------------------
 
+import json
+import datetime
+from services.pdf_ingestion import redact_pii
+
 def build_and_save_store(df, embeddings):
     """
-    Builds the FAISS index and saves it along with the metadata.
+    Builds the FAISS index with explicit unit normalization, redacts PII from metadata,
+    and produces a machine-readable data_manifest.json.
     """
     print("--- Building Final Vector Store ---")
     
@@ -61,33 +66,38 @@ def build_and_save_store(df, embeddings):
     df['archetype_label'] = df['archetype_cluster'].map(ARCHETYPE_MAP)
     print("Applied human-readable labels to clusters.")
 
-    # 2. Get the dimensions of the embeddings
-    d = embeddings.shape[1]
-    
-    # 3. Create the FAISS index
-    print(f"Creating FAISS index with {embeddings.shape[0]} vectors of dimension {d}...")
-    index = faiss.IndexFlatL2(d)  # Using L2 distance for similarity
-    index = faiss.IndexIDMap(index) # Maps index position to our embedding_id
+    # 2. Enforce strict L2 unit-normalization on embeddings
+    norms = np.linalg.norm(embeddings, axis=1, keepdims=True)
+    embeddings_norm = (embeddings / np.maximum(norms, 1e-12)).astype("float32")
+    print(f"Enforced L2 unit normalization. Norm range: [{np.min(np.linalg.norm(embeddings_norm, axis=1)):.4f}, {np.max(np.linalg.norm(embeddings_norm, axis=1)):.4f}]")
 
-    # 4. Add vectors to the index
-    # We need to map our DataFrame's 'embedding_id' to the vectors
-    # This ensures the index ID matches our CSV's ID.
+    # 3. Get the dimensions of the embeddings
+    d = embeddings_norm.shape[1]
+    
+    # 4. Create the FAISS index
+    print(f"Creating FAISS index with {embeddings_norm.shape[0]} vectors of dimension {d}...")
+    index = faiss.IndexFlatL2(d)
+    index = faiss.IndexIDMap(index)
+
+    # 5. Add vectors to the index
     index_ids = df['embedding_id'].values.astype('int64')
-    index.add_with_ids(embeddings.astype('float32'), index_ids)
+    index.add_with_ids(embeddings_norm, index_ids)
     print(f"Successfully added {index.ntotal} vectors to the index.")
 
-    # 5. Create the metadata
-    # This is a list of dictionaries, where each dict is the "document"
-    # our LLM will see. We store the text and the label.
+    # 6. Create the sanitized metadata with PII scrubbed
     metadata = []
+    archetype_counts = {}
     for _, row in df.iterrows():
+        label = row['archetype_label']
+        archetype_counts[label] = archetype_counts.get(label, 0) + 1
+        clean_text = redact_pii(str(row.get('cleaned_text', '')))
         metadata.append({
             'file_name': row['file_name'],
-            'text': row['cleaned_text'],
-            'archetype': row['archetype_label']
+            'text': clean_text,
+            'archetype': label
         })
     
-    # 6. Save the index and metadata to disk
+    # 7. Save the index and metadata to disk
     os.makedirs(store_output_dir, exist_ok=True)
     
     print(f"Saving FAISS index to '{faiss_index_path}'...")
@@ -96,29 +106,57 @@ def build_and_save_store(df, embeddings):
     print(f"Saving metadata to '{metadata_path}'...")
     with open(metadata_path, 'wb') as f:
         pickle.dump(metadata, f)
+
+    # 8. Produce data_manifest.json
+    manifest_path = "data_manifest.json"
+    manifest = {
+        "dataset_version": "1.0.0",
+        "created_at_utc": datetime.datetime.now(datetime.timezone.utc).isoformat(),
+        "indexed_vectors_count": int(index.ntotal),
+        "embedding_model": "sentence-transformers/all-MiniLM-L6-v2",
+        "embedding_dimension": int(d),
+        "distance_metric": "faiss.IndexFlatL2 (unit-normalized Cosine equivalent)",
+        "archetype_distribution": archetype_counts
+    }
+    with open(manifest_path, "w", encoding="utf-8") as f:
+        json.dump(manifest, f, indent=2)
+    print(f"Generated data manifest at '{manifest_path}'.")
         
-    print("\n--- ✅ Phase 2 Complete! ---")
+    print("\n--- [OK] Phase 2 Complete! ---")
     print("Your vector store is built and ready for the application.")
     print(f"Files created in '{store_output_dir}':")
     print(f"  - {os.path.basename(faiss_index_path)} (The AI vector database)")
     print(f"  - {os.path.basename(metadata_path)} (The resume text & labels)")
 
+
+def inspect_existing_store():
+    """Validates existing index and prints diagnostic metrics."""
+    if not os.path.exists(faiss_index_path) or not os.path.exists(metadata_path):
+        print("[ERROR] No existing vector store found.")
+        return
+    
+    index = faiss.read_index(faiss_index_path)
+    with open(metadata_path, "rb") as f:
+        meta = pickle.load(f)
+    print(f"Vector Store Status: Index contains {index.ntotal} vectors of dimension {index.d}. Metadata contains {len(meta)} entries.")
+
+
 def main():
     """
     Main function to run the vector store creation process.
     """
-    # Check for input files
     if not os.path.exists(csv_input_path) or not os.path.exists(embeddings_input_path):
-        print("❌ Error: Input files from the clustering step were not found.")
-        print("Please run 'cluster_and_visualize.py' first.")
+        print("[!] Input files in 'processed_data' were not found. Inspecting current store...")
+        inspect_existing_store()
         return
 
     print("Loading data and embeddings...")
     df = pd.read_csv(csv_input_path)
     embeddings = np.load(embeddings_input_path)
-    
     build_and_save_store(df, embeddings)
+
 
 # --- Run the script ---
 if __name__ == "__main__":
     main()
+

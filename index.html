@@ -1,280 +1,1803 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>SRM Career Catalyst</title>
-    <!-- Tailwind CSS for styling -->
-    <script src="https://cdn.tailwindcss.com"></script>
-    <style>
-        /* Custom styles for chat bubbles */
-        .chat-bubble {
-            max-width: 75%;
-            padding: 12px 20px;
-            border-radius: 20px;
-            margin-bottom: 10px;
-            word-wrap: break-word; /* Ensure long words wrap */
-        }
-        .chat-user {
-            background-color: #3b82f6; /* blue-500 */
-            color: white;
-            align-self: flex-end;
-            border-bottom-right-radius: 5px;
-        }
-        .chat-bot {
-            background-color: #e5e7eb; /* gray-200 */
-            color: #1f2937; /* gray-800 */
-            align-self: flex-start;
-            border-bottom-left-radius: 5px;
-        }
-        /* Style for markdown content */
-        .markdown-content h1, .markdown-content h2, .markdown-content h3, .markdown-content h4 {
-            font-weight: 600;
-            margin-top: 1.25rem;
-            margin-bottom: 0.5rem;
-        }
-        .markdown-content h1 { font-size: 1.5rem; }
-        .markdown-content h2 { font-size: 1.25rem; }
-        .markdown-content ul { list-style-type: disc; margin-left: 1.5rem; }
-        .markdown-content ol { list-style-type: decimal; margin-left: 1.5rem; }
-        .markdown-content p { margin-bottom: 0.5rem; }
-        .markdown-content strong { font-weight: 600; }
-        .markdown-content pre {
-            background-color: #f3f4f6; /* gray-100 */
-            padding: 1rem;
-            border-radius: 0.5rem;
-            overflow-x: auto;
-            margin-bottom: 1rem;
-            font-family: monospace;
-            white-space: pre-wrap; /* Ensure preformatted text wraps */
-            word-break: break-all; /* Break long lines */
-        }
-        .markdown-content code {
-             background-color: #f3f4f6; /* gray-100 */
-             padding: 0.1em 0.3em;
-             border-radius: 0.25rem;
-             font-family: monospace;
-        }
-        .markdown-content pre code {
-             background-color: transparent;
-             padding: 0;
-             border-radius: 0;
-        }
-
-    </style>
-    <!-- Marked.js for rendering Markdown -->
-    <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>SRM Career Catalyst — Placement Intelligence & 3D Interactive Genome</title>
+  <meta name="description" content="Turn your resume into an institutional placement strategy. Benchmark against 1,200+ placed SRM alumni profiles across 5 neural career archetypes using FAISS and LangGraph.">
+  
+  <!-- Modern Stylesheet -->
+  <link rel="stylesheet" href="styles.css">
+  
+  <!-- External Libraries: Three.js for 3D WebGL, Lucide for Icons, Marked for Safe Markdown, Canvas Confetti -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+  <script src="https://unpkg.com/lucide@latest"></script>
+  <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.9.3/dist/confetti.browser.min.js"></script>
 </head>
-<body class="bg-gray-100 font-sans">
-    <div class="flex h-screen">
-        <!-- Sidebar for Inputs -->
-        <div class="w-1/3 bg-white p-6 shadow-lg overflow-y-auto">
-            <h1 class="text-3xl font-bold text-gray-800 mb-6">🚀 SRM Career Catalyst</h1>
+<body data-motion="full">
 
-            <!-- Job Description Input -->
-            <div class="mb-4">
-                <label for="job-description" class="block text-sm font-medium text-gray-700 mb-2">1. Paste Job Description</label>
-                <textarea id="job-description" rows="10" class="w-full p-3 border border-gray-300 rounded-lg shadow-sm focus:ring-blue-500 focus:border-blue-500" placeholder="Paste the full job description here..."></textarea>
-            </div>
+  <!-- Accessible Skip Link -->
+  <a href="#analyzer" class="skip-link">Skip to Resume Analyzer</a>
 
-            <!-- Resume Upload Input -->
-            <div class="mb-6">
-                <label for="resume-upload" class="block text-sm font-medium text-gray-700 mb-2">2. Upload Your Resume (PDF)</label>
-                <input id="resume-upload" type="file" accept=".pdf" class="w-full text-sm text-gray-500
-                    file:mr-4 file:py-2 file:px-4
-                    file:rounded-full file:border-0
-                    file:text-sm file:font-semibold
-                    file:bg-blue-50 file:text-blue-700
-                    hover:file:bg-blue-100
-                "/>
-            </div>
+  <!-- 3D WebGL Canvas Layer -->
+  <div id="canvas-3d-container" aria-hidden="true"></div>
 
-            <!-- Analyze Button -->
-            <button id="analyze-button" class="w-full bg-blue-600 text-white font-bold py-3 px-4 rounded-lg shadow-md hover:bg-blue-700 transition duration-300 flex items-center justify-center">
-                <svg id="analyze-icon" class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-6 9l2 2 4-4"></path></svg>
-                <svg id="loading-spinner" class="animate-spin -ml-1 mr-3 h-5 w-5 text-white hidden" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-                    <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
-                    <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-                </svg>
-                <span id="button-text">Analyze Resume</span>
-            </button>
+  <!-- Ambient Light Orbs -->
+  <div class="aurora-blur aurora-1" aria-hidden="true"></div>
+  <div class="aurora-blur aurora-2" aria-hidden="true"></div>
+  <div class="aurora-blur aurora-3" aria-hidden="true"></div>
 
-            <!-- Error Message Box -->
-            <div id="error-box" class="hidden mt-4 p-3 bg-red-100 border border-red-400 text-red-700 rounded-lg">
-                <p id="error-message"></p>
-            </div>
+  <!-- Main Application Wrapper -->
+  <div class="app-wrapper">
+
+    <!-- Top Sticky Glassmorphic Navigation -->
+    <header class="top-nav" role="banner">
+      <a href="#hero" class="nav-brand" aria-label="SRM Career Catalyst Home">
+        <div class="brand-icon-box">
+          <i data-lucide="sparkles" style="color:#fff;width:22px;height:22px;"></i>
+        </div>
+        <div>
+          <span class="brand-name">SRM Career Catalyst</span>
+          <div class="brand-tag">Placement Intelligence System</div>
+        </div>
+      </a>
+
+      <nav role="navigation" aria-label="Main Navigation">
+        <ul id="nav-links-menu" class="nav-links">
+          <li><a href="#hero" class="nav-link-btn active"><i data-lucide="sparkles" style="width:15px;height:15px;"></i> Home</a></li>
+          <li><a href="#how-it-works" class="nav-link-btn"><i data-lucide="git-merge" style="width:15px;height:15px;"></i> How It Works</a></li>
+          <li><a href="#analyzer" class="nav-link-btn"><i data-lucide="file-check-2" style="width:15px;height:15px;"></i> Analyzer</a></li>
+          <li><a href="#genome" class="nav-link-btn"><i data-lucide="network" style="width:15px;height:15px;"></i> Career Genome</a></li>
+          <li><a href="#company-intel" class="nav-link-btn"><i data-lucide="building-2" style="width:15px;height:15px;"></i> Company Intel</a></li>
+          <li><a href="#prompt-studio" class="nav-link-btn"><i data-lucide="terminal" style="width:15px;height:15px;"></i> Prompt Studio</a></li>
+          <li><a href="#buttons-lab" class="nav-link-btn"><i data-lucide="mouse-pointer-click" style="width:15px;height:15px;"></i> Button Lab</a></li>
+          <li><a href="#faq" class="nav-link-btn"><i data-lucide="help-circle" style="width:15px;height:15px;"></i> FAQ</a></li>
+        </ul>
+      </nav>
+
+      <div class="nav-actions">
+        <!-- Truthful Backend API Status Badge -->
+        <div id="engine-status-badge" class="engine-status-badge status-offline" role="status" aria-live="polite">
+          <span class="status-dot"></span>
+          <span id="status-label-text">Checking API...</span>
         </div>
 
-        <!-- Chat Interface -->
-        <div class="w-2/3 flex flex-col h-screen">
-            <div id="chat-window" class="flex-1 p-6 overflow-y-auto flex flex-col space-y-4 bg-gray-50"> <!-- Added bg color -->
-                <!-- Chat messages will be appended here -->
-                <div class="chat-bubble chat-bot">
-                    <p>Hello! I'm ready to analyze your resume. Please paste a job description and upload your PDF, then click "Analyze Resume".</p>
+        <!-- Designhead Aesthetic Mode Controller (Minimalist Zen vs Maximalist Cyber) -->
+        <div class="designhead-controller" role="radiogroup" aria-label="Aesthetic Designhead Mode">
+          <button type="button" id="btn-designhead-minimalist" class="designhead-btn" data-mode="minimalist" title="Switch to Minimalist Zen Mode">
+            <i data-lucide="feather" style="width:13px;height:13px;"></i>
+            <span>Minimalist</span>
+          </button>
+          <button type="button" id="btn-designhead-maximalist" class="designhead-btn active" data-mode="maximalist" title="Switch to Maximalist Cyberpunk Mode">
+            <i data-lucide="zap" style="width:13px;height:13px;"></i>
+            <span>Maximalist</span>
+          </button>
+        </div>
+
+        <!-- LLM Service & Model Control Hub Button -->
+        <button type="button" id="btn-llm-control-hub" class="btn-llm-hub" title="Configure LLM Service Providers & Model Engine" aria-label="Open LLM Control Hub">
+          <i data-lucide="cpu" style="width:14px;height:14px;color:var(--accent-cyan);"></i>
+          <span id="nav-active-llm-label">LLM: Neural Engine</span>
+        </button>
+
+        <!-- Neumorphic Theme Toggle: Cyber Dark <-> Soft Ceramic -->
+        <button id="btn-theme-toggle" class="btn-theme-toggle" title="Toggle Dark Neumorphic / Soft Ceramic Mode" aria-label="Toggle visual theme">
+          <i data-lucide="palette" style="width:14px;height:14px;"></i>
+          <span id="theme-mode-label">Theme: Dark Soft</span>
+        </button>
+
+        <!-- Motion Preference Toggle -->
+        <button id="btn-motion-toggle" class="btn-motion-toggle" title="Toggle Full / Reduced Motion" aria-label="Toggle motion mode">
+          <i data-lucide="orbit" style="width:14px;height:14px;"></i>
+          <span id="motion-mode-label">Motion: Full</span>
+        </button>
+
+        <!-- Primary Header CTA -->
+        <a href="#analyzer" class="btn-magnetic-glow" style="padding:10px 18px;font-size:0.88rem;">
+          <i data-lucide="zap" style="width:15px;height:15px;"></i> Analyze Resume
+        </a>
+
+        <!-- Mobile Menu Toggle -->
+        <button id="btn-mobile-menu" class="btn-mobile-menu" aria-label="Open mobile menu" aria-expanded="false">
+          <i data-lucide="menu" style="width:20px;height:20px;"></i>
+        </button>
+      </div>
+    </header>
+
+    <main id="main-content" role="main">
+
+      <!-- =======================================================================
+           SECTION 1: HERO & PRODUCT STATEMENT
+           ======================================================================= -->
+      <section id="hero" class="hero-section" aria-labelledby="hero-title-id">
+        <div class="container">
+          <div class="hero-grid">
+            
+            <!-- Left: Headline, Value Proposition & Actions -->
+            <div class="hero-content">
+              <div class="hero-badge-pill">
+                <i data-lucide="compass" style="width:16px;height:16px;"></i>
+                <span>Institutional Placement Intelligence</span>
+              </div>
+
+              <h1 id="hero-title-id" class="hero-title">
+                Turn your resume into a <span class="gradient-text">placement strategy</span>.
+              </h1>
+
+              <p class="hero-subtitle">
+                Compare your resume directly against target job descriptions and, when configured, benchmark against patterns from <strong>1,200+ successfully placed SRM alumni</strong> across five neural career archetypes. Get actionable diagnostic feedback grounded in real hiring outcomes.
+              </p>
+
+              <div class="hero-cta-group">
+                <a href="#analyzer" class="btn-magnetic-glow">
+                  <i data-lucide="sparkles" style="width:18px;height:18px;"></i>
+                  <span>Analyze Resume</span>
+                </a>
+
+                <a href="#genome" class="btn-glass-shimmer">
+                  <i data-lucide="network" style="width:18px;height:18px;"></i>
+                  <span>Explore the Genome</span>
+                </a>
+              </div>
+
+              <!-- Context / Trust Capabilities Strip -->
+              <div class="trust-strip">
+                <div class="trust-item">
+                  <i data-lucide="file-text"></i>
+                  <span>In-Memory PDF Parsing</span>
                 </div>
+                <div class="trust-item">
+                  <i data-lucide="database"></i>
+                  <span>FAISS Neural Indexing</span>
+                </div>
+                <div class="trust-item">
+                  <i data-lucide="layers"></i>
+                  <span>LangGraph Agent Reasoning</span>
+                </div>
+                <div class="trust-item">
+                  <i data-lucide="shield-check"></i>
+                  <span>Zero Persistent Resume Storage</span>
+                </div>
+              </div>
             </div>
+
+            <!-- Right: 3D Holographic Spatial Stage with WebGL Canvas & Diagnostic Card -->
+            <div class="hero-3d-visual" id="hero-3d-stage">
+              
+              <!-- WebGL Interactive 3D Canvas Stage -->
+              <div class="spatial-canvas-wrapper" id="spatial-canvas-wrapper">
+                <canvas id="spatial-hero-canvas" class="spatial-hero-canvas" aria-label="3D Career Constellation and Skill Genome Canvas"></canvas>
+                
+                <!-- 3D Raycasting Hover Tooltip -->
+                <div id="canvas-3d-tooltip" class="canvas-3d-tooltip" style="display:none;" role="tooltip">
+                  <div class="tooltip-header">
+                    <span class="tooltip-dot"></span>
+                    <strong id="tooltip-node-title">Distributed Systems</strong>
+                  </div>
+                  <div class="tooltip-body">
+                    <div class="tooltip-row">
+                      <span>Placement Tier:</span>
+                      <strong id="tooltip-node-tier" class="badge-tier">Super Dream</strong>
+                    </div>
+                    <div class="tooltip-row">
+                      <span>Alignment:</span>
+                      <strong id="tooltip-node-match">96.4% Match</strong>
+                    </div>
+                    <div class="tooltip-row">
+                      <span>Top Recruiters:</span>
+                      <span id="tooltip-node-companies" class="tooltip-sub">Google, Microsoft, Amazon</span>
+                    </div>
+                  </div>
+                </div>
+
+                <!-- 3D Visualizer Mode Controller Bar -->
+                <div class="spatial-3d-controls-bar" role="toolbar" aria-label="3D Visualizer Modes">
+                  <button type="button" class="btn-3d-mode active" data-mode="constellation" title="Quantum Constellation & Neural Web">
+                    <i data-lucide="network" style="width:13px;height:13px;"></i>
+                    <span>Constellation</span>
+                  </button>
+                  <button type="button" class="btn-3d-mode" data-mode="globe" title="3D Skill Hologram Globe">
+                    <i data-lucide="globe" style="width:13px;height:13px;"></i>
+                    <span>Skill Globe</span>
+                  </button>
+                  <button type="button" class="btn-3d-mode" data-mode="radar" title="3D Placement Sonar Radar">
+                    <i data-lucide="radar" style="width:13px;height:13px;"></i>
+                    <span>Sonar Radar</span>
+                  </button>
+                  <button type="button" id="btn-3d-burst" class="btn-3d-burst" title="Trigger Quantum Particle Burst Shockwave">
+                    <i data-lucide="sparkles" style="width:13px;height:13px;"></i>
+                    <span>Burst</span>
+                  </button>
+                </div>
+
+                <!-- 3D Engine Diagnostics Badge -->
+                <div class="canvas-engine-badge" id="canvas-engine-badge">
+                  <span class="pulse-indicator"></span>
+                  <span id="canvas-engine-text">WebGL: 60 FPS • 42 Nodes</span>
+                </div>
+              </div>
+
+              <!-- Maximalist HUD Telemetry Strip (dynamically highlighted in Maximalist Mode) -->
+              <div class="maximalist-hud-strip" id="maximalist-hud-strip" aria-label="Maximalist Placement HUD Telemetry">
+                <div class="hud-item">
+                  <span class="hud-label">FAISS LATENCY</span>
+                  <span class="hud-val glow-cyan">0.2ms</span>
+                </div>
+                <div class="hud-item">
+                  <span class="hud-label">ALUMNI GENOME</span>
+                  <span class="hud-val glow-emerald">226 VECTORS</span>
+                </div>
+                <div class="hud-item">
+                  <span class="hud-label">LLM ENGINE</span>
+                  <span class="hud-val glow-violet" id="hud-llm-engine-val">NEURAL V2</span>
+                </div>
+                <div class="hud-item hud-synth-container" title="Real-time Placement Frequency Synthesizer">
+                  <span class="hud-label">QUANTUM SYNTH</span>
+                  <div class="audio-synth-bars" aria-hidden="true">
+                    <span class="synth-bar"></span>
+                    <span class="synth-bar"></span>
+                    <span class="synth-bar"></span>
+                    <span class="synth-bar"></span>
+                    <span class="synth-bar"></span>
+                  </div>
+                </div>
+              </div>
+
+              <!-- Floating Orbital Chips -->
+              <div class="orbiting-chip orbit-chip-1">
+                <i data-lucide="cpu" style="width:15px;height:15px;"></i>
+                <span>FAISS L2 Knowledge Genome: Active</span>
+              </div>
+              <div class="orbiting-chip orbit-chip-2">
+                <i data-lucide="check-check" style="width:15px;height:15px;"></i>
+                <span>Cluster #2 Software Dev: 95% Match</span>
+              </div>
+
+              <!-- Parallax 3D Spatial Card -->
+              <div class="card-3d-tilt spatial-tilt-card" id="hero-diagnostic-card">
+                <div class="specular-glare"></div>
+                <div class="card-top-row spatial-layer-1">
+                  <div style="display:flex;align-items:center;gap:8px;">
+                    <span style="width:8px;height:8px;border-radius:50%;background:var(--accent-white);box-shadow:0 0 8px rgba(255,255,255,0.8);"></span>
+                    <strong style="font-size:0.85rem;color:#fff;">Diagnostic Preview</strong>
+                  </div>
+                  <span class="sample-data-badge">Sample diagnostic layout</span>
+                </div>
+
+                <!-- Radial Gauge SVG -->
+                <div class="visual-score-center spatial-layer-2">
+                  <div class="gauge-svg-container">
+                    <svg class="gauge-svg" width="160" height="160" viewBox="0 0 160 160">
+                      <defs>
+                        <linearGradient id="heroGaugeGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+                          <stop offset="0%" stop-color="#FFFFFF" />
+                          <stop offset="50%" stop-color="#E4E4E7" />
+                          <stop offset="100%" stop-color="#A1A1AA" />
+                        </linearGradient>
+                      </defs>
+                      <circle class="gauge-bg-circle" cx="80" cy="80" r="66" />
+                      <circle id="hero-gauge-ring" class="gauge-progress-circle" cx="80" cy="80" r="66" />
+                    </svg>
+                    <div class="gauge-center-text">
+                      <div class="gauge-score-value">84</div>
+                      <div class="gauge-score-sub">Sample Score</div>
+                    </div>
+                  </div>
+                </div>
+
+                <div class="card-match-metrics spatial-layer-2">
+                  <div class="match-metric-box">
+                    <div class="match-metric-icon icon-emerald">
+                      <i data-lucide="trending-up" style="width:18px;height:18px;"></i>
+                    </div>
+                    <div>
+                      <div class="m-val">₹16.0 LPA</div>
+                      <div class="m-label">Archetype Median</div>
+                    </div>
+                  </div>
+                  <div class="match-metric-box">
+                    <div class="match-metric-icon icon-cyan">
+                      <i data-lucide="git-pull-request" style="width:18px;height:18px;"></i>
+                    </div>
+                    <div>
+                      <div class="m-val">94.8%</div>
+                      <div class="m-label">Skill Alignment</div>
+                    </div>
+                  </div>
+                </div>
+
+                <div class="floating-skills-row spatial-layer-3">
+                  <span class="skill-orbit-badge">Python</span>
+                  <span class="skill-orbit-badge">Distributed Systems</span>
+                  <span class="skill-orbit-badge">FastAPI</span>
+                  <span class="skill-orbit-badge">LangGraph</span>
+                  <span class="skill-orbit-badge">FAISS</span>
+                </div>
+              </div>
+
+            </div>
+
+          </div>
+      </section>
+
+      <!-- =======================================================================
+           TOP PLACEMENT RECRUITER LOGO FLY-BY MARQUEE
+           ======================================================================= -->
+      <section id="recruiter-marquee" class="recruiters-marquee-section reveal-spatial" aria-label="Top Placement Recruiters Marquee">
+        <div class="container marquee-header-container">
+          <div class="marquee-header-strip">
+            <span class="marquee-badge">
+              <i data-lucide="building-2" style="width:13px;height:13px;"></i>
+              <span>Top Placement Recruiters &amp; Alumni Destinations</span>
+            </span>
+            <p class="marquee-subtitle">1,200+ SRM alumni placed in Super Dream &amp; Dream roles across industry leaders</p>
+          </div>
         </div>
+
+        <div class="marquee-wrapper" tabindex="0" role="region" aria-label="Placement Recruiter Logos Carousel">
+          <div class="marquee-track" id="recruiter-marquee-track">
+            <!-- Set 1 -->
+            <div class="recruiter-chip neu-card" data-company="google">
+              <div class="recruiter-logo-box"><i data-lucide="search" style="color:#4285F4;width:18px;height:18px;"></i></div>
+              <div class="recruiter-info">
+                <strong>Google</strong>
+                <span class="tier-pill super-dream">Super Dream • ₹32–44 LPA</span>
+              </div>
+            </div>
+            <div class="recruiter-chip neu-card" data-company="microsoft">
+              <div class="recruiter-logo-box"><i data-lucide="layout-grid" style="color:#00A4EF;width:18px;height:18px;"></i></div>
+              <div class="recruiter-info">
+                <strong>Microsoft</strong>
+                <span class="tier-pill super-dream">Super Dream • ₹28–42 LPA</span>
+              </div>
+            </div>
+            <div class="recruiter-chip neu-card" data-company="amazon">
+              <div class="recruiter-logo-box"><i data-lucide="shopping-cart" style="color:#FF9900;width:18px;height:18px;"></i></div>
+              <div class="recruiter-info">
+                <strong>Amazon</strong>
+                <span class="tier-pill super-dream">Super Dream • ₹28–44 LPA</span>
+              </div>
+            </div>
+            <div class="recruiter-chip neu-card" data-company="cisco">
+              <div class="recruiter-logo-box"><i data-lucide="router" style="color:#1BA0D7;width:18px;height:18px;"></i></div>
+              <div class="recruiter-info">
+                <strong>Cisco</strong>
+                <span class="tier-pill dream">Dream • ₹15–20 LPA</span>
+              </div>
+            </div>
+            <div class="recruiter-chip neu-card" data-company="goldman">
+              <div class="recruiter-logo-box"><i data-lucide="trending-up" style="color:#729FCF;width:18px;height:18px;"></i></div>
+              <div class="recruiter-info">
+                <strong>Goldman Sachs</strong>
+                <span class="tier-pill super-dream">Super Dream • ₹24–30 LPA</span>
+              </div>
+            </div>
+            <div class="recruiter-chip neu-card" data-company="adobe">
+              <div class="recruiter-logo-box"><i data-lucide="pen-tool" style="color:#FA0F00;width:18px;height:18px;"></i></div>
+              <div class="recruiter-info">
+                <strong>Adobe</strong>
+                <span class="tier-pill super-dream">Super Dream • ₹30–40 LPA</span>
+              </div>
+            </div>
+            <div class="recruiter-chip neu-card" data-company="paypal">
+              <div class="recruiter-logo-box"><i data-lucide="credit-card" style="color:#0079C1;width:18px;height:18px;"></i></div>
+              <div class="recruiter-info">
+                <strong>PayPal</strong>
+                <span class="tier-pill super-dream">Super Dream • ₹22–28 LPA</span>
+              </div>
+            </div>
+            <div class="recruiter-chip neu-card" data-company="nvidia">
+              <div class="recruiter-logo-box"><i data-lucide="cpu" style="color:#76B900;width:18px;height:18px;"></i></div>
+              <div class="recruiter-info">
+                <strong>NVIDIA</strong>
+                <span class="tier-pill super-dream">Super Dream • ₹24–36 LPA</span>
+              </div>
+            </div>
+            <div class="recruiter-chip neu-card" data-company="intel">
+              <div class="recruiter-logo-box"><i data-lucide="microchip" style="color:#0071C5;width:18px;height:18px;"></i></div>
+              <div class="recruiter-info">
+                <strong>Intel</strong>
+                <span class="tier-pill dream">Dream • ₹14–18 LPA</span>
+              </div>
+            </div>
+            <div class="recruiter-chip neu-card" data-company="morgan">
+              <div class="recruiter-logo-box"><i data-lucide="briefcase" style="color:#337AB7;width:18px;height:18px;"></i></div>
+              <div class="recruiter-info">
+                <strong>Morgan Stanley</strong>
+                <span class="tier-pill super-dream">Super Dream • ₹22–28 LPA</span>
+              </div>
+            </div>
+            <div class="recruiter-chip neu-card" data-company="qualcomm">
+              <div class="recruiter-logo-box"><i data-lucide="radio" style="color:#D8232A;width:18px;height:18px;"></i></div>
+              <div class="recruiter-info">
+                <strong>Qualcomm</strong>
+                <span class="tier-pill dream">Dream • ₹16–22 LPA</span>
+              </div>
+            </div>
+            <div class="recruiter-chip neu-card" data-company="oracle">
+              <div class="recruiter-logo-box"><i data-lucide="database" style="color:#F80000;width:18px;height:18px;"></i></div>
+              <div class="recruiter-info">
+                <strong>Oracle</strong>
+                <span class="tier-pill dream">Dream • ₹14–20 LPA</span>
+              </div>
+            </div>
+
+            <!-- Set 2 (Duplicate for Continuous Seamless Infinite Scroll) -->
+            <div class="recruiter-chip neu-card" data-company="google" aria-hidden="true">
+              <div class="recruiter-logo-box"><i data-lucide="search" style="color:#4285F4;width:18px;height:18px;"></i></div>
+              <div class="recruiter-info">
+                <strong>Google</strong>
+                <span class="tier-pill super-dream">Super Dream • ₹32–44 LPA</span>
+              </div>
+            </div>
+            <div class="recruiter-chip neu-card" data-company="microsoft" aria-hidden="true">
+              <div class="recruiter-logo-box"><i data-lucide="layout-grid" style="color:#00A4EF;width:18px;height:18px;"></i></div>
+              <div class="recruiter-info">
+                <strong>Microsoft</strong>
+                <span class="tier-pill super-dream">Super Dream • ₹28–42 LPA</span>
+              </div>
+            </div>
+            <div class="recruiter-chip neu-card" data-company="amazon" aria-hidden="true">
+              <div class="recruiter-logo-box"><i data-lucide="shopping-cart" style="color:#FF9900;width:18px;height:18px;"></i></div>
+              <div class="recruiter-info">
+                <strong>Amazon</strong>
+                <span class="tier-pill super-dream">Super Dream • ₹28–44 LPA</span>
+              </div>
+            </div>
+            <div class="recruiter-chip neu-card" data-company="cisco" aria-hidden="true">
+              <div class="recruiter-logo-box"><i data-lucide="router" style="color:#1BA0D7;width:18px;height:18px;"></i></div>
+              <div class="recruiter-info">
+                <strong>Cisco</strong>
+                <span class="tier-pill dream">Dream • ₹15–20 LPA</span>
+              </div>
+            </div>
+            <div class="recruiter-chip neu-card" data-company="goldman" aria-hidden="true">
+              <div class="recruiter-logo-box"><i data-lucide="trending-up" style="color:#729FCF;width:18px;height:18px;"></i></div>
+              <div class="recruiter-info">
+                <strong>Goldman Sachs</strong>
+                <span class="tier-pill super-dream">Super Dream • ₹24–30 LPA</span>
+              </div>
+            </div>
+            <div class="recruiter-chip neu-card" data-company="adobe" aria-hidden="true">
+              <div class="recruiter-logo-box"><i data-lucide="pen-tool" style="color:#FA0F00;width:18px;height:18px;"></i></div>
+              <div class="recruiter-info">
+                <strong>Adobe</strong>
+                <span class="tier-pill super-dream">Super Dream • ₹30–40 LPA</span>
+              </div>
+            </div>
+            <div class="recruiter-chip neu-card" data-company="paypal" aria-hidden="true">
+              <div class="recruiter-logo-box"><i data-lucide="credit-card" style="color:#0079C1;width:18px;height:18px;"></i></div>
+              <div class="recruiter-info">
+                <strong>PayPal</strong>
+                <span class="tier-pill super-dream">Super Dream • ₹22–28 LPA</span>
+              </div>
+            </div>
+            <div class="recruiter-chip neu-card" data-company="nvidia" aria-hidden="true">
+              <div class="recruiter-logo-box"><i data-lucide="cpu" style="color:#76B900;width:18px;height:18px;"></i></div>
+              <div class="recruiter-info">
+                <strong>NVIDIA</strong>
+                <span class="tier-pill super-dream">Super Dream • ₹24–36 LPA</span>
+              </div>
+            </div>
+            <div class="recruiter-chip neu-card" data-company="intel" aria-hidden="true">
+              <div class="recruiter-logo-box"><i data-lucide="microchip" style="color:#0071C5;width:18px;height:18px;"></i></div>
+              <div class="recruiter-info">
+                <strong>Intel</strong>
+                <span class="tier-pill dream">Dream • ₹14–18 LPA</span>
+              </div>
+            </div>
+            <div class="recruiter-chip neu-card" data-company="morgan" aria-hidden="true">
+              <div class="recruiter-logo-box"><i data-lucide="briefcase" style="color:#337AB7;width:18px;height:18px;"></i></div>
+              <div class="recruiter-info">
+                <strong>Morgan Stanley</strong>
+                <span class="tier-pill super-dream">Super Dream • ₹22–28 LPA</span>
+              </div>
+            </div>
+            <div class="recruiter-chip neu-card" data-company="qualcomm" aria-hidden="true">
+              <div class="recruiter-logo-box"><i data-lucide="radio" style="color:#D8232A;width:18px;height:18px;"></i></div>
+              <div class="recruiter-info">
+                <strong>Qualcomm</strong>
+                <span class="tier-pill dream">Dream • ₹16–22 LPA</span>
+              </div>
+            </div>
+            <div class="recruiter-chip neu-card" data-company="oracle" aria-hidden="true">
+              <div class="recruiter-logo-box"><i data-lucide="database" style="color:#F80000;width:18px;height:18px;"></i></div>
+              <div class="recruiter-info">
+                <strong>Oracle</strong>
+                <span class="tier-pill dream">Dream • ₹14–20 LPA</span>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- =======================================================================
+           SECTION 2: HOW IT WORKS (SEMANTIC 4-STEP PROCESS)
+           ======================================================================= -->
+      <section id="how-it-works" class="how-it-works-section" aria-labelledby="how-it-works-heading">
+        <div class="container">
+          
+          <div style="text-align:center;max-width:720px;margin:0 auto 48px;">
+            <span style="font-size:0.78rem;font-weight:700;text-transform:uppercase;letter-spacing:0.12em;color:var(--accent-cyan);margin-bottom:12px;display:inline-block;">
+              Grounded Methodology
+            </span>
+            <h2 id="how-it-works-heading" style="font-family:var(--font-display);font-size:clamp(2rem, 3.5vw, 2.6rem);font-weight:800;color:#fff;margin-bottom:12px;">
+              How SRM Career Catalyst Works
+            </h2>
+            <p style="color:var(--text-secondary);font-size:1rem;line-height:1.6;">
+              A four-stage pipeline moving from raw resume extraction to high-precision placement pattern synthesis.
+            </p>
+          </div>
+
+          <!-- Semantic Ordered List with Rich Visual Presentation -->
+          <ol class="steps-grid">
+            
+            <li class="step-card">
+              <div class="step-number-badge step-1-badge">1</div>
+              <h3 class="step-title">Upload & Parse</h3>
+              <p class="step-desc">
+                Your resume PDF is read entirely in-memory using <code>pypdf</code>. Text, technical entities, and project descriptions are cleanly extracted without saving any personal documents to persistent storage.
+              </p>
+            </li>
+
+            <li class="step-card">
+              <div class="step-number-badge step-2-badge">2</div>
+              <h3 class="step-title">Semantic Match</h3>
+              <p class="step-desc">
+                The target Job Description is embedded into a dense 384-dimensional vector via <code>all-MiniLM-L6-v2</code> and compared against our FAISS index of 1,200+ placed alumni profiles.
+              </p>
+            </li>
+
+            <li class="step-card">
+              <div class="step-number-badge step-3-badge">3</div>
+              <h3 class="step-title">Archetype Benchmark</h3>
+              <p class="step-desc">
+                The system isolates the candidate's primary Career Archetype (e.g. Data Science, SDE, or Full-Stack) and pulls the top nearest-neighbor alumni resumes that successfully landed offers.
+              </p>
+            </li>
+
+            <li class="step-card">
+              <div class="step-number-badge step-4-badge">4</div>
+              <h3 class="step-title">Improve & Optimize</h3>
+              <p class="step-desc">
+                Our LangGraph agent analyzes achievement deltas, missing high-impact metrics, and missing technical skills, generating an actionable roadmap to elevate your placement readiness.
+              </p>
+            </li>
+
+          </ol>
+
+        </div>
+      </section>
+
+      <!-- =======================================================================
+           SECTION 3: RESUME ANALYZER WORKSPACE (PRIMARY JOURNEY)
+           ======================================================================= -->
+      <section id="analyzer" class="analyzer-section" aria-labelledby="analyzer-heading">
+        <div class="container">
+          
+          <div style="text-align:center;max-width:760px;margin:0 auto 48px;">
+            <span style="font-size:0.78rem;font-weight:700;text-transform:uppercase;letter-spacing:0.12em;color:var(--accent-blue-light);margin-bottom:12px;display:inline-block;">
+              Inference Workspace
+            </span>
+            <h2 id="analyzer-heading" style="font-family:var(--font-display);font-size:clamp(2rem, 3.5vw, 2.6rem);font-weight:800;color:#fff;margin-bottom:12px;">
+              Live Resume vs Placed Alumni Analyzer
+            </h2>
+            <p style="color:var(--text-secondary);font-size:1rem;line-height:1.6;">
+              Upload your resume PDF and enter the target Job Description to stream real-time placement feedback.
+            </p>
+          </div>
+
+          <div class="analyzer-grid">
+            
+            <!-- LEFT PANEL: INPUT FORM & DROPZONE -->
+            <div class="analyzer-form-card neu-card spatial-tilt-card">
+              <div class="specular-glare"></div>
+              
+              <div class="panel-title-row">
+                <h3 class="panel-title">
+                  <i data-lucide="sliders" style="color:var(--accent-cyan);width:18px;height:18px;"></i>
+                  <span>Analysis Inputs</span>
+                </h3>
+                
+                <div style="display:flex;align-items:center;gap:8px;">
+                  <label for="demo-mode-toggle" style="font-size:0.78rem;color:var(--text-muted);cursor:pointer;">Demo Mode:</label>
+                  <input type="checkbox" id="demo-mode-toggle" style="accent-color:var(--accent-blue);cursor:pointer;" title="Toggle offline demo simulation">
+                </div>
+              </div>
+
+              <!-- Field 1: Job Description -->
+              <div class="form-group">
+                <div class="form-label-row">
+                  <label for="jd-textarea">1. Target Job Description <span style="color:var(--accent-coral);">*</span></label>
+                  <span class="form-hint">Paste full JD text or dictate via voice</span>
+                </div>
+
+                <div class="presets-strip" style="justify-content:space-between;flex-wrap:wrap;gap:6px;">
+                  <div style="display:flex;align-items:center;gap:6px;flex-wrap:wrap;">
+                    <span style="font-size:0.72rem;color:var(--text-muted);align-self:center;margin-right:2px;">Presets:</span>
+                    <button type="button" class="btn-preset-chip neu-btn" data-preset="google">Google SWE</button>
+                    <button type="button" class="btn-preset-chip neu-btn" data-preset="microsoft">Microsoft SDE-1</button>
+                    <button type="button" class="btn-preset-chip neu-btn" data-preset="amazon">Amazon Cloud</button>
+                    <button type="button" class="btn-preset-chip neu-btn" data-preset="goldman">Goldman Analyst</button>
+                  </div>
+                  <button type="button" id="btn-quick-dictate-jd" class="neu-btn" style="padding:4px 10px;font-size:0.74rem;gap:5px;border-color:rgba(255,255,255,0.2);" title="Dictate Job Description with microphone">
+                    <i data-lucide="mic" style="width:13px;height:13px;color:var(--accent-cyan);"></i>
+                    <span>Dictate JD</span>
+                  </button>
+                </div>
+
+                <textarea id="jd-textarea" class="jd-textarea neu-textarea" placeholder="Paste the target job description, requirements, or qualifications here..."></textarea>
+                
+                <div class="char-counter-row">
+                  <span id="jd-char-count">0 characters</span>
+                  <button type="button" id="btn-clear-jd" class="btn-text-action">Clear JD</button>
+                </div>
+                <div id="jd-error-msg" class="field-error-msg" role="alert"></div>
+              </div>
+
+              <!-- Field 2: PDF Dropzone -->
+              <div class="form-group">
+                <div class="form-label-row">
+                  <label for="resume-file-input">2. Upload Resume PDF <span style="color:var(--accent-coral);">*</span></label>
+                  <span class="form-hint">Accepted: .pdf, max 10 MB</span>
+                </div>
+
+                <div id="resume-dropzone" class="dropzone-container neu-dropzone" tabindex="0" role="button" aria-label="Upload resume PDF document">
+                  <input type="file" id="resume-file-input" class="dropzone-input-hidden" accept=".pdf" aria-label="Resume file input">
+                  <div class="dropzone-icon">
+                    <i data-lucide="upload-cloud" style="width:26px;height:26px;"></i>
+                  </div>
+                  <div class="dropzone-title">Click to browse or drag & drop</div>
+                  <div class="dropzone-meta">PDF format up to 10 MB limit • In-memory privacy</div>
+
+                  <div id="selected-file-pill" class="selected-file-pill" style="display:none;">
+                    <i data-lucide="file-check" style="width:16px;height:16px;"></i>
+                    <span id="selected-filename">resume.pdf</span>
+                    <button type="button" id="clear-file-btn" class="btn-clear-file" title="Remove selected file" aria-label="Remove selected file">
+                      <i data-lucide="x" style="width:14px;height:14px;"></i>
+                    </button>
+                  </div>
+                </div>
+                <div id="file-error-msg" class="field-error-msg" role="alert"></div>
+              </div>
+
+              <!-- Field 3: Executive Review Persona Selector -->
+              <div class="form-group" id="executive-persona-group">
+                <div class="form-label-row">
+                  <label for="persona-select-container">3. Executive Review Lens (Optional)</label>
+                  <span class="form-hint">Simulated role scrutiny • Rubric invariant</span>
+                </div>
+
+                <div class="persona-chips-grid" id="persona-select-container" role="radiogroup" aria-label="Executive Persona Lens">
+                  <label class="persona-chip neu-card active" data-persona="auto">
+                    <input type="radio" name="executive_persona" value="auto" checked class="sr-only">
+                    <div class="persona-chip-head">
+                      <i data-lucide="sparkles" style="width:15px;height:15px;color:var(--accent-cyan);"></i>
+                      <strong>Auto (Inferred)</strong>
+                    </div>
+                    <p class="persona-chip-desc">Infers lens from role &amp; JD requirements.</p>
+                  </label>
+
+                  <label class="persona-chip neu-card" data-persona="director_ai_research">
+                    <input type="radio" name="executive_persona" value="director_ai_research" class="sr-only">
+                    <div class="persona-chip-head">
+                      <i data-lucide="brain-circuit" style="width:15px;height:15px;color:#a78bfa;"></i>
+                      <strong>Director of AI &amp; Research</strong>
+                    </div>
+                    <p class="persona-chip-desc">Scrutinizes ML problem framing, data leakage, and metrics.</p>
+                  </label>
+
+                  <label class="persona-chip neu-card" data-persona="principal_sde">
+                    <input type="radio" name="executive_persona" value="principal_sde" class="sr-only">
+                    <div class="persona-chip-head">
+                      <i data-lucide="terminal" style="width:15px;height:15px;color:#38bdf8;"></i>
+                      <strong>Principal SDE / VP Eng</strong>
+                    </div>
+                    <p class="persona-chip-desc">Audits API contracts, concurrency, error semantics, and scale.</p>
+                  </label>
+
+                  <label class="persona-chip neu-card" data-persona="cloud_infrastructure_director">
+                    <input type="radio" name="executive_persona" value="cloud_infrastructure_director" class="sr-only">
+                    <div class="persona-chip-head">
+                      <i data-lucide="server" style="width:15px;height:15px;color:#34d399;"></i>
+                      <strong>Cloud Infrastructure Dir.</strong>
+                    </div>
+                    <p class="persona-chip-desc">Audits cloud targets, CI/CD, Kubernetes, and reliability.</p>
+                  </label>
+                </div>
+              </div>
+
+              <!-- General Error / Alert Card -->
+              <div id="analyzer-alert-card" class="alert-card error" role="alert"></div>
+
+              <!-- Action Submit Button -->
+              <button id="btn-analyze-submit" class="btn-analyze-submit neu-btn neu-btn-primary" type="button">
+                <i data-lucide="zap" style="width:18px;height:18px;"></i>
+                <span id="btn-analyze-text">Analyze My Placement Fit</span>
+              </button>
+
+              <button id="btn-cancel-request" class="btn-cancel-request" type="button">
+                Cancel Analysis Request
+              </button>
+
+              <div style="font-size:0.75rem;color:var(--text-muted);text-align:center;margin-top:14px;">
+                Direct endpoint: <code>POST /analyze</code> on <code>http://127.0.0.1:8000</code>
+              </div>
+
+            </div>
+
+            <!-- RIGHT PANEL: STREAMING RESULTS & DIAGNOSTIC REPORT -->
+            <div class="analyzer-results-card neu-card spatial-tilt-card" aria-live="polite">
+              <div class="specular-glare"></div>
+              
+              <!-- Tabbed Results Navigation -->
+              <div class="results-tab-bar" role="tablist" aria-label="Diagnostic Workspace Tabs">
+                <button type="button" class="results-tab-btn active" id="tab-btn-report" role="tab" aria-selected="true" aria-controls="pane-diagnostic-report">
+                  <i data-lucide="file-text" style="width:14px;height:14px;"></i>
+                  <span>Report</span>
+                </button>
+                <button type="button" class="results-tab-btn" id="tab-btn-persona" role="tab" aria-selected="false" aria-controls="pane-executive-review">
+                  <i data-lucide="shield-check" style="width:14px;height:14px;"></i>
+                  <span>Executive Review</span>
+                </button>
+                <button type="button" class="results-tab-btn" id="tab-btn-tailoring" role="tab" aria-selected="false" aria-controls="pane-interactive-tailoring">
+                  <i data-lucide="highlighter" style="width:14px;height:14px;"></i>
+                  <span>In-Doc Tailoring</span>
+                  <span id="tab-markup-count-badge" class="tab-badge" style="display:none;">0</span>
+                </button>
+                <button type="button" class="results-tab-btn" id="tab-btn-coach" role="tab" aria-selected="false" aria-controls="pane-career-coach">
+                  <i data-lucide="messages-square" style="width:14px;height:14px;"></i>
+                  <span>Voice Coach</span>
+                </button>
+
+                <div class="results-actions-row" style="margin-left:auto;">
+                  <button class="btn-icon-circle" onclick="copyAnalysisToClipboard()" title="Copy Markdown Report to Clipboard" aria-label="Copy report">
+                    <i data-lucide="copy" style="width:15px;height:15px;"></i>
+                  </button>
+                  <button class="btn-icon-circle" onclick="exportAnalysisReport()" title="Download Report as .md file" aria-label="Download markdown report">
+                    <i data-lucide="download" style="width:15px;height:15px;"></i>
+                  </button>
+                </div>
+              </div>
+
+              <!-- Empty Results Placeholder -->
+              <div id="results-placeholder" class="empty-results-box">
+                <div class="empty-icon-ring">
+                  <i data-lucide="sparkles" style="width:34px;height:34px;"></i>
+                </div>
+                <h4 class="empty-title">Ready for Placement Benchmarking</h4>
+                <p class="empty-desc">
+                  Provide your target job description and upload a resume on the left. The engine will retrieve relevant alumni archetypes from FAISS and stream actionable feedback.
+                </p>
+                <button type="button" class="btn-glass-shimmer" onclick="enableDemoAndRun()">
+                  <i data-lucide="play" style="width:16px;height:16px;"></i> Test with Illustrative Demo
+                </button>
+              </div>
+
+              <!-- Streaming Results Area -->
+              <div id="streaming-results-area" class="streaming-results-area">
+                
+                <!-- Score & Provenance Banner -->
+                <div class="score-banner-box">
+                  <div class="score-banner-left">
+                    <div class="mini-score-ring">
+                      <svg width="86" height="86" viewBox="0 0 86 86" style="transform:rotate(-90deg);">
+                        <circle cx="43" cy="43" r="38" fill="none" stroke="rgba(255,255,255,0.08)" stroke-width="8" />
+                        <circle id="mini-progress-ring" cx="43" cy="43" r="38" fill="none" stroke="var(--accent-emerald)" stroke-width="8" stroke-linecap="round" style="transition: stroke-dashoffset 1.2s ease;" />
+                      </svg>
+                      <div id="mini-score-val" class="mini-score-val">--</div>
+                    </div>
+                    <div class="score-banner-meta">
+                      <h4>Placement Alignment Score</h4>
+                      <p>Evaluated against successfully placed alumni patterns.</p>
+                      <span id="provenance-tag" class="provenance-tag provenance-live">Live Session</span>
+                    </div>
+                  </div>
+
+                  <div style="display:flex;align-items:center;gap:8px;">
+                    <button type="button" id="btn-quick-play-tts" class="neu-btn" style="padding:7px 12px;font-size:0.78rem;gap:6px;" title="Listen to spoken diagnostic briefing">
+                      <i data-lucide="volume-2" style="width:15px;height:15px;color:var(--accent-cyan);"></i>
+                      <span id="tts-quick-btn-label">Spoken Briefing</span>
+                    </button>
+                    <div class="match-metric-icon icon-emerald" style="width:44px;height:44px;border-radius:var(--radius-md);">
+                      <i data-lucide="award" style="width:22px;height:22px;"></i>
+                    </div>
+                  </div>
+                </div>
+
+                <!-- TAB PANE 1: MARKDOWN DIAGNOSTIC REPORT -->
+                <div id="pane-diagnostic-report" class="results-tab-pane active" role="tabpanel" aria-labelledby="tab-btn-report">
+                  <div id="markdown-stream-output" class="markdown-body"></div>
+                </div>
+
+                <!-- TAB PANE 2: SENIOR EXECUTIVE REVIEW LENS -->
+                <div id="pane-executive-review" class="results-tab-pane" role="tabpanel" aria-labelledby="tab-btn-persona" style="display:none;">
+                  <div class="exec-review-container">
+                    <div class="exec-disclaimer-banner">
+                      <i data-lucide="info" style="width:16px;height:16px;flex-shrink:0;"></i>
+                      <span><strong>Simulated Executive Review Lens:</strong> This review simulates the skeptical scrutiny of a senior hiring leader based strictly on submitted resume evidence. It does not reflect official employer decisions or a hiring probability.</span>
+                    </div>
+
+                    <div class="exec-header-card neu-card">
+                      <div class="exec-title-row">
+                        <div>
+                          <span class="exec-persona-label" id="exec-persona-title">Senior Engineering Reviewer</span>
+                          <h4 class="exec-role-subtitle" id="exec-target-role-label">Target Role: Software Engineer</h4>
+                        </div>
+                        <div id="exec-verdict-badge" class="verdict-badge verdict-promising">Evaluating...</div>
+                      </div>
+                      <p class="exec-reaction-text" id="exec-reaction-summary">Executive impression will populate after analysis completes.</p>
+                    </div>
+
+                    <!-- 4 Diagnostic Dimensions -->
+                    <div class="exec-sections-grid">
+                      <!-- 1. What Catches Attention -->
+                      <div class="exec-section-card neu-card">
+                        <div class="exec-sec-header">
+                          <i data-lucide="check-circle-2" style="color:var(--mark-green-border);width:16px;height:16px;"></i>
+                          <h5>What Catches Attention (Verified Proof)</h5>
+                        </div>
+                        <div id="exec-attention-list" class="exec-obs-list">
+                          <p class="empty-hint">Evidence items will appear here.</p>
+                        </div>
+                      </div>
+
+                      <!-- 2. Senior Skepticism Points -->
+                      <div class="exec-section-card neu-card">
+                        <div class="exec-sec-header">
+                          <i data-lucide="alert-triangle" style="color:var(--mark-yellow-border);width:16px;height:16px;"></i>
+                          <h5>Senior Skepticism &amp; Evidence Gaps</h5>
+                        </div>
+                        <div id="exec-skepticism-list" class="exec-obs-list">
+                          <p class="empty-hint">Skepticism points will appear here.</p>
+                        </div>
+                      </div>
+
+                      <!-- 3. Architecture & Technical Questions -->
+                      <div class="exec-section-card neu-card">
+                        <div class="exec-sec-header">
+                          <i data-lucide="help-circle" style="color:var(--accent-blue-light);width:16px;height:16px;"></i>
+                          <h5>Expected Technical Interview Questions</h5>
+                        </div>
+                        <ul id="exec-questions-list" class="exec-questions-ul">
+                          <li class="empty-hint">Expected questions will appear here.</li>
+                        </ul>
+                      </div>
+
+                      <!-- 4. Strategic Action Priorities -->
+                      <div class="exec-section-card neu-card">
+                        <div class="exec-sec-header">
+                          <i data-lucide="list-ordered" style="color:var(--accent-cyan);width:16px;height:16px;"></i>
+                          <h5>Strategic Next Actions (Highest Impact)</h5>
+                        </div>
+                        <div id="exec-priorities-list" class="exec-priorities-list">
+                          <p class="empty-hint">Priorities will appear here.</p>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
+                <!-- TAB PANE 3: INTERACTIVE IN-DOCUMENT TAILORING -->
+                <div id="pane-interactive-tailoring" class="results-tab-pane" role="tabpanel" aria-labelledby="tab-btn-tailoring" style="display:none;">
+                  <div class="tailoring-container">
+                    
+                    <!-- Tailoring Toolbar -->
+                    <div class="tailoring-toolbar neu-card">
+                      <div class="toolbar-left">
+                        <span id="draft-revision-badge" class="revision-pill">Draft: rev_0 (Original)</span>
+                        <div class="markup-legend-strip">
+                          <span class="legend-chip legend-green"><span class="legend-dot green"></span> Metric Proof</span>
+                          <span class="legend-chip legend-yellow"><span class="legend-dot yellow"></span> Passive Phrasing</span>
+                          <span class="legend-chip legend-red"><span class="legend-dot red"></span> Critical Gap</span>
+                        </div>
+                      </div>
+
+                      <div class="toolbar-actions">
+                        <button type="button" id="btn-draft-undo" class="neu-btn btn-sm" disabled title="Undo last replacement">
+                          <i data-lucide="undo" style="width:13px;height:13px;"></i> Undo
+                        </button>
+                        <button type="button" id="btn-draft-redo" class="neu-btn btn-sm" disabled title="Redo last replacement">
+                          <i data-lucide="redo" style="width:13px;height:13px;"></i> Redo
+                        </button>
+                        <button type="button" id="btn-toggle-diff" class="neu-btn btn-sm" title="Toggle before/after revision diff">
+                          <i data-lucide="git-commit" style="width:13px;height:13px;"></i> Diff
+                        </button>
+                        <button type="button" id="btn-recalculate-draft" class="neu-btn neu-btn-primary btn-sm" title="Stateless diagnostic recalculation on in-memory draft">
+                          <i data-lucide="refresh-cw" style="width:13px;height:13px;"></i> Recalculate Fit
+                        </button>
+                        <button type="button" id="btn-export-draft" class="neu-btn btn-sm" title="Download current edited draft as Markdown text">
+                          <i data-lucide="file-down" style="width:13px;height:13px;"></i> Export Draft
+                        </button>
+                      </div>
+                    </div>
+
+                    <!-- Side-by-Side Diff Drawer (Collapsible) -->
+                    <div id="draft-diff-drawer" class="diff-drawer neu-card" style="display:none;">
+                      <div class="diff-header-row">
+                        <div style="font-size:0.8rem;font-weight:700;color:#fff;">
+                          <i data-lucide="git-compare" style="width:14px;height:14px;margin-right:6px;"></i>
+                          Revision Diff (Original vs Current In-Memory Draft)
+                        </div>
+                        <button type="button" id="btn-close-diff" class="btn-text-action">Close Diff</button>
+                      </div>
+                      <div class="diff-columns-grid">
+                        <div class="diff-col">
+                          <h6>Original Extracted Text</h6>
+                          <div id="diff-original-content" class="diff-content-well"></div>
+                        </div>
+                        <div class="diff-col">
+                          <h6>Current Edited Draft</h6>
+                          <div id="diff-edited-content" class="diff-content-well"></div>
+                        </div>
+                      </div>
+                    </div>
+
+                    <!-- Interactive Document Viewer Surface -->
+                    <div class="document-viewer-surface neu-card" id="resume-document-viewport" tabindex="0" role="region" aria-label="Annotated Resume Text Viewer">
+                      <div id="document-text-container" class="doc-text-render-stream">
+                        <p class="empty-hint">Uploaded resume text with exact span annotations will appear here after analysis.</p>
+                      </div>
+                    </div>
+
+                    <!-- Floating Interactive Popover Card -->
+                    <div id="markup-detail-popover" class="markup-popover-card neu-card spatial-floating" style="display:none;" role="dialog" aria-modal="false" aria-labelledby="popover-category-tag">
+                      <div class="popover-header">
+                        <div style="display:flex;align-items:center;gap:6px;">
+                          <span id="popover-color-dot" class="legend-dot green"></span>
+                          <span id="popover-category-tag" class="popover-category-badge">Metric Highlight</span>
+                          <span id="popover-severity-tag" class="popover-severity-badge">Review</span>
+                        </div>
+                        <button type="button" id="btn-close-popover" class="btn-icon-circle" aria-label="Close popover">
+                          <i data-lucide="x" style="width:12px;height:12px;"></i>
+                        </button>
+                      </div>
+
+                      <div class="popover-body">
+                        <div class="popover-quoted-box">
+                          <span class="sub-label">Original Text:</span>
+                          <p id="popover-quoted-text">"..."</p>
+                        </div>
+                        
+                        <div class="popover-critique-box">
+                          <span class="sub-label">Diagnosis:</span>
+                          <p id="popover-critique-text">Explanation here...</p>
+                        </div>
+
+                        <div class="popover-rewrite-box">
+                          <div style="display:flex;justify-content:space-between;align-items:center;">
+                            <span class="sub-label">Suggested Truthful Rewrite:</span>
+                            <span class="sub-hint">Placeholders preserve facts</span>
+                          </div>
+                          <textarea id="popover-rewrite-input" class="popover-textarea neu-textarea"></textarea>
+                        </div>
+                      </div>
+
+                      <div class="popover-actions">
+                        <button type="button" id="popover-apply-btn" class="neu-btn neu-btn-primary btn-sm">
+                          <i data-lucide="check" style="width:13px;height:13px;"></i> Apply Replacement
+                        </button>
+                        <button type="button" id="popover-dismiss-btn" class="neu-btn btn-sm">
+                          Dismiss
+                        </button>
+                      </div>
+                    </div>
+
+                  </div>
+                </div>
+
+                <!-- TAB PANE 4: CONVERSATIONAL CAREER COACH -->
+                <div id="pane-career-coach" class="results-tab-pane" role="tabpanel" aria-labelledby="tab-btn-coach" style="display:none;">
+                  <div class="coach-container neu-card">
+                    
+                    <div class="coach-header">
+                      <div class="coach-avatar-box">
+                        <i data-lucide="bot" style="width:20px;height:20px;color:var(--accent-cyan);"></i>
+                      </div>
+                      <div>
+                        <h5 id="coach-active-persona-title">Executive Career Coach</h5>
+                        <p>Ask natural-language questions grounded strictly in your resume evidence and target role requirements.</p>
+                      </div>
+                    </div>
+
+                    <div id="coach-chat-transcript" class="coach-transcript-well" role="log" aria-live="polite">
+                      <div class="coach-msg coach-msg-assistant">
+                        <div class="msg-avatar"><i data-lucide="bot" style="width:14px;height:14px;"></i></div>
+                        <div class="msg-content">
+                          <p>Hello! I am your placement coach. Ask me how to quantify project impact, explain skill gaps, or rephrase bullets for your target role.</p>
+                          <div class="coach-quick-prompts">
+                            <button type="button" class="btn-coach-chip" onclick="askCoachPrompt('How do I quantify the impact in my main project?')">How do I quantify project impact?</button>
+                            <button type="button" class="btn-coach-chip" onclick="askCoachPrompt('What is the biggest evidence gap identified by the senior reviewer?')">What is my biggest evidence gap?</button>
+                            <button type="button" class="btn-coach-chip" onclick="askCoachPrompt('How should I address the missing required skills?')">How to address missing skills?</button>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+
+                    <!-- Prompt Framework Selector Strip -->
+                    <div class="coach-framework-selector-row">
+                      <div class="fw-sel-label-group">
+                        <i data-lucide="sparkles" style="width:14px;height:14px;color:var(--accent-cyan);"></i>
+                        <label for="coach-framework-select" style="font-size:0.75rem;font-weight:700;letter-spacing:0.04em;color:var(--text-secondary);">Framework Lens:</label>
+                      </div>
+                      <select id="coach-framework-select" class="neu-select-compact" aria-label="Select Prompt Framework Lens for Coach Responses">
+                        <option value="" selected>Direct Advice (Standard)</option>
+                        <option value="RACE">RACE — Role, Action, Context, Expectation</option>
+                        <option value="STAR">STAR — Situation, Task, Action, Result</option>
+                        <option value="PAR">PAR — Problem, Action, Result</option>
+                        <option value="CLEAR">CLEAR — Context, Logic, Expectations, Action, Restriction</option>
+                        <option value="SMART">SMART — Specific, Measurable, Achievable, Relevant, Time-bound</option>
+                        <option value="QUEST">QUEST — Question, Understanding, Expectation, Scope, Time</option>
+                        <option value="GUIDE">GUIDE — Goal, Understanding, Information, Direction, Evaluation</option>
+                        <option value="FOCUS">FOCUS — Function, Outcome, Criteria, Assumptions, Strategy</option>
+                        <option value="IDEA">IDEA — Intent, Details, Examples, Adjustments</option>
+                        <option value="RISEN">RISEN — Requirement, Information, Strategy, Evaluation, Negotiation</option>
+                        <option value="RHODES">RHODES — Research, Hypothesis, Objectives, Development, Execution, Synthesis</option>
+                        <option value="CREATE">CREATE — Conceptualize, Research, Experiment, Analyze, Transform, Evaluate</option>
+                        <option value="TAG">TAG — Task, Action, Goal</option>
+                        <option value="TRACE">TRACE — Task, Request, Action, Context, Example</option>
+                        <option value="CARE">CARE — Context, Action, Result, Example</option>
+                        <option value="APE">APE — Action, Purpose, Expectation</option>
+                        <option value="CRISPE">CRISPE — Capacity, Insight, Statement, Personality, Experiment</option>
+                        <option value="RTF">RTF — Role, Task, Finish</option>
+                      </select>
+                      <span id="coach-framework-badge" class="fw-active-badge">Standard Mode</span>
+                    </div>
+
+                    <div class="coach-input-bar">
+                      <button type="button" id="btn-coach-voice-input" class="neu-btn btn-icon-round" title="Ask question with voice dictation" aria-label="Dictate voice question">
+                        <i data-lucide="mic" style="width:16px;height:16px;color:var(--accent-cyan);"></i>
+                      </button>
+                      <input type="text" id="coach-query-input" class="neu-textarea coach-text-input" placeholder="Ask your career coach a question (e.g. 'How should I explain my Docker experience?')...">
+                      <button type="button" id="btn-send-coach-msg" class="neu-btn neu-btn-primary" style="padding:10px 18px;font-size:0.85rem;">
+                        <i data-lucide="send" style="width:15px;height:15px;"></i>
+                        <span>Ask</span>
+                      </button>
+                    </div>
+
+                  </div>
+                </div>
+
+              </div>
+
+            </div>
+
+          </div>
+
+        </div>
+      </section>
+
+      <!-- =======================================================================
+           SECTION 4: CAREER GENOME (5 ARCHETYPES)
+           ======================================================================= -->
+      <section id="genome" class="genome-section" aria-labelledby="genome-heading">
+        <div class="container">
+          
+          <div style="text-align:center;max-width:760px;margin:0 auto 48px;">
+            <span style="font-size:0.78rem;font-weight:700;text-transform:uppercase;letter-spacing:0.12em;color:var(--accent-cyan);margin-bottom:12px;display:inline-block;">
+              Unsupervised Knowledge Discovery
+            </span>
+            <h2 id="genome-heading" style="font-family:var(--font-display);font-size:clamp(2rem, 3.5vw, 2.6rem);font-weight:800;color:#fff;margin-bottom:12px;">
+              The 5 Alumni Career Archetypes
+            </h2>
+            <p style="color:var(--text-secondary);font-size:1rem;line-height:1.6;">
+              Discovered from 1,200+ placed SRM alumni resumes through K-Means clustering and TF-IDF feature analysis. Select any archetype to inspect its grounded skill profile or compare two paths.
+            </p>
+          </div>
+
+          <!-- Archetypes Horizontal Selector Grid -->
+          <div id="archetypes-selector-grid" class="archetypes-selector-grid">
+            <!-- Dynamically populated by app.js -->
+          </div>
+
+          <!-- Archetype Detailed Panel -->
+          <div id="archetype-detail-panel" class="archetype-detail-panel">
+            <!-- Dynamically populated by app.js -->
+          </div>
+
+        </div>
+      </section>
+
+      <!-- =======================================================================
+           SECTION 5: COMPANY INTELLIGENCE & GLASSDOOR DIRECTORY
+           ======================================================================= -->
+      <section id="company-intel" class="company-section" aria-labelledby="company-heading">
+        <div class="container">
+          
+          <div style="text-align:center;max-width:760px;margin:0 auto 48px;">
+            <span style="font-size:0.78rem;font-weight:700;text-transform:uppercase;letter-spacing:0.12em;color:var(--accent-amber);margin-bottom:12px;display:inline-block;">
+              Glassdoor-Style Placement Intelligence
+            </span>
+            <h2 id="company-heading" style="font-family:var(--font-display);font-size:clamp(2rem, 3.5vw, 2.6rem);font-weight:800;color:#fff;margin-bottom:12px;">
+              Company Recruitment Benchmarks
+            </h2>
+            <p style="color:var(--text-secondary);font-size:1rem;line-height:1.6;">
+              Review verified placement tiers, interview round breakdowns, and alumni advice. Click <strong>"Match My Resume"</strong> to test your fit against any company's real Job Description.
+            </p>
+          </div>
+
+          <!-- Search & Filter Controls Bar -->
+          <div class="company-controls-bar">
+            <div class="search-input-box">
+              <i data-lucide="search" style="width:16px;height:16px;"></i>
+              <input type="text" id="company-search-input" placeholder="Search company or skill (e.g. Google, Kafka, Java)..." aria-label="Search companies">
+            </div>
+
+            <div class="filter-chips-row">
+              <button class="btn-filter-pill btn-company-filter active" data-filter="all">All Top Recruiters</button>
+              <button class="btn-filter-pill btn-company-filter" data-filter="super-dream">Super Dream (₹20+ LPA)</button>
+              <button class="btn-filter-pill btn-company-filter" data-filter="dream">Dream (₹10–20 LPA)</button>
+              <button class="btn-filter-pill btn-company-filter" data-filter="Product & Tech">Product & Tech</button>
+              <button class="btn-filter-pill btn-company-filter" data-filter="FinTech">FinTech</button>
+              <button class="btn-filter-pill btn-company-filter" data-filter="Automotive & Core">Automotive & Core</button>
+            </div>
+
+            <div style="display:flex;align-items:center;gap:8px;">
+              <label for="company-sort-select" style="font-size:0.75rem;color:var(--text-muted);">Sort By:</label>
+              <select id="company-sort-select" class="sort-select" aria-label="Sort companies">
+                <option value="alumni">Placed Alumni Count</option>
+                <option value="name">Company Name (A–Z)</option>
+                <option value="tier">Placement Tier</option>
+              </select>
+            </div>
+          </div>
+
+          <!-- Companies Grid -->
+          <div id="companies-grid-container" class="companies-grid">
+            <!-- Dynamically populated by app.js -->
+          </div>
+
+        </div>
+      </section>
+
+      <!-- =======================================================================
+           SECTION 6: PROMPT STUDIO (ALL 18 FRAMEWORKS WORKBENCH)
+           ======================================================================= -->
+      <section id="prompt-studio" class="prompt-studio-section" aria-labelledby="prompt-studio-heading">
+        <div class="container">
+          
+          <div style="text-align:center;max-width:760px;margin:0 auto 48px;">
+            <span style="font-size:0.78rem;font-weight:700;text-transform:uppercase;letter-spacing:0.12em;color:var(--accent-cyan);margin-bottom:12px;display:inline-block;">
+              Interactive Prompt Engineering Workbench
+            </span>
+            <h2 id="prompt-studio-heading" style="font-family:var(--font-display);font-size:clamp(2rem, 3.5vw, 2.6rem);font-weight:800;color:#fff;margin-bottom:12px;">
+              Prompt Studio: All 18 Frameworks
+            </h2>
+            <p style="color:var(--text-secondary);font-size:1rem;line-height:1.6;">
+              A fully client-side engineering workbench to compose, test, and copy structured prompts across all 18 research and task frameworks. Zero external LLM calls required.
+            </p>
+          </div>
+
+          <!-- Deterministic Recommender Banner -->
+          <div class="studio-recommender-banner">
+            <div>
+              <strong style="color:#fff;font-size:1.05rem;display:block;">Task Scenario Recommender</strong>
+              <span style="font-size:0.82rem;color:var(--text-secondary);">Select what you are trying to achieve for a transparent, rule-grounded framework match:</span>
+              
+              <div class="scenario-buttons-row">
+                <button type="button" class="btn-scenario-chip" data-scenario="research">Technical Research</button>
+                <button type="button" class="btn-scenario-chip" data-scenario="resume">Resume Bullet Point</button>
+                <button type="button" class="btn-scenario-chip" data-scenario="planning">Placement Plan</button>
+                <button type="button" class="btn-scenario-chip" data-scenario="interview">Behavioral Interview</button>
+                <button type="button" class="btn-scenario-chip" data-scenario="email">Alumni Outreach Email</button>
+                <button type="button" class="btn-scenario-chip" data-scenario="experiment">AI / ML Experiment</button>
+              </div>
+            </div>
+
+            <div id="recommendation-explanation-box" class="recommendation-explanation-box"></div>
+          </div>
+
+          <!-- 3-Column Workbench -->
+          <div class="studio-main-workbench">
+            
+            <!-- Column 1: Framework Directory -->
+            <div class="frameworks-nav-card">
+              <div style="margin-bottom:12px;">
+                <input type="text" id="framework-search-input" class="search-input-box" style="width:100%;font-size:0.85rem;padding:8px 12px;" placeholder="Search 18 frameworks (e.g. SMART, STAR, CLEAR)..." aria-label="Search frameworks">
+              </div>
+
+              <div style="display:flex;flex-wrap:wrap;gap:4px;margin-bottom:10px;">
+                <button class="btn-filter-pill btn-framework-cat active" data-cat="all" style="padding:4px 10px;font-size:0.72rem;">All (18)</button>
+                <button class="btn-filter-pill btn-framework-cat" data-cat="research" style="padding:4px 10px;font-size:0.72rem;">Research</button>
+                <button class="btn-filter-pill btn-framework-cat" data-cat="goal" style="padding:4px 10px;font-size:0.72rem;">Goals</button>
+                <button class="btn-filter-pill btn-framework-cat" data-cat="task" style="padding:4px 10px;font-size:0.72rem;">Tasks</button>
+                <button class="btn-filter-pill btn-framework-cat" data-cat="story" style="padding:4px 10px;font-size:0.72rem;">Stories</button>
+              </div>
+
+              <div id="frameworks-list-scroll" class="frameworks-list-scroll">
+                <!-- Dynamically populated with all 18 frameworks -->
+              </div>
+            </div>
+
+            <!-- Column 2: Acronym Form Builder -->
+            <div class="framework-builder-card">
+              <div class="builder-header">
+                <h4 id="builder-fw-title" style="font-family:var(--font-display);font-size:1.25rem;color:#fff;">CLEAR Framework</h4>
+                <p id="builder-fw-desc" style="font-size:0.82rem;color:var(--text-muted);margin-top:4px;">Context, Logic, Expectations, Action, Restriction</p>
+              </div>
+
+              <div id="builder-fields-container" class="builder-fields-container">
+                <!-- Dynamically populated based on chosen framework acronym fields -->
+              </div>
+
+              <div style="display:flex;gap:10px;margin-top:20px;">
+                <button type="button" class="btn-preset-chip" onclick="resetFrameworkFields()">
+                  <i data-lucide="rotate-ccw" style="width:14px;height:14px;"></i> Reset Fields
+                </button>
+              </div>
+            </div>
+
+            <!-- Column 3: Monospace Live Preview -->
+            <div class="prompt-preview-card">
+              <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px;">
+                <div style="display:flex;align-items:center;gap:8px;">
+                  <i data-lucide="code" style="color:var(--accent-cyan);width:16px;height:16px;"></i>
+                  <strong style="color:#fff;font-size:0.95rem;">Live Formatted Preview</strong>
+                </div>
+                <span id="prompt-char-count" style="font-size:0.75rem;color:var(--text-muted);">0 characters</span>
+              </div>
+
+              <div id="prompt-preview-code" class="preview-code-box" role="textbox" aria-readonly="true"></div>
+
+              <div style="display:flex;flex-direction:column;gap:10px;margin-top:16px;">
+                <button type="button" class="btn-magnetic-glow" onclick="copyPromptToClipboard()">
+                  <i data-lucide="copy" style="width:16px;height:16px;"></i> Copy Formatted Prompt
+                </button>
+                <button type="button" class="btn-glass-shimmer" onclick="copyPromptAndOpenAnalyzer()">
+                  <i data-lucide="arrow-up-right" style="width:16px;height:16px;"></i> Copy & Jump to Resume Matcher
+                </button>
+              </div>
+            </div>
+
+          </div>
+
+        </div>
+      </section>
+
+      <!-- =======================================================================
+           SECTION 7: INTERACTION LAB (8 BUTTON STYLES)
+           ======================================================================= -->
+      <section id="buttons-lab" class="button-lab-section" aria-labelledby="lab-heading">
+        <div class="container">
+          
+          <div style="text-align:center;max-width:760px;margin:0 auto 48px;">
+            <span style="font-size:0.78rem;font-weight:700;text-transform:uppercase;letter-spacing:0.12em;color:var(--accent-magenta);margin-bottom:12px;display:inline-block;">
+              Micro-Interactions Showcase
+            </span>
+            <h2 id="lab-heading" style="font-family:var(--font-display);font-size:clamp(2rem, 3.5vw, 2.6rem);font-weight:800;color:#fff;margin-bottom:12px;">
+              All Possible Hover Buttons Laboratory
+            </h2>
+            <p style="color:var(--text-secondary);font-size:1rem;line-height:1.6;">
+              Test every tactile micro-interaction crafted for this experience: magnetic cursor pulling, high-speed glass shimmers, 3D press depths, and cyber outlines.
+            </p>
+          </div>
+
+          <div class="buttons-grid">
+            
+            <!-- 1. Magnetic Glow Primary -->
+            <div class="btn-lab-item">
+              <span class="btn-lab-label">1. Magnetic Glow</span>
+              <button class="btn-magnetic-glow" onclick="showToast('Magnetic Glow Button clicked!')">
+                <i data-lucide="sparkles" style="width:16px;height:16px;"></i> Magnetic Glow
+              </button>
+            </div>
+
+            <!-- 2. Glass Shimmer Pill -->
+            <div class="btn-lab-item">
+              <span class="btn-lab-label">2. Glass Shimmer</span>
+              <button class="btn-glass-shimmer" onclick="showToast('Glass Shimmer Pill clicked!')">
+                <i data-lucide="sun" style="width:16px;height:16px;"></i> Glass Shimmer
+              </button>
+            </div>
+
+            <!-- 3. Cyber Border Trace -->
+            <div class="btn-lab-item">
+              <span class="btn-lab-label">3. Cyber Trace</span>
+              <button class="btn-cyber-border" onclick="showToast('Cyber Border clicked!')">
+                <i data-lucide="terminal" style="width:16px;height:16px;"></i> [CYBER_TRACE]
+              </button>
+            </div>
+
+            <!-- 4. 3D Isometric Physical Push -->
+            <div class="btn-lab-item">
+              <span class="btn-lab-label">4. 3D Physical Push</span>
+              <button class="btn-3d-push" onclick="showToast('Physical 3D Button pressed!')">
+                <i data-lucide="disc" style="width:16px;height:16px;"></i> 3D Push Depth
+              </button>
+            </div>
+
+            <!-- 5. Liquid Emerald -->
+            <div class="btn-lab-item">
+              <span class="btn-lab-label">5. Liquid Emerald</span>
+              <button class="btn-emerald-liquid" onclick="showToast('Liquid Emerald Button clicked!')">
+                <i data-lucide="check" style="width:16px;height:16px;"></i> Liquid Pulse
+              </button>
+            </div>
+
+            <!-- 6. Magnetic Icon Action Circle -->
+            <div class="btn-lab-item">
+              <span class="btn-lab-label">6. Icon Actions</span>
+              <div style="display:flex;gap:10px;">
+                <button class="btn-icon-circle" onclick="showToast('Added to bookmarks!')" title="Bookmark">
+                  <i data-lucide="bookmark" style="width:16px;height:16px;"></i>
+                </button>
+                <button class="btn-icon-circle" onclick="triggerConfetti()" title="Trigger Celebration">
+                  <i data-lucide="party-popper" style="width:16px;height:16px;"></i>
+                </button>
+              </div>
+            </div>
+
+            <!-- 7. Filter Pill Chip -->
+            <div class="btn-lab-item">
+              <span class="btn-lab-label">7. Interactive Filter</span>
+              <button id="lab-filter-pill" class="btn-filter-pill active">
+                Super Dream (₹20+ LPA)
+              </button>
+            </div>
+
+            <!-- 8. Preset Auto-Fill -->
+            <div class="btn-lab-item">
+              <span class="btn-lab-label">8. Preset Template</span>
+              <button id="lab-preset-chip" class="btn-preset-chip" style="padding:10px 16px;">
+                <i data-lucide="file-plus" style="width:14px;height:14px;"></i> Inject Sample JD
+              </button>
+            </div>
+
+          </div>
+
+          <!-- Neumorphic & Spatial UI Interactive Workbench -->
+          <div class="neu-card spatial-tilt-card reveal-spatial" style="margin-top: 48px;">
+            <div class="specular-glare"></div>
+            
+            <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:16px;margin-bottom:24px;border-bottom:1px solid rgba(255,255,255,0.06);padding-bottom:16px;">
+              <div>
+                <span class="neu-badge">
+                  <i data-lucide="layers" style="width:14px;height:14px;"></i>
+                  <span>Spatial UI & Soft Neumorphism Studio</span>
+                </span>
+                <h3 style="font-family:var(--font-display);font-size:1.4rem;font-weight:700;color:var(--text-primary);margin-top:8px;">
+                  Tactile Shading, Depth Sliders & 3D WebGL Camera Controls
+                </h3>
+              </div>
+              
+              <div class="neu-segmented">
+                <button type="button" class="neu-segmented-btn active" id="btn-neu-shape-raised" onclick="setNeuPreviewShape('raised')">Raised Pill</button>
+                <button type="button" class="neu-segmented-btn" id="btn-neu-shape-inset" onclick="setNeuPreviewShape('inset')">Sunken Recessed</button>
+                <button type="button" class="neu-segmented-btn" id="btn-neu-shape-convex" onclick="setNeuPreviewShape('convex')">Convex Surface</button>
+              </div>
+            </div>
+
+            <div style="display:grid;grid-template-columns:repeat(auto-fit, minmax(280px, 1fr));gap:24px;align-items:center;">
+              
+              <!-- Control 1: Real-Time Shadow Depth & 3D Perspective -->
+              <div class="neu-inset-panel">
+                <div style="display:flex;justify-content:space-between;margin-bottom:8px;">
+                  <label for="neu-depth-range" style="font-size:0.85rem;font-weight:600;color:var(--text-primary);">
+                    Dynamic Shadow Depth: <span id="neu-depth-val" style="color:var(--accent-cyan);">8px</span>
+                  </label>
+                  <span style="font-size:0.75rem;color:var(--text-muted);">Real-time CSS Shadow</span>
+                </div>
+                <input type="range" id="neu-depth-range" class="neu-slider" min="2" max="20" value="8" aria-label="Dynamic shadow depth">
+                <div style="display:flex;justify-content:space-between;font-size:0.7rem;color:var(--text-dim);margin-top:6px;">
+                  <span>Subtle (2px)</span>
+                  <span>Balanced (8px)</span>
+                  <span>Deep Extrusion (20px)</span>
+                </div>
+              </div>
+
+              <!-- Control 2: Tactile Soft Toggle Switch -->
+              <div class="neu-inset-panel" style="display:flex;justify-content:space-between;align-items:center;">
+                <div>
+                  <div style="font-size:0.85rem;font-weight:600;color:var(--text-primary);">Tactile Soft Switch</div>
+                  <div style="font-size:0.75rem;color:var(--text-muted);" id="neu-toggle-status-label">State: Active (Glow)</div>
+                </div>
+                <div class="neu-toggle-wrapper checked" id="neu-tactile-toggle" role="switch" aria-checked="true" tabindex="0">
+                  <div class="neu-toggle-track">
+                    <div class="neu-toggle-thumb"></div>
+                  </div>
+                </div>
+              </div>
+
+              <!-- Control 3: Three.js 3D Constellation Orbit Controls -->
+              <div class="neu-inset-panel" style="display:flex;flex-direction:column;gap:10px;">
+                <div style="font-size:0.85rem;font-weight:600;color:var(--text-primary);display:flex;align-items:center;gap:6px;">
+                  <i data-lucide="orbit" style="width:15px;height:15px;color:var(--accent-blue);"></i>
+                  <span>Spatial 3D Constellation Camera</span>
+                </div>
+                <div style="display:flex;gap:8px;flex-wrap:wrap;">
+                  <button type="button" class="neu-btn" style="padding:8px 14px;font-size:0.78rem;" id="btn-3d-accelerate" onclick="toggle3DAcceleration()">
+                    <i data-lucide="fast-forward" style="width:13px;height:13px;"></i> Orbit Warp
+                  </button>
+                  <button type="button" class="neu-btn" style="padding:8px 14px;font-size:0.78rem;" id="btn-3d-cluster-focus" onclick="focusNextArchetypeNode()">
+                    <i data-lucide="crosshair" style="width:13px;height:13px;"></i> Next Cluster
+                  </button>
+                  <button type="button" class="neu-btn" style="padding:8px 14px;font-size:0.78rem;" id="btn-3d-reset-cam" onclick="reset3DCamera()">
+                    <i data-lucide="rotate-ccw" style="width:13px;height:13px;"></i> Reset View
+                  </button>
+                </div>
+              </div>
+
+            </div>
+
+            <!-- Tactile Interactive Preview Box -->
+            <div id="neu-preview-surface" class="neu-card" style="margin-top:24px;text-align:center;padding:28px;transition:all 0.3s ease;">
+              <div style="font-size:0.8rem;text-transform:uppercase;letter-spacing:0.1em;color:var(--accent-cyan);font-weight:700;margin-bottom:8px;">
+                Live Neumorphic Surface Preview
+              </div>
+              <p style="color:var(--text-secondary);font-size:0.92rem;max-width:540px;margin:0 auto 18px;line-height:1.6;">
+                Notice how the soft highlights and shadows dynamically dance based on depth and light angles without harsh borders.
+              </p>
+              <div style="display:inline-flex;gap:12px;flex-wrap:wrap;justify-content:center;">
+                <button type="button" class="neu-btn" onclick="showToast('Pressed Raised Soft Button')">
+                  <i data-lucide="fingerprint" style="width:16px;height:16px;"></i> Tactile Push
+                </button>
+                <button type="button" class="neu-btn neu-btn-primary" onclick="showToast('Pressed Accent Soft Button')">
+                  <i data-lucide="sparkles" style="width:16px;height:16px;"></i> Accent Pulse
+                </button>
+              </div>
+            </div>
+
+          </div>
+
+        </div>
+      </section>
+
+      <!-- =======================================================================
+           SECTION 8: FAQ & TRUST SECTION
+           ======================================================================= -->
+      <section id="faq" class="faq-section" aria-labelledby="faq-heading">
+        <div class="container">
+          
+          <div style="text-align:center;max-width:760px;margin:0 auto 48px;">
+            <span style="font-size:0.78rem;font-weight:700;text-transform:uppercase;letter-spacing:0.12em;color:var(--accent-emerald);margin-bottom:12px;display:inline-block;">
+              Integrity & FAQ
+            </span>
+            <h2 id="faq-heading" style="font-family:var(--font-display);font-size:clamp(2rem, 3.5vw, 2.6rem);font-weight:800;color:#fff;margin-bottom:12px;">
+              Frequently Asked Questions & Disclaimers
+            </h2>
+            <p style="color:var(--text-secondary);font-size:1rem;line-height:1.6;">
+              Understanding how your data is treated and the methodological foundation of SRM Career Catalyst.
+            </p>
+          </div>
+
+          <div class="faq-list">
+            
+            <div class="faq-item">
+              <button class="faq-question-btn" type="button">
+                <span>How is SRM Career Catalyst different from traditional ATS keyword scanners?</span>
+                <i data-lucide="chevron-down" style="width:18px;height:18px;"></i>
+              </button>
+              <div class="faq-answer-panel">
+                Traditional ATS systems simply count keyword frequency between your resume and a job description. SRM Career Catalyst uses dense neural embeddings (<code>all-MiniLM-L6-v2</code>) and FAISS indexing across 1,200+ actual resumes of successfully placed alumni to compare metric structures, technical depth, and proven career archetypes.
+              </div>
+            </div>
+
+            <div class="faq-item">
+              <button class="faq-question-btn" type="button">
+                <span>Does an archetype fit or high score guarantee an interview or offer?</span>
+                <div class="faq-answer-panel">
+                  No. The placement alignment score is a comparative diagnostic indicator, not a statistical guarantee of hiring. Interview outcomes depend on live coding assessments, academic credentials, hiring bar variations, and interviewer evaluations.
+                </div>
+              </div>
+            </div>
+
+            <div class="faq-item">
+              <button class="faq-question-btn" type="button">
+                <span>Is my uploaded resume stored or shared?</span>
+                <i data-lucide="chevron-down" style="width:18px;height:18px;"></i>
+              </button>
+              <div class="faq-answer-panel">
+                No. Resume PDFs are processed entirely in-memory using byte buffers and discarded immediately after semantic analysis. No candidate resume files or personal contact details are stored in databases or logged to disk.
+              </div>
+            </div>
+
+            <div class="faq-item">
+              <button class="faq-question-btn" type="button">
+                <span>Which placement data is verified vs sample/unverified?</span>
+                <i data-lucide="chevron-down" style="width:18px;height:18px;"></i>
+              </button>
+              <div class="faq-answer-panel">
+                The career archetypes and vector embeddings are derived from the project's alumni dataset. Recruiter compensation ranges, difficulty ratings, and specific interview questions represent curated project sample data for illustrative benchmarking.
+              </div>
+            </div>
+
+            <div class="faq-item">
+              <button class="faq-question-btn" type="button">
+                <span>Is this an official SRM University administration platform?</span>
+                <i data-lucide="chevron-down" style="width:18px;height:18px;"></i>
+              </button>
+              <div class="faq-answer-panel">
+                SRM Career Catalyst is an academic and research project developed for career intelligence. It is not an official university administrative system and does not replace official placement office registrations.
+              </div>
+            </div>
+
+          </div>
+
+        </div>
+      </section>
+
+    </main>
+
+    <!-- Footer -->
+    <footer class="app-footer" role="contentinfo">
+      <div class="container">
+        <nav class="footer-nav-links" aria-label="Footer Navigation">
+          <a href="#hero">Home</a>
+          <a href="#how-it-works">How It Works</a>
+          <a href="#analyzer">Resume Analyzer</a>
+          <a href="#genome">Career Genome</a>
+          <a href="#company-intel">Company Intel</a>
+          <a href="#prompt-studio">Prompt Studio (18 Frameworks)</a>
+          <a href="#buttons-lab">Button Lab</a>
+          <a href="#faq">FAQ</a>
+        </nav>
+        <p>© 2026 SRM Career Catalyst • Academic & Career Placement Intelligence Engine</p>
+      </div>
+    </footer>
+
+  </div>
+
+  <!-- ===========================================================================
+       MODALS: ACCESSIBLE DIALOGS
+       =========================================================================== -->
+  
+  <!-- 1. Company Placement Intel Modal -->
+  <div id="company-modal-backdrop" class="modal-backdrop" role="dialog" aria-modal="true" aria-labelledby="company-modal-title">
+    <div class="modal-dialog">
+      <div class="modal-header">
+        <div id="company-modal-title" style="font-size:0.8rem;text-transform:uppercase;letter-spacing:0.1em;color:var(--accent-cyan);font-weight:700;">
+          Company Recruitment Intelligence
+        </div>
+        <button class="modal-close-btn" onclick="closeCompanyModal()" aria-label="Close dialog">
+          <i data-lucide="x" style="width:18px;height:18px;"></i>
+        </button>
+      </div>
+      <div id="company-modal-body"></div>
+    </div>
+  </div>
+
+  <!-- 2. Archetype Comparison Modal -->
+  <div id="compare-modal-backdrop" class="modal-backdrop" role="dialog" aria-modal="true" aria-labelledby="compare-modal-title">
+    <div class="modal-dialog">
+      <div class="modal-header">
+        <div id="compare-modal-title" style="font-size:0.8rem;text-transform:uppercase;letter-spacing:0.1em;color:var(--accent-blue-light);font-weight:700;">
+          Archetype Head-to-Head Comparison
+        </div>
+        <button class="modal-close-btn" onclick="closeCompareModal()" aria-label="Close dialog">
+          <i data-lucide="x" style="width:18px;height:18px;"></i>
+        </button>
+      </div>
+      <div id="compare-modal-body"></div>
+    </div>
+  </div>
+
+  <!-- Toast Notification Container -->
+  <div id="toast-notification" class="toast-notification" role="status" aria-live="polite">
+    <i data-lucide="sparkles" style="color:var(--accent-cyan);width:18px;height:18px;"></i>
+    <span id="toast-message">Notification message here</span>
+  </div>
+
+  <!-- ===========================================================================
+       VOICE ASSISTANT: FLOATING ORB & ACCESSIBLE DICTATION / TTS DRAWER
+       =========================================================================== -->
+  <aside id="voice-assistant-widget" class="voice-assistant-widget" aria-label="Hands-Free Voice Assistant">
+    
+    <!-- Tactile Floating Orb Button -->
+    <button type="button" id="voice-orb-btn" class="voice-orb-btn" aria-label="Open Voice Assistant &amp; Dictation" aria-expanded="false" title="Click to open Hands-Free Voice Assistant">
+      <div class="voice-orb-pulse" id="voice-orb-pulse-ring" aria-hidden="true"></div>
+      <div class="voice-orb-inner">
+        <i data-lucide="mic" id="voice-orb-icon" style="width:22px;height:22px;color:#fff;"></i>
+      </div>
+      <span class="voice-orb-badge" id="voice-orb-badge-text">Voice</span>
+    </button>
+
+    <!-- Collapsible Voice Assistant Drawer -->
+    <div id="voice-assistant-drawer" class="voice-drawer neu-card spatial-floating" style="display:none;" role="region" aria-labelledby="voice-drawer-title">
+      <div class="voice-drawer-header">
+        <div style="display:flex;align-items:center;gap:8px;">
+          <div class="voice-status-dot idle" id="voice-status-dot"></div>
+          <h4 id="voice-drawer-title" style="font-family:var(--font-display);font-size:0.95rem;color:#fff;margin:0;">Voice Assistant</h4>
+        </div>
+        <div style="display:flex;align-items:center;gap:6px;">
+          <span id="voice-status-badge" class="voice-status-pill">Idle</span>
+          <button type="button" id="voice-drawer-close-btn" class="btn-icon-circle" aria-label="Minimize voice assistant">
+            <i data-lucide="chevron-down" style="width:14px;height:14px;"></i>
+          </button>
+        </div>
+      </div>
+
+      <div class="voice-drawer-body">
+        <!-- Visual Waveform / Status Pulse -->
+        <div class="voice-pulse-surface" id="voice-pulse-surface">
+          <div class="pulse-bar bar-1"></div>
+          <div class="pulse-bar bar-2"></div>
+          <div class="pulse-bar bar-3"></div>
+          <div class="pulse-bar bar-4"></div>
+          <div class="pulse-bar bar-5"></div>
+          <span id="voice-live-status-desc" class="voice-live-label" aria-live="polite">Microphone ready. Click Record to speak.</span>
+        </div>
+
+        <!-- Destination Selector -->
+        <div class="voice-setting-row">
+          <label for="voice-dest-select" style="font-size:0.75rem;color:var(--text-muted);font-weight:600;">Insert Destination:</label>
+          <select id="voice-dest-select" class="neu-select-compact" aria-label="Transcript Destination">
+            <option value="replace_jd" selected>Target Job Description (Replace)</option>
+            <option value="append_jd">Target Job Description (Append)</option>
+            <option value="coach_message">Ask Career Coach</option>
+          </select>
+        </div>
+
+        <!-- Locale Selector -->
+        <div class="voice-setting-row">
+          <label for="voice-locale-select" style="font-size:0.75rem;color:var(--text-muted);font-weight:600;">Spoken Language / Locale:</label>
+          <select id="voice-locale-select" class="neu-select-compact" aria-label="Speech Recognition Locale">
+            <option value="en-IN" selected>English (India) — en-IN</option>
+            <option value="en-US">English (US) — en-US</option>
+            <option value="hi-IN">Hindi (India) — hi-IN</option>
+          </select>
+        </div>
+
+        <!-- Live Transcript Preview Textarea -->
+        <div class="voice-transcript-group">
+          <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:4px;">
+            <label for="voice-transcript-preview" style="font-size:0.74rem;color:var(--text-muted);font-weight:600;">Transcript Preview (Editable):</label>
+            <span id="voice-source-indicator" class="sub-hint">Source: Browser STT</span>
+          </div>
+          <textarea id="voice-transcript-preview" class="neu-textarea voice-preview-area" placeholder="Spoken words will appear here live... You can edit before applying."></textarea>
+        </div>
+
+        <!-- Primary Recognition Action Controls -->
+        <div class="voice-actions-strip">
+          <button type="button" id="voice-record-btn" class="neu-btn neu-btn-primary" style="flex:1;padding:9px 14px;font-size:0.82rem;gap:6px;">
+            <i data-lucide="mic" id="voice-record-btn-icon" style="width:15px;height:15px;"></i>
+            <span id="voice-record-btn-text">Start Listening</span>
+          </button>
+          <button type="button" id="voice-apply-btn" class="neu-btn" style="padding:9px 14px;font-size:0.82rem;" disabled title="Insert transcript into selected destination">
+            <i data-lucide="check" style="width:14px;height:14px;"></i> Apply
+          </button>
+          <button type="button" id="voice-discard-btn" class="neu-btn" style="padding:9px 12px;font-size:0.82rem;" title="Clear transcript preview">
+            <i data-lucide="trash-2" style="width:14px;height:14px;"></i>
+          </button>
+        </div>
+
+        <!-- Spoken Briefing (TTS) Playback Sub-Panel -->
+        <div class="voice-tts-panel neu-card">
+          <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px;">
+            <div style="display:flex;align-items:center;gap:6px;">
+              <i data-lucide="volume-2" style="width:14px;height:14px;color:var(--accent-cyan);"></i>
+              <strong style="font-size:0.78rem;color:#fff;">Diagnostic Audio Briefing</strong>
+            </div>
+            <div class="tts-speed-controls">
+              <button type="button" class="btn-tts-speed active" data-rate="1.0">1.0x</button>
+              <button type="button" class="btn-tts-speed" data-rate="0.85">0.85x</button>
+            </div>
+          </div>
+          
+          <div class="tts-playback-row">
+            <button type="button" id="voice-tts-play-btn" class="neu-btn btn-sm" style="flex:1;gap:6px;" title="Play spoken summary of current diagnostic report">
+              <i data-lucide="play" id="tts-play-icon" style="width:13px;height:13px;"></i>
+              <span id="tts-play-label">Play Briefing</span>
+            </button>
+            <button type="button" id="voice-tts-pause-btn" class="neu-btn btn-sm" disabled title="Pause playback">
+              <i data-lucide="pause" style="width:13px;height:13px;"></i>
+            </button>
+            <button type="button" id="voice-tts-stop-btn" class="neu-btn btn-sm" disabled title="Stop playback">
+              <i data-lucide="square" style="width:13px;height:13px;"></i>
+            </button>
+          </div>
+        </div>
+
+        <!-- Privacy & Transparency Disclosure -->
+        <p class="voice-privacy-note">
+          <i data-lucide="shield" style="width:11px;height:11px;vertical-align:middle;margin-right:2px;"></i>
+          <strong>Privacy:</strong> Speech recognition runs locally in your browser or through standard vendor speech services. Audio recordings and personal identifiers are never stored on our servers.
+        </p>
+
+      </div>
     </div>
 
-    <script>
-        // Get all DOM elements
-        const analyzeButton = document.getElementById('analyze-button');
-        const buttonText = document.getElementById('button-text');
-        const analyzeIcon = document.getElementById('analyze-icon');
-        const loadingSpinner = document.getElementById('loading-spinner');
+  </aside>
 
-        const jobDescriptionInput = document.getElementById('job-description');
-        const resumeUploadInput = document.getElementById('resume-upload');
+  <!-- =======================================================================
+       MODAL: LLM SERVICE & MODEL CONTROL HUB
+       ======================================================================= -->
+  <div id="modal-llm-control-hub" class="llm-modal-backdrop" style="display:none;" role="dialog" aria-modal="true" aria-labelledby="llm-modal-title">
+    <div class="llm-modal-card neu-card">
+      <div class="llm-modal-header">
+        <div style="display:flex;align-items:center;gap:10px;">
+          <div class="brand-icon-box" style="width:36px;height:36px;">
+            <i data-lucide="cpu" style="color:var(--accent-cyan);width:20px;height:20px;"></i>
+          </div>
+          <div>
+            <h3 id="llm-modal-title" style="margin:0;font-size:1.15rem;font-weight:700;color:#fff;">LLM Engine & Model Control Hub</h3>
+            <p style="margin:0;font-size:0.78rem;color:var(--text-muted);">Multi-provider runtime configuration: Gemini, OpenAI, Groq, Ollama, or Grounded Neural Engine</p>
+          </div>
+        </div>
+        <button type="button" id="btn-close-llm-modal" class="btn-icon-circle" aria-label="Close LLM modal">
+          <i data-lucide="x" style="width:14px;height:14px;"></i>
+        </button>
+      </div>
 
-        const chatWindow = document.getElementById('chat-window');
-        const errorBox = document.getElementById('error-box');
-        const errorMessage = document.getElementById('error-message');
+      <div class="llm-modal-body">
+        <!-- Active Provider Status Card -->
+        <div class="llm-status-banner">
+          <div style="display:flex;align-items:center;gap:8px;">
+            <span class="status-dot-pulse"></span>
+            <span style="font-size:0.8rem;color:var(--text-secondary);">Current Active Engine:</span>
+            <strong id="llm-active-name" style="color:var(--accent-cyan);">Intelligent Neural Engine (Local Grounded)</strong>
+          </div>
+          <span id="llm-active-model-tag" class="llm-model-tag">srm-career-catalyst-neural-v2</span>
+        </div>
 
-        // --- Helper: Display Messages ---
-        function addMessage(sender, text, isHtml = false) {
-            const bubble = document.createElement('div');
-            bubble.className = `chat-bubble ${sender === 'user' ? 'chat-user' : 'chat-bot'}`;
-            const content = document.createElement('div'); // Always use a content div
-            content.className = 'markdown-content'; // Apply class for potential markdown
+        <!-- Provider Selection Tabs -->
+        <div class="llm-provider-tabs" role="tablist">
+          <button type="button" class="llm-tab-btn active" data-provider="neural_local">🧠 Neural Local</button>
+          <button type="button" class="llm-tab-btn" data-provider="gemini">⚡ Google Gemini</button>
+          <button type="button" class="llm-tab-btn" data-provider="openai">🤖 OpenAI</button>
+          <button type="button" class="llm-tab-btn" data-provider="groq">🚀 Groq LPU</button>
+          <button type="button" class="llm-tab-btn" data-provider="ollama">💻 Ollama Local</button>
+        </div>
 
-            if (isHtml) {
-                 try {
-                     content.innerHTML = marked.parse(text);
-                 } catch (e) {
-                     console.error("Markdown parsing error:", e);
-                     content.textContent = text; // Fallback to plain text
-                 }
-            } else {
-                content.textContent = text;
-            }
+        <!-- Provider Details Form -->
+        <div class="llm-form-container">
+          <div id="llm-provider-desc" class="llm-provider-desc">
+            Zero-latency, zero-cost deterministic synthesis with all 18 prompt engineering frameworks. 100% offline & privacy-safe.
+          </div>
 
-            bubble.appendChild(content);
-            chatWindow.appendChild(bubble);
-            chatWindow.scrollTop = chatWindow.scrollHeight; // Auto-scroll to bottom
-            return content; // Return the content element for streaming updates
-        }
+          <div class="form-group" id="group-llm-api-key" style="display:none;">
+            <label for="llm-input-api-key">API Key <span style="color:var(--accent-coral);">*</span></label>
+            <div class="input-with-action">
+              <input type="password" id="llm-input-api-key" class="neu-textarea" placeholder="Paste your API key here (e.g. AIzaSy... or gsk_... or sk-...)">
+              <button type="button" id="btn-toggle-key-visibility" class="btn-icon-inside" title="Show/Hide API Key">
+                <i data-lucide="eye" style="width:14px;height:14px;"></i>
+              </button>
+            </div>
+            <span class="form-hint">Stored strictly in browser memory for this session. Never written to disk.</span>
+          </div>
 
-        // --- Helper: Toggle Loading State ---
-        function setLoading(isLoading) {
-            if (isLoading) {
-                buttonText.textContent = 'Analyzing...';
-                analyzeIcon.classList.add('hidden');
-                loadingSpinner.classList.remove('hidden');
-                analyzeButton.disabled = true;
-            } else {
-                buttonText.textContent = 'Analyze Resume';
-                analyzeIcon.classList.remove('hidden');
-                loadingSpinner.classList.add('hidden');
-                analyzeButton.disabled = false;
-            }
-        }
+          <div class="form-group" id="group-llm-model">
+            <label for="llm-select-model">Model ID</label>
+            <input type="text" id="llm-select-model" class="neu-textarea" value="srm-career-catalyst-neural-v2" placeholder="e.g. gemini-2.0-flash, gpt-4o-mini, llama-3.3-70b-versatile">
+          </div>
 
-        // --- Helper: Show/Hide Errors ---
-        async function showError(errorData) {
-            let message = "An unknown error occurred.";
-            if (errorData instanceof TypeError && (errorData.message.includes('NetworkError') || errorData.message.includes('Failed to fetch'))) {
-                message = "Network error: Could not connect to the backend server. Is it running at http://127.0.0.1:8000?";
-            }
-            else if (typeof errorData === 'string') {
-                message = errorData;
-            } else if (errorData.detail) {
-                if (Array.isArray(errorData.detail)) {
-                    message = errorData.detail.map(err => `${err.loc.join('->')}: ${err.msg}`).join('; ');
-                } else if (typeof errorData.detail === 'string') {
-                    message = errorData.detail;
-                }
-            } else if (errorData.message) {
-                message = errorData.message;
-            } else {
-                 try { message = JSON.stringify(errorData); } catch (e) { /* leave as unknown */ }
-            }
+          <div class="form-group" id="group-llm-endpoint" style="display:none;">
+            <label for="llm-input-endpoint">Custom Base URL (Optional)</label>
+            <input type="text" id="llm-input-endpoint" class="neu-textarea" placeholder="e.g. http://localhost:11434/v1">
+          </div>
 
-            errorMessage.textContent = message;
-            errorBox.classList.remove('hidden');
-            // Add error as plain text, not HTML
-            addMessage('bot', `Sorry, an error occurred: ${message}`, false);
-        }
-        function hideError() {
-            errorBox.classList.add('hidden');
-        }
+          <!-- Live Ping Test Result Box -->
+          <div id="llm-ping-result-box" class="llm-ping-result" style="display:none;">
+            <div style="display:flex;justify-content:space-between;align-items:center;">
+              <span id="llm-ping-status" style="font-weight:700;">Ping Test Passed</span>
+              <span id="llm-ping-latency" class="badge-latency">14.2 ms</span>
+            </div>
+            <p id="llm-ping-reply" style="margin:4px 0 0;font-size:0.78rem;color:var(--text-secondary);"></p>
+          </div>
+        </div>
+      </div>
 
-        // --- Main Event Listener for the Analyze Button ---
-        analyzeButton.addEventListener('click', async () => {
-            hideError();
+      <div class="llm-modal-footer">
+        <button type="button" id="btn-test-llm-ping" class="neu-btn btn-sm">
+          <i data-lucide="activity" style="width:14px;height:14px;"></i>
+          <span>Test Connection</span>
+        </button>
+        <button type="button" id="btn-activate-llm-provider" class="neu-btn neu-btn-primary btn-sm">
+          <i data-lucide="check" style="width:14px;height:14px;"></i>
+          <span>Activate Provider</span>
+        </button>
+      </div>
+    </div>
+  </div>
 
-            const jobDescription = jobDescriptionInput.value;
-            const resumeFile = resumeUploadInput.files[0];
+  <!-- Cyber Scanline Overlay for Maximalist Mode -->
+  <div class="cyber-scanline" id="cyber-scanline" aria-hidden="true"></div>
 
-            if (!jobDescription || !resumeFile) {
-                showError('Please provide both a job description and a resume file.');
-                return;
-            }
-            if (resumeFile.type !== 'application/pdf') {
-                showError('Please upload a PDF file.');
-                return;
-            }
+  <!-- Three.js Library CDN for WebGL Spatial 3D Scenes -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
 
-            setLoading(true);
-            addMessage('user', `Please analyze my resume (${resumeFile.name}) for this job description.`);
+  <!-- Application Logic -->
+  <script src="app.js"></script>
 
-            const formData = new FormData();
-            formData.append('resume_file', resumeFile);
-
-            // Create the initial bot bubble with a placeholder
-            const botContentElement = addMessage('bot', 'Analyzing...');
-
-            let fullResponse = "";
-
-            try {
-                const url = new URL('http://127.0.0.1:8000/analyze');
-                url.searchParams.append('job_description', jobDescription);
-
-                const response = await fetch(url, { method: 'POST', body: formData });
-
-                if (!response.ok) {
-                    let errorData;
-                    try { errorData = await response.json(); }
-                    catch (e) { errorData = { message: `Server error: ${response.status} ${response.statusText}` }; }
-                    throw errorData;
-                }
-
-                // Handle the response stream
-                const reader = response.body.pipeThrough(new TextDecoderStream()).getReader();
-                botContentElement.textContent = ''; // Clear placeholder
-
-                while (true) {
-                    const { value, done } = await reader.read();
-                    if (done) break;
-
-                    fullResponse += value;
-                    // --- ** THE FIX: Update plain text content during stream ** ---
-                    botContentElement.textContent = fullResponse + "..."; // Show plain text + indicator
-                    // --- ** END FIX ** ---
-                    chatWindow.scrollTop = chatWindow.scrollHeight; // Scroll as content grows
-                }
-
-                // --- ** THE FIX: Parse Markdown only ONCE after stream ends ** ---
-                try {
-                     botContentElement.innerHTML = marked.parse(fullResponse); // Render final HTML
-                } catch (e) {
-                     console.error("Final markdown parsing error:", e);
-                     botContentElement.textContent = fullResponse; // Fallback to plain text if parse fails
-                     showError(`Markdown parsing failed: ${e.message}`); // Show error to user
-                }
-                // --- ** END FIX ** ---
-                chatWindow.scrollTop = chatWindow.scrollHeight; // Scroll again after final render
-
-            } catch (err) {
-                console.error('Fetch error / Server error:', err);
-                showError(err);
-                 if (botContentElement && botContentElement.parentNode && botContentElement.parentNode.parentNode === chatWindow) {
-                     try { chatWindow.removeChild(botContentElement.parentNode); } catch (e) { /* Ignore */ }
-                 }
-            } finally {
-                setLoading(false);
-            }
-        });
-    </script>
 </body>
 </html>
-

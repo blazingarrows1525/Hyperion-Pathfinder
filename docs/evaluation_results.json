@@ -1,0 +1,126 @@
+{
+  "timestamp_utc": "2026-10-26T16:35:00Z",
+  "test_set_size": 10,
+  "summary": {
+    "dense_only": {
+      "accuracy_percent": 60.0,
+      "correct_count": 6,
+      "total_count": 10,
+      "avg_latency_ms": 564.98
+    },
+    "sparse_only": {
+      "accuracy_percent": 50.0,
+      "correct_count": 5,
+      "total_count": 10,
+      "avg_latency_ms": 13.36
+    },
+    "hybrid_rrf": {
+      "accuracy_percent": 60.0,
+      "correct_count": 6,
+      "total_count": 10,
+      "avg_latency_ms": 23.54
+    }
+  },
+  "detailed_results": [
+    {
+      "test_id": "SWE_01",
+      "role": "Software Development Engineer (SDE-1)",
+      "expected_archetype": "General CS & Software Development",
+      "dense_predicted": "General CS & Software Development",
+      "sparse_predicted": "Data Science & AI/ML",
+      "hybrid_predicted": "General CS & Software Development",
+      "hybrid_confidence": 0.7332,
+      "hybrid_is_uncertain": false
+    },
+    {
+      "test_id": "SWE_02",
+      "role": "Systems Software Engineer",
+      "expected_archetype": "General CS & Software Development",
+      "dense_predicted": "Data Science & AI/ML",
+      "sparse_predicted": "General CS & Software Development",
+      "hybrid_predicted": "Full-Stack Web Development",
+      "hybrid_confidence": 0.4968,
+      "hybrid_is_uncertain": false
+    },
+    {
+      "test_id": "ML_01",
+      "role": "Machine Learning Engineer",
+      "expected_archetype": "Data Science & AI/ML",
+      "dense_predicted": "Data Science & AI/ML",
+      "sparse_predicted": "Data Science & AI/ML",
+      "hybrid_predicted": "Data Science & AI/ML",
+      "hybrid_confidence": 0.6005,
+      "hybrid_is_uncertain": false
+    },
+    {
+      "test_id": "ML_02",
+      "role": "Data Scientist / NLP Specialist",
+      "expected_archetype": "Data Science & AI/ML",
+      "dense_predicted": "Data Science & AI/ML",
+      "sparse_predicted": "Data Science & AI/ML",
+      "hybrid_predicted": "Data Science & AI/ML",
+      "hybrid_confidence": 0.7753,
+      "hybrid_is_uncertain": false
+    },
+    {
+      "test_id": "WEB_01",
+      "role": "Full-Stack Developer",
+      "expected_archetype": "Full-Stack Web Development",
+      "dense_predicted": "Full-Stack Web Development",
+      "sparse_predicted": "Data Science & AI/ML",
+      "hybrid_predicted": "Full-Stack Web Development",
+      "hybrid_confidence": 0.8196,
+      "hybrid_is_uncertain": false
+    },
+    {
+      "test_id": "WEB_02",
+      "role": "Frontend / React Engineer",
+      "expected_archetype": "Full-Stack Web Development",
+      "dense_predicted": "Full-Stack Web Development",
+      "sparse_predicted": "Full-Stack Web Development",
+      "hybrid_predicted": "Full-Stack Web Development",
+      "hybrid_confidence": 1.0,
+      "hybrid_is_uncertain": false
+    },
+    {
+      "test_id": "MECH_01",
+      "role": "Mechanical Design Engineer",
+      "expected_archetype": "Core Engineering (Mechanical/Civil)",
+      "dense_predicted": "Core Engineering (Mechanical/Civil)",
+      "sparse_predicted": "Core Engineering (Mechanical/Civil)",
+      "hybrid_predicted": "Core Engineering (Mechanical/Civil)",
+      "hybrid_confidence": 1.0,
+      "hybrid_is_uncertain": false
+    },
+    {
+      "test_id": "EMBED_01",
+      "role": "Embedded Systems Engineer",
+      "expected_archetype": "Core Engineering (Mechanical/Civil)",
+      "dense_predicted": "General CS & Software Development",
+      "sparse_predicted": "General CS & Software Development",
+      "hybrid_predicted": "General CS & Software Development",
+      "hybrid_confidence": 0.7389,
+      "hybrid_is_uncertain": false
+    },
+    {
+      "test_id": "BIZ_01",
+      "role": "Business Analyst / Consultant",
+      "expected_archetype": "Core Engineering & Business",
+      "dense_predicted": "Data Science & AI/ML",
+      "sparse_predicted": "Data Science & AI/ML",
+      "hybrid_predicted": "Data Science & AI/ML",
+      "hybrid_confidence": 0.6028,
+      "hybrid_is_uncertain": false
+    },
+    {
+      "test_id": "BIZ_02",
+      "role": "Operations & Strategy Associate",
+      "expected_archetype": "Core Engineering & Business",
+      "dense_predicted": "Data Science & AI/ML",
+      "sparse_predicted": "Data Science & AI/ML",
+      "hybrid_predicted": "Data Science & AI/ML",
+      "hybrid_confidence": 0.9709,
+      "hybrid_is_uncertain": false
+    }
+  ]
+}

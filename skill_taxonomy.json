@@ -1,0 +1,258 @@
+{
+  "version": "1.0.0",
+  "updated_at": "2026-10-26",
+  "skills": [
+    {
+      "id": "python",
+      "canonical": "Python",
+      "category": "Programming Languages",
+      "aliases": ["python", "py", "python3", "python 3", "cpython"]
+    },
+    {
+      "id": "cpp",
+      "canonical": "C++",
+      "category": "Programming Languages",
+      "aliases": ["c++", "cpp", "cplusplus", "c/c++"]
+    },
+    {
+      "id": "c",
+      "canonical": "C",
+      "category": "Programming Languages",
+      "aliases": ["c language", "c programming", "ansi c"]
+    },
+    {
+      "id": "java",
+      "canonical": "Java",
+      "category": "Programming Languages",
+      "aliases": ["java", "jdk", "jvm", "core java", "java 8", "java 11", "java 17"]
+    },
+    {
+      "id": "csharp",
+      "canonical": "C#",
+      "category": "Programming Languages",
+      "aliases": ["c#", "csharp", "c sharp", ".net c#"]
+    },
+    {
+      "id": "javascript",
+      "canonical": "JavaScript",
+      "category": "Programming Languages",
+      "aliases": ["javascript", "js", "es6", "es6+", "ecmascript"]
+    },
+    {
+      "id": "typescript",
+      "canonical": "TypeScript",
+      "category": "Programming Languages",
+      "aliases": ["typescript", "ts"]
+    },
+    {
+      "id": "golang",
+      "canonical": "Go",
+      "category": "Programming Languages",
+      "aliases": ["go", "golang"]
+    },
+    {
+      "id": "sql",
+      "canonical": "SQL",
+      "category": "Databases",
+      "aliases": ["sql", "structured query language", "ansi sql"]
+    },
+    {
+      "id": "postgresql",
+      "canonical": "PostgreSQL",
+      "category": "Databases",
+      "aliases": ["postgresql", "postgres", "psql"]
+    },
+    {
+      "id": "mysql",
+      "canonical": "MySQL",
+      "category": "Databases",
+      "aliases": ["mysql"]
+    },
+    {
+      "id": "mongodb",
+      "canonical": "MongoDB",
+      "category": "Databases",
+      "aliases": ["mongodb", "mongo", "nosql mongodb"]
+    },
+    {
+      "id": "redis",
+      "canonical": "Redis",
+      "category": "Databases",
+      "aliases": ["redis", "in-memory cache", "redis cache"]
+    },
+    {
+      "id": "pytorch",
+      "canonical": "PyTorch",
+      "category": "AI/ML Frameworks",
+      "aliases": ["pytorch", "torch"]
+    },
+    {
+      "id": "tensorflow",
+      "canonical": "TensorFlow",
+      "category": "AI/ML Frameworks",
+      "aliases": ["tensorflow", "tf", "tf2", "tf 2.0"]
+    },
+    {
+      "id": "scikit_learn",
+      "canonical": "scikit-learn",
+      "category": "AI/ML Frameworks",
+      "aliases": ["scikit-learn", "sklearn", "scikit learn"]
+    },
+    {
+      "id": "pandas",
+      "canonical": "Pandas",
+      "category": "AI/ML Frameworks",
+      "aliases": ["pandas", "pd"]
+    },
+    {
+      "id": "numpy",
+      "canonical": "NumPy",
+      "category": "AI/ML Frameworks",
+      "aliases": ["numpy", "np"]
+    },
+    {
+      "id": "opencv",
+      "canonical": "OpenCV",
+      "category": "AI/ML Frameworks",
+      "aliases": ["opencv", "cv2"]
+    },
+    {
+      "id": "nlp",
+      "canonical": "Natural Language Processing",
+      "category": "AI/ML Frameworks",
+      "aliases": ["nlp", "natural language processing", "text mining", "spacy", "nltk", "transformers", "huggingface"]
+    },
+    {
+      "id": "react",
+      "canonical": "React",
+      "category": "Web Frameworks",
+      "aliases": ["react", "react.js", "reactjs", "react native"]
+    },
+    {
+      "id": "nodejs",
+      "canonical": "Node.js",
+      "category": "Web Frameworks",
+      "aliases": ["node.js", "nodejs", "node"]
+    },
+    {
+      "id": "express",
+      "canonical": "Express.js",
+      "category": "Web Frameworks",
+      "aliases": ["express", "express.js", "expressjs"]
+    },
+    {
+      "id": "fastapi",
+      "canonical": "FastAPI",
+      "category": "Web Frameworks",
+      "aliases": ["fastapi", "fast api"]
+    },
+    {
+      "id": "docker",
+      "canonical": "Docker",
+      "category": "Cloud & DevOps",
+      "aliases": ["docker", "containerization", "containers"]
+    },
+    {
+      "id": "kubernetes",
+      "canonical": "Kubernetes",
+      "category": "Cloud & DevOps",
+      "aliases": ["kubernetes", "k8s"]
+    },
+    {
+      "id": "aws",
+      "canonical": "Amazon Web Services (AWS)",
+      "category": "Cloud & DevOps",
+      "aliases": ["aws", "amazon web services", "s3", "ec2", "lambda"]
+    },
+    {
+      "id": "azure",
+      "canonical": "Microsoft Azure",
+      "category": "Cloud & DevOps",
+      "aliases": ["azure", "microsoft azure", "azure cloud"]
+    },
+    {
+      "id": "git",
+      "canonical": "Git & Version Control",
+      "category": "Cloud & DevOps",
+      "aliases": ["git", "github", "gitlab", "version control"]
+    },
+    {
+      "id": "ci_cd",
+      "canonical": "CI/CD Pipelines",
+      "category": "Cloud & DevOps",
+      "aliases": ["ci/cd", "ci-cd", "continuous integration", "github actions", "jenkins"]
+    },
+    {
+      "id": "kafka",
+      "canonical": "Apache Kafka",
+      "category": "Cloud & DevOps",
+      "aliases": ["kafka", "apache kafka", "message broker", "event streaming"]
+    },
+    {
+      "id": "dsa",
+      "canonical": "Data Structures & Algorithms",
+      "category": "Core CS",
+      "aliases": ["dsa", "data structures", "algorithms", "algorithmic problem solving", "dynamic programming", "graphs", "trees"]
+    },
+    {
+      "id": "oop",
+      "canonical": "Object-Oriented Programming (OOP)",
+      "category": "Core CS",
+      "aliases": ["oop", "oops", "object oriented programming", "solid principles", "design patterns"]
+    },
+    {
+      "id": "dbms",
+      "canonical": "Database Management Systems (DBMS)",
+      "category": "Core CS",
+      "aliases": ["dbms", "database management", "rdbms", "normalization", "acid properties"]
+    },
+    {
+      "id": "os",
+      "canonical": "Operating Systems & Linux",
+      "category": "Core CS",
+      "aliases": ["operating systems", "os", "linux", "unix", "posix", "bash", "shell scripting"]
+    },
+    {
+      "id": "networks",
+      "canonical": "Computer Networks",
+      "category": "Core CS",
+      "aliases": ["computer networks", "networking", "tcp/ip", "http/https", "dns", "sockets"]
+    },
+    {
+      "id": "autocad",
+      "canonical": "AutoCAD",
+      "category": "Engineering Tools",
+      "aliases": ["autocad", "cad", "2d cad"]
+    },
+    {
+      "id": "solidworks",
+      "canonical": "SolidWorks",
+      "category": "Engineering Tools",
+      "aliases": ["solidworks", "solid works", "3d modeling cad"]
+    },
+    {
+      "id": "embedded_c",
+      "canonical": "Embedded C / Microcontrollers",
+      "category": "Engineering Tools",
+      "aliases": ["embedded c", "microcontrollers", "arduino", "stm32", "arm cortex", "iot", "firmware"]
+    },
+    {
+      "id": "matlab",
+      "canonical": "MATLAB & Simulink",
+      "category": "Engineering Tools",
+      "aliases": ["matlab", "simulink"]
+    },
+    {
+      "id": "ansys",
+      "canonical": "ANSYS & FEA",
+      "category": "Engineering Tools",
+      "aliases": ["ansys", "fea", "finite element analysis", "cfd"]
+    },
+    {
+      "id": "analytics_bi",
+      "canonical": "Business Analytics & BI",
+      "category": "Business & Analytics",
+      "aliases": ["power bi", "tableau", "excel", "advanced excel", "business intelligence", "dashboards"]
+    }
+  ]
+}

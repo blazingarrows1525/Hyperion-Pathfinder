@@ -1,0 +1,44 @@
+{
+  "rubric_id": "SRM-ALIGN-v1.0",
+  "version": "1.0.0",
+  "name": "Deterministic Resume-to-Job Alignment Rubric",
+  "total_points": 100,
+  "disclaimer": "This score represents deterministic textual and evidence alignment between the candidate resume and target job requirements. It does not measure innate ability, placement probability, or hiring guarantees.",
+  "components": [
+    {
+      "key": "required_skills",
+      "name": "Required Technical Skills Coverage",
+      "weight": 0.35,
+      "max_points": 35,
+      "description": "Ratio of required technical skills present in the resume with demonstrable evidence."
+    },
+    {
+      "key": "project_evidence",
+      "name": "Project & Practical Implementation Evidence",
+      "weight": 0.25,
+      "max_points": 25,
+      "description": "Evaluation of whether skills are contextualized in concrete projects, GitHub repositories, or deliverables."
+    },
+    {
+      "key": "domain_responsibilities",
+      "name": "Role Domain & Responsibility Alignment",
+      "weight": 0.20,
+      "max_points": 20,
+      "description": "Semantic alignment between candidate experience descriptions and target job duties."
+    },
+    {
+      "key": "metrics_density",
+      "name": "Quantified Achievement & Impact Metrics",
+      "weight": 0.10,
+      "max_points": 10,
+      "description": "Presence of quantifiable business or technical metrics (percentages, throughput, latency, revenue, scale)."
+    },
+    {
+      "key": "completeness_readability",
+      "name": "Structure, Completeness & Readability",
+      "weight": 0.10,
+      "max_points": 10,
+      "description": "Presence of core resume sections (Education, Projects, Skills, Experience) and clean typographical formatting."
+    }
+  ]
+}

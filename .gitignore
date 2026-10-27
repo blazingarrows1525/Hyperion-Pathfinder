@@ -2,10 +2,12 @@
 venv/
 env/
 pycache/
+__pycache__/
 *.pyc
+*.log
 .env
 data/
 processed_data/
 *.png
 .DS_Store
-Resumes/
+Resumes/

@@ -1,0 +1,26 @@
+{
+  "dataset_version": "2.0.0",
+  "created_at_utc": "2026-10-26T21:55:00Z",
+  "source_count": 226,
+  "valid_document_count": 224,
+  "degraded_document_count": 2,
+  "degraded_documents": [
+    "DHRUV SRIVASTAVA RESUME.pdf",
+    "SOUMIL SAHA_Doc.pdf"
+  ],
+  "embedding_model_id": "sentence-transformers/all-MiniLM-L6-v2",
+  "embedding_dimension": 384,
+  "max_seq_length": 256,
+  "index_type": "IndexFlatL2",
+  "index_metric": "L2_Squared",
+  "is_vector_normalized": true,
+  "total_indexed_vectors": 226,
+  "archetype_distribution": {
+    "General CS & Software Development": 88,
+    "Data Science & AI/ML": 53,
+    "Core Engineering (Mechanical/Civil)": 37,
+    "Full-Stack Web Development": 31,
+    "Core Engineering & Business": 17
+  },
+  "provenance": "SRM Institute of Science and Technology alumni placed resumes corpus"
+}

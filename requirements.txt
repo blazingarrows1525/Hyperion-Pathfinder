@@ -6,9 +6,12 @@ langgraph
 langchain
 azure-ai-inference
 azure-core
+openai>=1.0.0
 sentence-transformers
 faiss-cpu
+rank-bm25
 pypdf
 pandas
 numpy
 torch
+scikit-learn

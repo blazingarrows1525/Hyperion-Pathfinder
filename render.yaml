@@ -8,3 +8,11 @@ services:
     envVars:
       - key: PYTHON_VERSION
         value: 3.10.12
+      - key: OPENAI_API_KEY
+        sync: false
+      - key: OPENAI_BASE_URL
+        value: https://api.openai.com/v1
+      - key: LLM_MODEL
+        value: gpt-4o-mini
+      - key: ENABLE_RERANKER
+        value: "false"
