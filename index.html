@@ -4,7 +4,7 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Resume Checker — Placement Intelligence & 3D Interactive Genome</title>
-  <meta name="description" content="Turn your resume into an institutional placement strategy. Benchmark against 1,200+ placed alumni profiles across 5 neural career archetypes using FAISS and LangGraph.">
+  <meta name="description" content="Turn your resume into an institutional placement strategy. Benchmark against 226 verified benchmark profiles across 5 neural career archetypes using FAISS and LangGraph.">
   
   <!-- Modern Stylesheet -->
   <link rel="stylesheet" href="styles.css">
@@ -126,7 +126,7 @@
               </h1>
 
               <p class="hero-subtitle">
-                Compare your resume directly against target job descriptions and, when configured, benchmark against patterns from <strong>1,200+ successfully placed alumni</strong> across five neural career archetypes. Get actionable diagnostic feedback grounded in real hiring outcomes.
+                Compare your resume directly against target job descriptions and, when configured, benchmark against patterns from <strong>226 verified benchmark alumni profiles</strong> across five neural career archetypes. Get actionable diagnostic feedback grounded in real hiring outcomes.
               </p>
 
               <div class="hero-cta-group">
@@ -214,7 +214,7 @@
                 <!-- 3D Engine Diagnostics Badge -->
                 <div class="canvas-engine-badge" id="canvas-engine-badge">
                   <span class="pulse-indicator"></span>
-                  <span id="canvas-engine-text">WebGL: 60 FPS • 42 Nodes</span>
+                  <span id="canvas-engine-text">WebGL Engine • 18 Skill Nodes Active</span>
                 </div>
               </div>
 
@@ -259,7 +259,7 @@
                 <div class="specular-glare"></div>
                 <div class="card-top-row spatial-layer-1">
                   <div style="display:flex;align-items:center;gap:8px;">
-                    <span style="width:8px;height:8px;border-radius:50%;background:var(--accent-white);box-shadow:0 0 8px rgba(255,255,255,0.8);"></span>
+                    <span style="width:8px;height:8px;border-radius:50%;background:var(--accent-blue);box-shadow:0 0 8px var(--accent-blue);"></span>
                     <strong style="font-size:0.85rem;color:#fff;">Diagnostic Preview</strong>
                   </div>
                   <span class="sample-data-badge">Sample diagnostic layout</span>
@@ -271,9 +271,9 @@
                     <svg class="gauge-svg" width="160" height="160" viewBox="0 0 160 160">
                       <defs>
                         <linearGradient id="heroGaugeGrad" x1="0%" y1="0%" x2="100%" y2="100%">
-                          <stop offset="0%" stop-color="#FFFFFF" />
-                          <stop offset="50%" stop-color="#E4E4E7" />
-                          <stop offset="100%" stop-color="#A1A1AA" />
+                          <stop offset="0%" stop-color="var(--accent-blue)" />
+                          <stop offset="50%" stop-color="var(--accent-cyan)" />
+                          <stop offset="100%" stop-color="var(--accent-violet)" />
                         </linearGradient>
                       </defs>
                       <circle class="gauge-bg-circle" cx="80" cy="80" r="66" />
@@ -331,7 +331,7 @@
               <i data-lucide="building-2" style="width:13px;height:13px;"></i>
               <span>Top Placement Recruiters &amp; Career Destinations</span>
             </span>
-            <p class="marquee-subtitle">1,200+ candidates placed in Super Dream &amp; Dream roles across industry leaders</p>
+            <p class="marquee-subtitle">226 verified benchmark profiles across industry leaders</p>
           </div>
         </div>
 
@@ -545,7 +545,7 @@
               <div class="step-number-badge step-2-badge">2</div>
               <h3 class="step-title">Semantic Match</h3>
               <p class="step-desc">
-                The target Job Description is embedded into a dense 384-dimensional vector via <code>all-MiniLM-L6-v2</code> and compared against our FAISS index of 1,200+ placed alumni profiles.
+                The target Job Description is embedded into a dense 384-dimensional vector via <code>all-MiniLM-L6-v2</code> and compared against our FAISS index of 226 verified benchmark alumni profiles.
               </p>
             </li>
 
@@ -1082,7 +1082,7 @@
               The 5 Alumni Career Archetypes
             </h2>
             <p style="color:var(--text-secondary);font-size:1rem;line-height:1.6;">
-              Discovered from 1,200+ benchmark placed alumni resumes through K-Means clustering and TF-IDF feature analysis. Select any archetype to inspect its grounded skill profile or compare two paths.
+              Discovered from 226 benchmark placed alumni resumes (224 valid, 2 degraded) through K-Means clustering and TF-IDF feature analysis. Select any archetype to inspect its grounded skill profile or compare two paths.
             </p>
           </div>
 
@@ -1469,16 +1469,17 @@
                 <i data-lucide="chevron-down" style="width:18px;height:18px;"></i>
               </button>
               <div class="faq-answer-panel">
-                Traditional ATS systems simply count keyword frequency between your resume and a job description. Resume Checker uses dense neural embeddings (<code>all-MiniLM-L6-v2</code>) and FAISS indexing across 1,200+ actual resumes of successfully placed candidates to compare metric structures, technical depth, and proven career archetypes.
+                Traditional ATS systems simply count keyword frequency between your resume and a job description. Resume Checker uses dense neural embeddings (<code>all-MiniLM-L6-v2</code>) and FAISS indexing across 226 verified benchmark alumni resumes to compare metric structures, technical depth, and proven career archetypes.
               </div>
             </div>
 
             <div class="faq-item">
               <button class="faq-question-btn" type="button">
                 <span>Does an archetype fit or high score guarantee an interview or offer?</span>
-                <div class="faq-answer-panel">
-                  No. The placement alignment score is a comparative diagnostic indicator, not a statistical guarantee of hiring. Interview outcomes depend on live coding assessments, academic credentials, hiring bar variations, and interviewer evaluations.
-                </div>
+                <i data-lucide="chevron-down" style="width:18px;height:18px;"></i>
+              </button>
+              <div class="faq-answer-panel">
+                No. The placement alignment score is a comparative diagnostic indicator, not a statistical guarantee of hiring. Interview outcomes depend on live coding assessments, academic credentials, hiring bar variations, and interviewer evaluations.
               </div>
             </div>
 

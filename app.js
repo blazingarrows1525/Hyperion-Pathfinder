@@ -532,7 +532,7 @@ const archetypesDatabase = [
     accentColor: 'var(--arch-0-color)',
     medianCtc: '₹9.8 LPA',
     placementRate: '88%',
-    sampleAlumniCount: '210+ placed',
+    sampleAlumniCount: '17 verified profiles',
     summary: 'Focuses on analytical modeling, business operations, tech consulting, and supply chain management. Profiles showcase cross-functional data synthesis and enterprise tooling.',
     keySkills: ['Business Analytics', 'SQL / PowerBI', 'Operations Research', 'Financial Modeling', 'Excel / VBA', 'Strategic Consulting', 'ERP Systems', 'Scrum / Agile'],
     typicalRoles: ['Management Trainee', 'Technology Consultant', 'Business Analyst', 'Operations Associate', 'Product Analyst'],
@@ -553,7 +553,7 @@ Requirements:
     accentColor: 'var(--arch-1-color)',
     medianCtc: '₹18.5 LPA',
     placementRate: '94%',
-    sampleAlumniCount: '340+ placed',
+    sampleAlumniCount: '53 verified profiles',
     summary: 'Heavy focus on machine learning algorithms, deep neural architectures, natural language processing, computer vision, and mathematical modeling.',
     keySkills: ['Python', 'PyTorch / TensorFlow', 'HuggingFace Transformers', 'Scikit-Learn', 'Vector DBs (FAISS)', 'Computer Vision (OpenCV)', 'Data Pipelines (Pandas)', 'MLOps / Docker'],
     typicalRoles: ['Machine Learning Engineer', 'Data Scientist', 'AI Research Associate', 'NLP Specialist', 'Quant Analyst'],
@@ -574,7 +574,7 @@ Requirements:
     accentColor: 'var(--arch-2-color)',
     medianCtc: '₹16.0 LPA',
     placementRate: '95%',
-    sampleAlumniCount: '480+ placed',
+    sampleAlumniCount: '88 verified profiles',
     summary: 'The classical software engineering archetype. Grounded in solid Data Structures, Algorithms, Object-Oriented Design, operating systems internals, and distributed databases.',
     keySkills: ['Data Structures & Algorithms', 'C++ / Java', 'Object-Oriented Design', 'Operating Systems', 'DBMS & Indexing', 'Multithreading', 'Linux Internals', 'Git'],
     typicalRoles: ['Software Development Engineer I (SDE-1)', 'Systems Engineer', 'Backend Developer', 'Core Platforms Engineer'],
@@ -595,7 +595,7 @@ Requirements:
     accentColor: 'var(--arch-3-color)',
     medianCtc: '₹14.2 LPA',
     placementRate: '96%',
-    sampleAlumniCount: '390+ placed',
+    sampleAlumniCount: '31 verified profiles',
     summary: 'End-to-end product engineering spanning modern responsive frontend architectures, REST/GraphQL APIs, relational and NoSQL databases, and cloud deployment.',
     keySkills: ['React / Next.js', 'Node.js / Express', 'TypeScript', 'FastAPI / Python', 'PostgreSQL / MongoDB', 'Redis Caching', 'Docker / CI/CD', 'Tailwind CSS'],
     typicalRoles: ['Full-Stack Engineer', 'Frontend Specialist', 'API Engineer', 'Product Developer', 'DevOps / Cloud Associate'],
@@ -615,7 +615,7 @@ Requirements:
     accentColor: 'var(--arch-4-color)',
     medianCtc: '₹8.2 LPA',
     placementRate: '84%',
-    sampleAlumniCount: '190+ placed',
+    sampleAlumniCount: '37 verified profiles',
     summary: 'Physical engineering systems, embedded hardware integration, CAD/CAM design, finite element modeling, IoT sensor networks, and mechatronics.',
     keySkills: ['Embedded C', 'AutoCAD / SolidWorks', 'MATLAB / Simulink', 'Microcontrollers (ARM/ESP32)', 'IoT Protocols (MQTT)', 'FEA / ANSYS', 'Robotics', 'Mechatronics'],
     typicalRoles: ['Embedded Systems Engineer', 'Robotics Specialist', 'CAE / Design Analyst', 'Hardware Firmware Developer', 'IoT Systems Architect'],
@@ -955,10 +955,124 @@ const PLACEMENT_SKILLS_3D = [
   { name: "MLOps & Model Deployment", tier: "Super Dream", match: "97.5%", companies: "NVIDIA, Google, Adobe", archetype: "AI/ML Systems", color: 0xFF007F, radius: 22, pos: [-30, 110, 60] }
 ];
 
+// Central Three.js Scene Controller Contract
+const sceneController = {
+  pauseReasons: new Set(),
+  isLifecycleBound: false,
+  resizeObserver: null,
+
+  init(canvas, wrapper) {
+    if (!this.isLifecycleBound && wrapper) {
+      this.bindLifecycle(canvas, wrapper);
+    }
+    init3DScene();
+  },
+
+  bindLifecycle(canvas, wrapper) {
+    this.isLifecycleBound = true;
+
+    // 1. Tab visibility listener
+    document.addEventListener('visibilitychange', () => {
+      if (document.hidden) {
+        this.pause('hidden');
+      } else {
+        this.resume('hidden');
+      }
+    });
+
+    // 2. Offscreen scroll observer
+    if ('IntersectionObserver' in window && wrapper) {
+      const observer = new IntersectionObserver((entries) => {
+        entries.forEach(entry => {
+          if (entry.isIntersecting) {
+            this.resume('offscreen');
+          } else {
+            this.pause('offscreen');
+          }
+        });
+      }, { threshold: 0.05 });
+      observer.observe(wrapper);
+    }
+
+    // 3. WebGL Context lost / restored
+    if (canvas) {
+      canvas.addEventListener('webglcontextlost', (e) => {
+        e.preventDefault();
+        console.warn('WebGL context lost. Pausing 3D constellation.');
+        this.pause('contextlost');
+      });
+      canvas.addEventListener('webglcontextrestored', () => {
+        console.info('WebGL context restored. Re-initialising scene.');
+        this.resume('contextlost');
+        cleanup3DScene();
+        init3DScene();
+      });
+    }
+
+    // 4. ResizeObserver on wrapper
+    if ('ResizeObserver' in window && wrapper) {
+      let rTimer = null;
+      this.resizeObserver = new ResizeObserver(() => {
+        if (rTimer) clearTimeout(rTimer);
+        rTimer = setTimeout(() => {
+          onCanvasResize();
+        }, 120);
+      });
+      this.resizeObserver.observe(wrapper);
+    }
+  },
+
+  pause(reason) {
+    this.pauseReasons.add(reason);
+    isRenderingActive = false;
+    if (animFrameId) {
+      cancelAnimationFrame(animFrameId);
+      animFrameId = null;
+    }
+  },
+
+  resume(reason) {
+    this.pauseReasons.delete(reason);
+    if (this.pauseReasons.size === 0 && appState.motionMode !== 'reduced') {
+      isRenderingActive = true;
+      if (typeof window._sceneAnimate === 'function' && !animFrameId) {
+        animFrameId = requestAnimationFrame(window._sceneAnimate);
+      }
+    }
+  },
+
+  setTheme(theme) {
+    if (scene && renderer) {
+      const isCeramic = theme === 'ceramic';
+      const fogColor = isCeramic ? 0xF8F9FA : 0x060608;
+      if (scene.fog) scene.fog.color.setHex(fogColor);
+      renderer.setClearColor(fogColor, isCeramic ? 0.35 : 0.0);
+    }
+  },
+
+  resetCamera() {
+    reset3DCamera();
+  },
+
+  dispose() {
+    this.pause('disposed');
+    if (this.resizeObserver) {
+      this.resizeObserver.disconnect();
+      this.resizeObserver = null;
+    }
+    cleanup3DScene();
+  }
+};
+window.sceneController = sceneController;
+
 function init3DScene() {
   const canvas = document.getElementById('spatial-hero-canvas');
   const wrapper = document.getElementById('spatial-canvas-wrapper');
   if (!canvas || !wrapper) return;
+
+  if (!sceneController.isLifecycleBound) {
+    sceneController.bindLifecycle(canvas, wrapper);
+  }
 
   // Handle Reduced Motion
   if (appState.motionMode === 'reduced') {
@@ -1189,6 +1303,7 @@ function init3DScene() {
 
   // Animation Loop
   function animate() {
+    window._sceneAnimate = animate;
     if (!isRenderingActive) return;
     animFrameId = requestAnimationFrame(animate);
 
@@ -1331,6 +1446,9 @@ function create3DModeOverlays(targetScene, isMinimalist) {
 }
 
 function init3DModeButtons() {
+  if (window._3dButtonsInitialized) return;
+  window._3dButtonsInitialized = true;
+
   const modeButtons = document.querySelectorAll('.btn-3d-mode');
   modeButtons.forEach(btn => {
     btn.addEventListener('click', () => {
@@ -1457,13 +1575,79 @@ function onCanvasResize() {
   if (!wrapper || !camera || !renderer) return;
   const w = wrapper.clientWidth;
   const h = wrapper.clientHeight;
+  if (w <= 0 || h <= 0) return;
   camera.aspect = w / h;
   camera.updateProjectionMatrix();
+  renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 1.5));
   renderer.setSize(w, h);
 }
 
+function toggle3DAcceleration() {
+  if (appState.motionMode === 'reduced') {
+    showToast('Orbit acceleration disabled in reduced motion mode.');
+    return;
+  }
+  orbitSpeedMultiplier = orbitSpeedMultiplier === 1.0 ? 3.5 : 1.0;
+  const isAccelerated = orbitSpeedMultiplier > 1.0;
+  const btn = document.getElementById('btn-3d-accelerate');
+  if (btn) {
+    btn.classList.toggle('active', isAccelerated);
+    btn.setAttribute('aria-pressed', String(isAccelerated));
+  }
+  showToast(isAccelerated ? '3D Orbit Warp Activated (3.5x Speed)' : '3D Orbit Normal Speed (1.0x)');
+}
+
+function focusNextArchetypeNode() {
+  if (!spatialNodes || spatialNodes.length === 0) return;
+  currentFocusNodeIdx = (currentFocusNodeIdx + 1) % spatialNodes.length;
+  const targetNode = spatialNodes[currentFocusNodeIdx];
+  if (!targetNode) return;
+
+  const pos = targetNode.userData.targetPos || [targetNode.position.x, targetNode.position.y, targetNode.position.z];
+  targetX = pos[0] * 0.6;
+  targetY = -pos[1] * 0.6;
+
+  spatialNodes.forEach((n, idx) => {
+    if (idx === currentFocusNodeIdx) {
+      n.scale.set(1.4, 1.4, 1.4);
+      show3DNodeTooltip(n.userData.skill, pos);
+    } else {
+      n.scale.set(1.0, 1.0, 1.0);
+    }
+  });
+
+  const skillName = targetNode.userData.skill?.name || 'Skill Node';
+  showToast(`Focused Cluster Node: ${skillName}`);
+}
+
+function reset3DCamera() {
+  targetX = 0;
+  targetY = 0;
+  mouseX = 0;
+  mouseY = 0;
+  currentFocusNodeIdx = -1;
+  orbitSpeedMultiplier = 1.0;
+
+  if (camera) {
+    camera.position.set(0, 0, 520);
+    camera.lookAt(0, 0, 0);
+  }
+
+  const accBtn = document.getElementById('btn-3d-accelerate');
+  if (accBtn) {
+    accBtn.classList.remove('active');
+    accBtn.setAttribute('aria-pressed', 'false');
+  }
+
+  spatialNodes.forEach(n => n.scale.set(1.0, 1.0, 1.0));
+  const tooltip = document.getElementById('canvas-3d-tooltip');
+  if (tooltip) tooltip.style.display = 'none';
+
+  showToast('Reset 3D Constellation Camera to Origin');
+}
+
 function update3DSceneAesthetic(designheadMode) {
-  // Re-init 3D scene with the new aesthetic parameters
+  cleanup3DScene();
   init3DScene();
 }
 
@@ -1566,12 +1750,16 @@ function init2DFallbackConstellation(canvas, wrapper) {
 // ==============================================================================
 function init3DCardTilt() {
   if (appState.motionMode === 'reduced') return;
+  const canHover = window.matchMedia('(hover: hover) and (pointer: fine)').matches;
+  if (!canHover) return;
 
-  const tiltCards = document.querySelectorAll(
-    '.card-3d-tilt, .spatial-tilt-card, .neu-card, .company-card, .archetype-chip-card, .analyzer-form-card, .analyzer-results-card'
-  );
+  // Apply 3D perspective tilt only to designated showcase and hero cards
+  const tiltCards = document.querySelectorAll('.card-3d-tilt, .spatial-tilt-card, #hero-diagnostic-card');
 
   tiltCards.forEach(card => {
+    if (card.dataset.tiltBound) return;
+    card.dataset.tiltBound = 'true';
+
     // Inject specular reflection glare if not present
     let glare = card.querySelector('.specular-glare');
     if (!glare) {
@@ -1587,36 +1775,47 @@ function init3DCardTilt() {
       const centerX = rect.width / 2;
       const centerY = rect.height / 2;
 
-      const rotateX = ((y - centerY) / centerY) * -10;
-      const rotateY = ((x - centerX) / centerX) * 10;
+      // Restrained clamp (max ±3.5 degrees) for stable readability
+      const rawX = ((y - centerY) / centerY) * -4;
+      const rawY = ((x - centerX) / centerX) * 4;
+      const rotateX = Math.max(-3.5, Math.min(3.5, rawX));
+      const rotateY = Math.max(-3.5, Math.min(3.5, rawY));
 
-      card.style.transform = `perspective(1000px) rotateX(${rotateX.toFixed(2)}deg) rotateY(${rotateY.toFixed(2)}deg) translateZ(8px)`;
+      card.style.transform = `perspective(1000px) rotateX(${rotateX.toFixed(2)}deg) rotateY(${rotateY.toFixed(2)}deg) translateZ(6px)`;
 
       // Dynamic Specular Light Glare
       const glareX = (x / rect.width) * 100;
       const glareY = (y / rect.height) * 100;
-      glare.style.background = `radial-gradient(circle 280px at ${glareX}% ${glareY}%, rgba(255, 255, 255, 0.16) 0%, transparent 65%)`;
+      glare.style.background = `radial-gradient(circle 280px at ${glareX}% ${glareY}%, rgba(255, 255, 255, 0.18) 0%, transparent 65%)`;
       glare.style.opacity = '1';
-    });
+    }, { passive: true });
 
     card.addEventListener('mouseleave', () => {
       card.style.transform = 'perspective(1000px) rotateX(0deg) rotateY(0deg) translateZ(0px)';
-      glare.style.opacity = '0';
+      if (glare) glare.style.opacity = '0';
     });
   });
 }
 
 function initHoverButtons() {
   if (appState.motionMode === 'reduced') return;
+  const canHover = window.matchMedia('(hover: hover) and (pointer: fine)').matches;
+  if (!canHover) return;
 
-  const magneticBtns = document.querySelectorAll('.btn-magnetic-glow, .btn-icon-circle, .neu-btn');
+  const magneticBtns = document.querySelectorAll('.btn-magnetic-glow, .btn-icon-circle');
   magneticBtns.forEach(btn => {
+    if (btn.dataset.magneticBound) return;
+    btn.dataset.magneticBound = 'true';
+
     btn.addEventListener('mousemove', (e) => {
       const rect = btn.getBoundingClientRect();
       const x = e.clientX - rect.left - rect.width / 2;
       const y = e.clientY - rect.top - rect.height / 2;
-      btn.style.transform = `translate(${x * 0.18}px, ${y * 0.18}px) scale(1.02)`;
-    });
+      // Clamped gentle magnetic pull (max ±4px)
+      const clampedX = Math.max(-4.5, Math.min(4.5, x * 0.12));
+      const clampedY = Math.max(-4.5, Math.min(4.5, y * 0.12));
+      btn.style.transform = `translate(${clampedX.toFixed(1)}px, ${clampedY.toFixed(1)}px) scale(1.015)`;
+    }, { passive: true });
 
     btn.addEventListener('mouseleave', () => {
       btn.style.transform = 'translate(0px, 0px) scale(1)';
@@ -2048,9 +2247,8 @@ function renderSafeMarkdown(rawText, isDemo) {
 
   if (typeof marked !== 'undefined') {
     try {
-      // Escape raw scriptable HTML
-      const sanitized = cleanMarkdown.replace(/<script\b[^<]*(?:(?!<\/script>)<[^<]*)*<\/script>/gi, '');
-      markdownArea.innerHTML = marked.parse(sanitized);
+      const parsed = marked.parse(cleanMarkdown);
+      markdownArea.innerHTML = sanitizeHtmlSafe(parsed);
     } catch (e) {
       markdownArea.textContent = cleanMarkdown;
     }
@@ -2059,13 +2257,47 @@ function renderSafeMarkdown(rawText, isDemo) {
   }
 }
 
-function updateScoreRing(text) {
-  const scoreElem = document.getElementById('mini-score-val');
-  const ring = document.getElementById('mini-progress-ring');
+// Client-side DOM Sanitizer against scripts, iframes, inline event handlers, and data/javascript URIs
+function sanitizeHtmlSafe(dirtyHtml) {
+  if (!dirtyHtml) return '';
+  const parser = new DOMParser();
+  const doc = parser.parseFromString(dirtyHtml, 'text/html');
 
+  // Strip dangerous executable elements
+  const dangerousTags = ['script', 'style', 'object', 'embed', 'iframe', 'frame', 'link', 'meta'];
+  dangerousTags.forEach(tag => {
+    doc.querySelectorAll(tag).forEach(el => el.remove());
+  });
+
+  // Strip on* event attributes and javascript: URLs
+  const allElements = doc.querySelectorAll('*');
+  allElements.forEach(el => {
+    Array.from(el.attributes).forEach(attr => {
+      const name = attr.name.toLowerCase();
+      const val = attr.value.toLowerCase();
+      if (name.startsWith('on') || val.includes('javascript:') || val.includes('vbscript:') || val.includes('data:text/html')) {
+        el.removeAttribute(attr.name);
+      }
+    });
+  });
+
+  return doc.body.innerHTML;
+}
+
+function updateScoreRing(text) {
+  if (appState.reportData && typeof appState.reportData.deterministic_score === 'number') {
+    return updateScoreRingFromNumber(appState.reportData.deterministic_score);
+  }
   const match = text.match(/Score[^\d]*(\d{1,3})/i) || text.match(/(\d{1,2}|100)\s*\/\s*100/);
   const score = match && match[1] ? parseInt(match[1], 10) : 84;
+  updateScoreRingFromNumber(score);
+}
+
+function updateScoreRingFromNumber(score) {
+  score = Math.max(0, Math.min(100, Math.round(score)));
   appState.analyzer.extractedScore = score;
+  const scoreElem = document.getElementById('mini-score-val');
+  const ring = document.getElementById('mini-progress-ring');
 
   if (scoreElem) {
     scoreElem.textContent = `${score}`;
@@ -2179,6 +2411,11 @@ function populateSampleJdFromArchetype(id) {
   const arch = archetypesDatabase.find(a => a.id === id);
   const jdTextarea = document.getElementById('jd-textarea');
   if (arch && jdTextarea) {
+    if (jdTextarea.value.trim().length > 0 && jdTextarea.value.trim() !== arch.sampleJd.trim()) {
+      if (!confirm(`Replace your current Job Description with the sample JD for ${arch.name}?`)) {
+        return;
+      }
+    }
     jdTextarea.value = arch.sampleJd;
     appState.analyzer.jobDescription = arch.sampleJd;
     const charCounter = document.getElementById('jd-char-count');
@@ -2405,6 +2642,11 @@ function loadCompanyJd(companyId) {
   const company = companyDatabase.find(c => c.id === companyId);
   const jdTextarea = document.getElementById('jd-textarea');
   if (company && jdTextarea) {
+    if (jdTextarea.value.trim().length > 0 && jdTextarea.value.trim() !== company.sampleJd.trim()) {
+      if (!confirm(`Replace your current Job Description with the sample JD for ${company.name}?`)) {
+        return;
+      }
+    }
     jdTextarea.value = company.sampleJd;
     appState.analyzer.jobDescription = company.sampleJd;
     const charCounter = document.getElementById('jd-char-count');
@@ -2821,10 +3063,10 @@ function initNeumorphicWorkbench() {
       const lightOffset = Math.max(2, Math.round(depth * 0.75));
       const lightBlur = Math.round(depth * 1.8);
 
-      document.documentElement.style.setProperty(
-        '--neu-raised',
-        `${depth}px ${depth}px ${darkBlur}px var(--neu-shadow-dark), -${lightOffset}px -${lightOffset}px ${lightBlur}px var(--neu-shadow-light)`
-      );
+      const previewSurface = document.getElementById('neu-preview-surface');
+      if (previewSurface) {
+        previewSurface.style.boxShadow = `${depth}px ${depth}px ${darkBlur}px var(--neu-shadow-dark), -${lightOffset}px -${lightOffset}px ${lightBlur}px var(--neu-shadow-light)`;
+      }
     });
   }
 
@@ -3470,11 +3712,11 @@ ${text}
 function initVoiceAssistantController() {
   const orbBtn = document.getElementById('voice-orb-btn');
   const drawer = document.getElementById('voice-assistant-drawer');
-  const closeBtn = document.getElementById('voice-drawer-close');
+  const closeBtn = document.getElementById('voice-drawer-close-btn') || document.getElementById('voice-drawer-close');
   const recordBtn = document.getElementById('voice-record-btn');
   const applyBtn = document.getElementById('voice-apply-btn');
   const discardBtn = document.getElementById('voice-discard-btn');
-  const quickDictateBtn = document.getElementById('btn-quick-dictate');
+  const quickDictateBtn = document.getElementById('btn-quick-dictate-jd') || document.getElementById('btn-quick-dictate');
   const destSelect = document.getElementById('voice-dest-select');
   const localeSelect = document.getElementById('voice-locale-select');
 
@@ -4064,6 +4306,10 @@ function parseAndHydrateStructuredReport(streamBuffer) {
   try {
     const report = JSON.parse(match[1]);
     appState.reportData = report;
+
+    if (typeof report.deterministic_score === 'number') {
+      updateScoreRingFromNumber(report.deterministic_score);
+    }
 
     if (report.persona_review) {
       renderExecutiveReview(report.persona_review);
