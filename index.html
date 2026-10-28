@@ -28,6 +28,9 @@
   <div class="aurora-blur aurora-2" aria-hidden="true"></div>
   <div class="aurora-blur aurora-3" aria-hidden="true"></div>
 
+  <!-- Ambient Spatial Canvas for Full-Page 3D Depth -->
+  <canvas id="ambient-spatial-canvas" class="ambient-spatial-canvas" aria-hidden="true"></canvas>
+
   <!-- Main Application Wrapper -->
   <div class="app-wrapper">
 
@@ -89,6 +92,12 @@
         </button>
 
         <!-- Motion Preference Toggle -->
+        <!-- Spatial Audio Synthesizer Toggle -->
+        <button type="button" id="btn-sound-toggle" class="btn-sound-toggle" title="Toggle Spatial UI Synthesizer Audio" aria-label="Toggle UI synthesizer sound" aria-pressed="false">
+          <i data-lucide="volume-x" style="width:14px;height:14px;"></i>
+          <span id="sound-toggle-label">Sound: Off</span>
+        </button>
+
         <button id="btn-motion-toggle" class="btn-motion-toggle" title="Toggle Full / Reduced Motion" aria-label="Toggle motion mode">
           <i data-lucide="orbit" style="width:14px;height:14px;"></i>
           <span id="motion-mode-label">Motion: Full</span>
@@ -206,10 +215,31 @@
                     <i data-lucide="radar" style="width:13px;height:13px;"></i>
                     <span>Sonar Radar</span>
                   </button>
+                  <button type="button" class="btn-3d-mode" data-mode="warp" title="Hyper-Warp Speed Starfield">
+                    <i data-lucide="zap" style="width:13px;height:13px;"></i>
+                    <span>Hyper-Warp</span>
+                  </button>
                   <button type="button" id="btn-3d-burst" class="btn-3d-burst" title="Trigger Quantum Particle Burst Shockwave">
                     <i data-lucide="sparkles" style="width:13px;height:13px;"></i>
                     <span>Burst</span>
                   </button>
+                  <div class="spatial-zoom-controls">
+                    <button type="button" id="btn-3d-zoom-in" class="btn-3d-icon-sm" title="Zoom In (+)" aria-label="Zoom in 3D camera">
+                      <i data-lucide="zoom-in" style="width:12px;height:12px;"></i>
+                    </button>
+                    <button type="button" id="btn-3d-zoom-out" class="btn-3d-icon-sm" title="Zoom Out (-)" aria-label="Zoom out 3D camera">
+                      <i data-lucide="zoom-out" style="width:12px;height:12px;"></i>
+                    </button>
+                    <button type="button" id="btn-3d-reset-cam-stage" class="btn-3d-icon-sm" title="Reset Camera View" aria-label="Reset camera orientation">
+                      <i data-lucide="rotate-ccw" style="width:12px;height:12px;"></i>
+                    </button>
+                  </div>
+                </div>
+
+                <!-- 3D Drag & Zoom Hint -->
+                <div class="spatial-drag-hint" id="spatial-drag-hint" aria-hidden="true">
+                  <i data-lucide="move" style="width:12px;height:12px;"></i>
+                  <span>Drag 360° to rotate • Scroll to zoom • Click nodes</span>
                 </div>
 
                 <!-- 3D Engine Diagnostics Badge -->
@@ -1602,6 +1632,26 @@
                   <div class="neu-toggle-track">
                     <div class="neu-toggle-thumb"></div>
                   </div>
+                </div>
+              </div>
+
+              <!-- Control 4: Interactive 3D Lighting Vector Puck -->
+              <div class="neu-inset-panel" style="display:flex;flex-direction:column;gap:8px;">
+                <div style="display:flex;justify-content:space-between;align-items:center;">
+                  <span style="font-size:0.85rem;font-weight:600;color:var(--text-primary);display:flex;align-items:center;gap:6px;">
+                    <i data-lucide="sun" style="width:14px;height:14px;color:var(--accent-amber);"></i>
+                    <span>3D Light Vector Puck</span>
+                  </span>
+                  <span id="neu-light-angle-label" style="font-size:0.75rem;color:var(--accent-cyan);font-weight:700;">135° (NW)</span>
+                </div>
+                <div class="neu-light-puck-container" id="neu-light-well" title="Drag puck to rotate 3D shadows across all surfaces">
+                  <div class="neu-light-puck" id="neu-light-puck" tabindex="0" role="slider" aria-label="3D Lighting Direction Puck">
+                    <span class="puck-center-glow"></span>
+                  </div>
+                  <span class="puck-axis-label axis-n">N</span>
+                  <span class="puck-axis-label axis-e">E</span>
+                  <span class="puck-axis-label axis-s">S</span>
+                  <span class="puck-axis-label axis-w">W</span>
                 </div>
               </div>
 

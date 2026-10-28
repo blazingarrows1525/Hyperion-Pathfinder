@@ -4992,3 +4992,284 @@ body.designhead-maximalist .spatial-canvas-wrapper {
 .snapshot-table-search input:focus {
   border-color: var(--accent-blue);
 }
+
+/* ==============================================================================
+   ENHANCED SPATIAL 3D & DEEP ANIMATION UPGRADES (MASTER PROMPT V2)
+   ============================================================================== */
+
+/* 1. Full-Page Ambient Spatial Canvas */
+.ambient-spatial-canvas {
+  position: fixed;
+  inset: 0;
+  width: 100vw;
+  height: 100vh;
+  pointer-events: none;
+  z-index: 0;
+  opacity: 0.85;
+  transition: opacity 0.5s ease;
+}
+
+[data-theme="ceramic"] .ambient-spatial-canvas {
+  opacity: 0.35;
+}
+
+/* 2. Expanded 3D Spatial Hero Stage */
+.hero-3d-visual {
+  position: relative;
+  width: 100%;
+}
+
+.spatial-canvas-wrapper {
+  position: relative;
+  width: 100% !important;
+  height: 520px !important;
+  min-height: 480px !important;
+  background: radial-gradient(circle at 50% 45%, rgba(18, 22, 42, 0.98) 0%, rgba(7, 8, 14, 0.99) 100%) !important;
+  border: 1px solid rgba(0, 242, 254, 0.25) !important;
+  border-radius: var(--radius-xl) !important;
+  overflow: hidden !important;
+  box-shadow: 0 24px 60px rgba(0, 0, 0, 0.7), 0 0 40px rgba(0, 242, 254, 0.15), inset 0 0 30px rgba(0, 0, 0, 0.7) !important;
+  margin-bottom: 16px;
+  transition: border-color 0.3s ease, box-shadow 0.3s ease;
+}
+
+[data-theme="ceramic"] .spatial-canvas-wrapper {
+  background: radial-gradient(circle at 50% 45%, #FFFFFF 0%, #EEF2F6 100%) !important;
+  border: 1px solid rgba(0, 0, 0, 0.12) !important;
+  box-shadow: 12px 14px 30px rgba(0, 0, 0, 0.08), -8px -8px 24px #FFFFFF, inset 0 0 20px rgba(255, 255, 255, 0.8) !important;
+}
+
+@media (min-width: 1280px) {
+  .hero-grid {
+    grid-template-columns: 1fr 1.05fr !important;
+    gap: 40px !important;
+    align-items: center !important;
+  }
+  .spatial-canvas-wrapper {
+    height: 560px !important;
+  }
+}
+
+/* 3. 3D Drag & Zoom Hint */
+.spatial-drag-hint {
+  position: absolute;
+  top: 14px;
+  left: 14px;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 5px 12px;
+  border-radius: var(--radius-full);
+  background: rgba(10, 12, 20, 0.75);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  font-family: var(--font-mono);
+  font-size: 0.7rem;
+  color: var(--text-secondary);
+  pointer-events: none;
+  z-index: 5;
+  letter-spacing: 0.02em;
+  animation: fadeInHint 0.8s ease 0.3s both;
+}
+
+[data-theme="ceramic"] .spatial-drag-hint {
+  background: rgba(255, 255, 255, 0.88);
+  color: #334155;
+  border-color: rgba(0, 0, 0, 0.1);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+}
+
+@keyframes fadeInHint {
+  from { opacity: 0; transform: translateY(-6px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+/* 4. 3D Stage Zoom Controls */
+.spatial-zoom-controls {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  padding-left: 6px;
+  border-left: 1px solid rgba(255, 255, 255, 0.15);
+}
+
+.btn-3d-icon-sm {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 26px;
+  height: 26px;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.08);
+  color: var(--text-secondary);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.btn-3d-icon-sm:hover {
+  background: rgba(0, 242, 254, 0.25);
+  color: #FFFFFF;
+  border-color: rgba(0, 242, 254, 0.6);
+  transform: scale(1.1);
+}
+
+[data-theme="ceramic"] .btn-3d-icon-sm {
+  background: rgba(0, 0, 0, 0.04);
+  color: #475569;
+  border-color: rgba(0, 0, 0, 0.1);
+}
+
+[data-theme="ceramic"] .btn-3d-icon-sm:hover {
+  background: #EFF6FF;
+  color: #1D4ED8;
+  border-color: #3B82F6;
+}
+
+/* 5. Spatial Audio Synthesizer Toggle in Header */
+.btn-sound-toggle {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 12px;
+  border-radius: var(--radius-full);
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  color: var(--text-secondary);
+  font-size: 0.76rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.25s ease;
+}
+
+.btn-sound-toggle:hover {
+  background: rgba(255, 255, 255, 0.12);
+  color: #FFFFFF;
+  border-color: rgba(0, 242, 254, 0.45);
+}
+
+.btn-sound-toggle.active {
+  background: rgba(0, 242, 254, 0.16);
+  border-color: rgba(0, 242, 254, 0.65);
+  color: var(--accent-cyan);
+  box-shadow: 0 0 14px rgba(0, 242, 254, 0.3);
+}
+
+[data-theme="ceramic"] .btn-sound-toggle {
+  background: #FFFFFF;
+  border: 1px solid rgba(0, 0, 0, 0.1);
+  color: var(--text-secondary);
+  box-shadow: 2px 2px 6px rgba(0, 0, 0, 0.05);
+}
+
+[data-theme="ceramic"] .btn-sound-toggle.active {
+  background: #EFF6FF;
+  border-color: #3B82F6;
+  color: #2563EB;
+}
+
+/* 6. Interactive 3D Lighting Vector Puck in Neumorphic Studio */
+.neu-light-puck-container {
+  position: relative;
+  width: 140px;
+  height: 140px;
+  margin: 6px auto 0;
+  border-radius: 50%;
+  background: var(--neu-base-inset, #0D0E15);
+  box-shadow: inset 4px 4px 10px rgba(0, 0, 0, 0.7), inset -3px -3px 8px rgba(255, 255, 255, 0.06);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  cursor: crosshair;
+  user-select: none;
+  touch-action: none;
+}
+
+[data-theme="ceramic"] .neu-light-puck-container {
+  background: #E8EDF5;
+  box-shadow: inset 4px 4px 8px rgba(166, 175, 195, 0.7), inset -3px -3px 8px #FFFFFF;
+  border: 1px solid rgba(0, 0, 0, 0.08);
+}
+
+.neu-light-puck {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: 32px;
+  height: 32px;
+  margin-top: -16px;
+  margin-left: -16px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, #FFB703 0%, #FF8500 100%);
+  box-shadow: 0 0 16px rgba(255, 183, 3, 0.75), 0 4px 8px rgba(0, 0, 0, 0.5);
+  border: 2px solid #FFFFFF;
+  cursor: grab;
+  transition: transform 0.05s linear;
+  z-index: 2;
+}
+
+.neu-light-puck:active {
+  cursor: grabbing;
+  transform: scale(1.18);
+}
+
+.puck-center-glow {
+  position: absolute;
+  inset: 5px;
+  border-radius: 50%;
+  background: #FFFFFF;
+  opacity: 0.75;
+}
+
+.puck-axis-label {
+  position: absolute;
+  font-family: var(--font-mono);
+  font-size: 0.65rem;
+  font-weight: 700;
+  color: var(--text-dim);
+  pointer-events: none;
+}
+
+.axis-n { top: 4px; left: 50%; transform: translateX(-50%); }
+.axis-s { bottom: 4px; left: 50%; transform: translateX(-50%); }
+.axis-w { left: 6px; top: 50%; transform: translateY(-50%); }
+.axis-e { right: 6px; top: 50%; transform: translateY(-50%); }
+
+/* 7. Deep 3D Card Tilt & Specular Physics across ALL Cards */
+.kpi-card, .archetype-card, .company-card, .prompt-card, .btn-lab-item,
+.step-card, .analyzer-form-card, .report-workspace-card, .snapshot-band-card, .faq-item {
+  transform-style: preserve-3d;
+  transition: transform 0.22s cubic-bezier(0.2, 0.8, 0.2, 1), box-shadow 0.22s ease, border-color 0.22s ease;
+  position: relative;
+}
+
+.specular-glare {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  border-radius: inherit;
+  opacity: 0;
+  transition: opacity 0.25s ease;
+  mix-blend-mode: overlay;
+  z-index: 10;
+}
+
+/* Card Parallax Layer Elevations */
+.kpi-card .kpi-val, .archetype-card h3, .company-card h4, .prompt-card .framework-acronym {
+  transform: translateZ(26px);
+}
+
+.kpi-card .kpi-label, .archetype-card .archetype-desc, .company-card .highest-ctc-badge {
+  transform: translateZ(16px);
+}
+
+/* 8. Tactical Radar Mode Sweeping Animation */
+@keyframes radarSweepPulse {
+  0% { transform: scale(0.98); opacity: 0.3; }
+  50% { transform: scale(1.02); opacity: 0.6; }
+  100% { transform: scale(0.98); opacity: 0.3; }
+}
+
+/* 9. Hyper-Warp Particle Streak Glow */
+.warp-streak-active .spatial-canvas-wrapper {
+  box-shadow: 0 0 60px rgba(0, 242, 254, 0.4), inset 0 0 50px rgba(121, 40, 202, 0.3) !important;
+}

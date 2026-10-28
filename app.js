@@ -1,3 +1,160 @@
+
+// ==============================================================================
+// 0. SPATIAL AUDIO ENGINE & AMBIENT 3D BACKGROUND (WEB AUDIO & CANVAS)
+// ==============================================================================
+class SpatialAudioEngine {
+  constructor() {
+    this.ctx = null;
+    this.enabled = false;
+  }
+  init() {
+    if (!this.ctx && (window.AudioContext || window.webkitAudioContext)) {
+      const AudioCtx = window.AudioContext || window.webkitAudioContext;
+      this.ctx = new AudioCtx();
+    }
+  }
+  toggle() {
+    this.init();
+    this.enabled = !this.enabled;
+    const btn = document.getElementById('btn-sound-toggle');
+    const label = document.getElementById('sound-toggle-label');
+    if (btn) {
+      btn.classList.toggle('active', this.enabled);
+      btn.setAttribute('aria-pressed', String(this.enabled));
+      const icon = btn.querySelector('i');
+      if (icon) {
+        icon.setAttribute('data-lucide', this.enabled ? 'volume-2' : 'volume-x');
+        if (window.lucide) window.lucide.createIcons();
+      }
+    }
+    if (label) label.textContent = this.enabled ? 'Sound: On' : 'Sound: Off';
+    if (this.enabled) this.click();
+    showToast(this.enabled ? 'Spatial Audio Synthesizer: Active' : 'Spatial Audio: Muted');
+    return this.enabled;
+  }
+  playTone(freq, type = 'sine', duration = 0.08, gainVal = 0.04) {
+    if (!this.enabled) return;
+    this.init();
+    if (!this.ctx) return;
+    try {
+      if (this.ctx.state === 'suspended') this.ctx.resume();
+      const osc = this.ctx.createOscillator();
+      const gain = this.ctx.createGain();
+      osc.type = type;
+      osc.frequency.setValueAtTime(freq, this.ctx.currentTime);
+      gain.gain.setValueAtTime(gainVal, this.ctx.currentTime);
+      gain.gain.exponentialRampToValueAtTime(0.0001, this.ctx.currentTime + duration);
+      osc.connect(gain);
+      gain.connect(this.ctx.destination);
+      osc.start();
+      osc.stop(this.ctx.currentTime + duration);
+    } catch (e) {
+      // Audio context policy safe ignore
+    }
+  }
+  click() { this.playTone(850, 'sine', 0.04, 0.035); }
+  nodeSelect() {
+    this.playTone(520, 'sine', 0.09, 0.05);
+    setTimeout(() => this.playTone(1040, 'triangle', 0.16, 0.045), 60);
+  }
+  modeSwitch() {
+    this.playTone(440, 'triangle', 0.07, 0.04);
+    setTimeout(() => this.playTone(880, 'sine', 0.16, 0.045), 70);
+  }
+  burst() {
+    this.playTone(280, 'sawtooth', 0.16, 0.05);
+    setTimeout(() => this.playTone(620, 'sine', 0.22, 0.04), 80);
+  }
+  copy() {
+    this.playTone(660, 'sine', 0.07, 0.045);
+    setTimeout(() => this.playTone(990, 'sine', 0.14, 0.04), 65);
+  }
+}
+const spatialAudio = new SpatialAudioEngine();
+window.spatialAudio = spatialAudio;
+
+function initSpatialAudioController() {
+  const btn = document.getElementById('btn-sound-toggle');
+  if (btn) {
+    btn.addEventListener('click', () => {
+      spatialAudio.toggle();
+    });
+  }
+}
+
+// Full-Page Ambient Spatial Canvas with Cosmic Dust Parallax
+function initAmbientSpatialCanvas() {
+  const canvas = document.getElementById('ambient-spatial-canvas');
+  if (!canvas) return;
+  const ctx = canvas.getContext('2d');
+  if (!ctx) return;
+
+  let width = (canvas.width = window.innerWidth);
+  let height = (canvas.height = window.innerHeight);
+
+  window.addEventListener('resize', () => {
+    width = canvas.width = window.innerWidth;
+    height = canvas.height = window.innerHeight;
+  }, { passive: true });
+
+  const particleCount = 65;
+  const stars = [];
+  const colors = ['#00F2FE', '#9D4EDD', '#00F5D4', '#FFB703', '#FFFFFF'];
+
+  for (let i = 0; i < particleCount; i++) {
+    stars.push({
+      x: Math.random() * width,
+      y: Math.random() * height,
+      z: Math.random() * 0.8 + 0.2,
+      r: Math.random() * 1.8 + 0.6,
+      vx: (Math.random() - 0.5) * 0.25,
+      vy: (Math.random() - 0.5) * 0.25,
+      alpha: Math.random() * 0.6 + 0.2,
+      color: colors[Math.floor(Math.random() * colors.length)]
+    });
+  }
+
+  let mouseShiftX = 0;
+  let mouseShiftY = 0;
+
+  window.addEventListener('mousemove', (e) => {
+    mouseShiftX = (e.clientX / width - 0.5) * 35;
+    mouseShiftY = (e.clientY / height - 0.5) * 35;
+  }, { passive: true });
+
+  function renderAmbient() {
+    if (appState.motionMode === 'reduced') {
+      ctx.clearRect(0, 0, width, height);
+      return;
+    }
+    ctx.clearRect(0, 0, width, height);
+    const scrollY = window.scrollY || 0;
+
+    for (let i = 0; i < stars.length; i++) {
+      const s = stars[i];
+      s.x += s.vx;
+      s.y += s.vy;
+
+      if (s.x < 0) s.x = width;
+      if (s.x > width) s.x = 0;
+      if (s.y < 0) s.y = height;
+      if (s.y > height) s.y = 0;
+
+      const px = s.x + mouseShiftX * s.z;
+      const py = ((s.y - scrollY * s.z * 0.12) % height + height) % height;
+
+      ctx.beginPath();
+      ctx.arc(px, py, s.r * s.z, 0, Math.PI * 2);
+      ctx.fillStyle = s.color;
+      ctx.globalAlpha = s.alpha * s.z;
+      ctx.fill();
+    }
+    ctx.globalAlpha = 1.0;
+    requestAnimationFrame(renderAmbient);
+  }
+  requestAnimationFrame(renderAmbient);
+}
+
 /**
  * ==============================================================================
  * RESUME CHECKER — MASTER CLIENT CONTROLLER & ARCHITECTURE
@@ -918,41 +1075,66 @@ Responsibilities:
 
 // ==============================================================================
 // ==============================================================================
-// 6. THREE.JS 3D SPATIAL WEBGL ENGINE: CONSTELLATION, GENOME GLOBE & RADAR
+// 6. SPATIAL 3D CONSTELLATION & QUANTUM ENGINE (THREE.JS R128)
 // ==============================================================================
-let scene, camera, renderer, particlesMesh, linesMesh, radarMesh, globeMesh;
-let spatialNodes = [];
-let current3DMode = 'constellation'; // 'constellation' | 'globe' | 'radar'
+let scene, camera, renderer;
+let particlesMesh, linesMesh, spatialNodes = [];
+let globeMesh, radarMesh;
+let centralCoreGroup = null;
+let animFrameId = null;
 let mouseX = 0, mouseY = 0;
 let targetX = 0, targetY = 0;
+let cameraZ = 520, targetCameraZ = 520;
 let isRenderingActive = true;
-let animFrameId = null;
+let current3DMode = 'constellation';
 let orbitSpeedMultiplier = 1.0;
 let currentFocusNodeIdx = -1;
 let raycaster = null;
 let mouseVec = null;
 let shockwaveParticles = [];
 
-// Curated 42 Placement Skills & Architecture Nodes
+// Interactive 3D Orbit Drag State
+let isOrbitDragging = false;
+let prevPointerPos = { x: 0, y: 0 };
+let orbitRotation = { x: 0, y: 0 };
+let orbitVelocity = { x: 0, y: 0 };
+
+// Curated 25 High-Value Placement Skills organized across 5 Career Archetypes
 const PLACEMENT_SKILLS_3D = [
-  { name: "Distributed Systems", tier: "Super Dream", match: "97.8%", companies: "Google, Microsoft, Amazon", archetype: "Software Architecture", color: 0x00F2FE, radius: 24, pos: [-180, 80, -30] },
-  { name: "PyTorch & Transformers", tier: "Super Dream", match: "98.4%", companies: "NVIDIA, Google DeepMind, Adobe", archetype: "AI/ML Systems", color: 0xFF007F, radius: 26, pos: [190, 110, 40] },
-  { name: "Kubernetes & Cloud Native", tier: "Super Dream", match: "96.2%", companies: "Cisco, Microsoft, Amazon", archetype: "Cloud & DevOps", color: 0x00F5D4, radius: 22, pos: [0, -40, 70] },
-  { name: "System Design & Scalability", tier: "Super Dream", match: "99.1%", companies: "Google, Amazon, Goldman Sachs", archetype: "Software Architecture", color: 0x7928CA, radius: 28, pos: [-150, -110, 30] },
-  { name: "Low-Latency C++", tier: "Super Dream", match: "95.7%", companies: "Goldman Sachs, Morgan Stanley, Qualcomm", archetype: "Core Engineering", color: 0xFFB703, radius: 24, pos: [180, -90, -40] },
-  { name: "FastAPI & Python Async", tier: "Dream", match: "94.5%", companies: "PayPal, Adobe, Cisco", archetype: "Backend Platforms", color: 0x00F2FE, radius: 18, pos: [-90, 150, 20] },
-  { name: "Docker & Containerization", tier: "Dream", match: "93.8%", companies: "Microsoft, Intel, PayPal", archetype: "Cloud & DevOps", color: 0x00F5D4, radius: 18, pos: [100, 160, -20] },
-  { name: "Redis Distributed Cache", tier: "Super Dream", match: "96.9%", companies: "Amazon, PayPal, Google", archetype: "Software Architecture", color: 0xFF007F, radius: 20, pos: [-240, -20, 50] },
-  { name: "Kafka Event Streams", tier: "Super Dream", match: "97.2%", companies: "Goldman Sachs, Cisco, Amazon", archetype: "Distributed Systems", color: 0x7928CA, radius: 22, pos: [240, 30, -50] },
-  { name: "FAISS Neural Indexing", tier: "Super Dream", match: "98.0%", companies: "Google, Adobe, Microsoft", archetype: "AI/ML Systems", color: 0xFFB703, radius: 22, pos: [50, 60, 90] },
-  { name: "PostgreSQL & Query Profiling", tier: "Dream", match: "92.5%", companies: "Oracle, PayPal, Cisco", archetype: "Data Engineering", color: 0x00F2FE, radius: 17, pos: [-60, -160, -30] },
-  { name: "LangGraph Agent Workflows", tier: "Super Dream", match: "98.6%", companies: "Microsoft, Adobe, Google", archetype: "AI/ML Systems", color: 0xFF007F, radius: 24, pos: [80, -150, 40] },
-  { name: "GraphQL & Microservices", tier: "Dream", match: "94.0%", companies: "PayPal, Adobe, Amazon", archetype: "Full-Stack Web", color: 0x00F5D4, radius: 17, pos: [-210, 160, -60] },
-  { name: "CI/CD & GitHub Actions", tier: "Dream", match: "93.1%", companies: "Cisco, Microsoft, Oracle", archetype: "Cloud & DevOps", color: 0x7928CA, radius: 18, pos: [220, 180, 30] },
-  { name: "Terraform & AWS Infra", tier: "Super Dream", match: "95.5%", companies: "Amazon, Cisco, Intel", archetype: "Cloud & DevOps", color: 0xFFB703, radius: 20, pos: [0, 190, -40] },
-  { name: "Go / Golang Concurrency", tier: "Super Dream", match: "96.4%", companies: "Google, Cisco, PayPal", archetype: "Systems & Cloud", color: 0x00F2FE, radius: 21, pos: [-120, -50, -80] },
-  { name: "React & Three.js Spatial UI", tier: "Dream", match: "94.8%", companies: "Adobe, PayPal, Microsoft", archetype: "Frontend & Spatial", color: 0x00F5D4, radius: 19, pos: [130, -30, -70] },
-  { name: "MLOps & Model Deployment", tier: "Super Dream", match: "97.5%", companies: "NVIDIA, Google, Adobe", archetype: "AI/ML Systems", color: 0xFF007F, radius: 22, pos: [-30, 110, 60] }
+  // Cluster 0: Software Architecture (0x00F2FE - Electric Cyan)
+  { name: "Distributed Systems", tier: "Super Dream", match: "97.8%", companies: "Google, Microsoft, Amazon", archetypeId: 0, archetype: "Software Architecture", color: 0x00F2FE, radius: 24, pos: [-180, 80, -30] },
+  { name: "System Design & Scalability", tier: "Super Dream", match: "99.1%", companies: "Google, Amazon, Goldman Sachs", archetypeId: 0, archetype: "Software Architecture", color: 0x00F2FE, radius: 28, pos: [-150, -110, 30] },
+  { name: "Redis Distributed Cache", tier: "Super Dream", match: "96.9%", companies: "Amazon, PayPal, Google", archetypeId: 0, archetype: "Software Architecture", color: 0x00F2FE, radius: 20, pos: [-240, -20, 50] },
+  { name: "Kafka Event Streams", tier: "Super Dream", match: "97.2%", companies: "Goldman Sachs, Cisco, Amazon", archetypeId: 0, archetype: "Software Architecture", color: 0x00F2FE, radius: 22, pos: [-160, 160, -50] },
+  { name: "High-Concurrency Go", tier: "Super Dream", match: "96.4%", companies: "Google, Cisco, Uber", archetypeId: 0, archetype: "Software Architecture", color: 0x00F2FE, radius: 21, pos: [-120, -50, -80] },
+
+  // Cluster 1: AI/ML Systems (0x9D4EDD - Neon Violet)
+  { name: "PyTorch & Transformers", tier: "Super Dream", match: "98.4%", companies: "NVIDIA, Google DeepMind, Adobe", archetypeId: 1, archetype: "AI/ML Systems", color: 0x9D4EDD, radius: 26, pos: [190, 110, 40] },
+  { name: "LangGraph Agent Workflows", tier: "Super Dream", match: "98.6%", companies: "Microsoft, Adobe, Google", archetypeId: 1, archetype: "AI/ML Systems", color: 0x9D4EDD, radius: 24, pos: [80, -150, 40] },
+  { name: "FAISS Neural Indexing", tier: "Super Dream", match: "98.0%", companies: "Google, Adobe, Microsoft", archetypeId: 1, archetype: "AI/ML Systems", color: 0x9D4EDD, radius: 22, pos: [50, 60, 90] },
+  { name: "RAG Pipeline Engineering", tier: "Super Dream", match: "97.6%", companies: "Microsoft, Amazon, Adobe", archetypeId: 1, archetype: "AI/ML Systems", color: 0x9D4EDD, radius: 23, pos: [150, 190, 20] },
+  { name: "MLOps & Model Deployment", tier: "Super Dream", match: "97.5%", companies: "NVIDIA, Google, Cisco", archetypeId: 1, archetype: "AI/ML Systems", color: 0x9D4EDD, radius: 22, pos: [-30, 110, 60] },
+
+  // Cluster 2: Cloud & DevOps (0x00F5D4 - Mint Emerald)
+  { name: "Kubernetes & Cloud Native", tier: "Super Dream", match: "96.2%", companies: "Cisco, Microsoft, Amazon", archetypeId: 2, archetype: "Cloud & DevOps", color: 0x00F5D4, radius: 24, pos: [0, -40, 70] },
+  { name: "Docker & Containerization", tier: "Dream", match: "93.8%", companies: "Microsoft, Intel, PayPal", archetypeId: 2, archetype: "Cloud & DevOps", color: 0x00F5D4, radius: 18, pos: [100, 160, -20] },
+  { name: "Terraform & AWS Infra", tier: "Super Dream", match: "95.5%", companies: "Amazon, Cisco, Intel", archetypeId: 2, archetype: "Cloud & DevOps", color: 0x00F5D4, radius: 20, pos: [0, 190, -40] },
+  { name: "CI/CD & GitHub Actions", tier: "Dream", match: "93.1%", companies: "Cisco, Microsoft, Oracle", archetypeId: 2, archetype: "Cloud & DevOps", color: 0x00F5D4, radius: 18, pos: [220, 180, 30] },
+  { name: "Linux Observability & eBPF", tier: "Super Dream", match: "95.9%", companies: "Google, Cisco, Intel", archetypeId: 2, archetype: "Cloud & DevOps", color: 0x00F5D4, radius: 19, pos: [90, 40, -70] },
+
+  // Cluster 3: Product Strategy & FinTech (0xFFB703 - Solar Amber)
+  { name: "Low-Latency C++ Engine", tier: "Super Dream", match: "95.7%", companies: "Goldman Sachs, Morgan Stanley, Qualcomm", archetypeId: 3, archetype: "Core Engineering", color: 0xFFB703, radius: 24, pos: [180, -90, -40] },
+  { name: "Quantitative Risk Modeling", tier: "Super Dream", match: "96.5%", companies: "Goldman Sachs, JP Morgan, Morgan Stanley", archetypeId: 3, archetype: "Core Engineering", color: 0xFFB703, radius: 22, pos: [240, -40, 20] },
+  { name: "High-Frequency Algorithmic Systems", tier: "Super Dream", match: "97.1%", companies: "Tower Research, DE Shaw, Graviton", archetypeId: 3, archetype: "Core Engineering", color: 0xFFB703, radius: 25, pos: [150, -180, -20] },
+  { name: "Product Growth & Unit Economics", tier: "Dream", match: "94.2%", companies: "PayPal, Amazon, Flipkart", archetypeId: 3, archetype: "Core Engineering", color: 0xFFB703, radius: 18, pos: [200, 50, -60] },
+  { name: "Financial Derivatives Architecture", tier: "Super Dream", match: "96.0%", companies: "Morgan Stanley, Barclays, Citi", archetypeId: 3, archetype: "Core Engineering", color: 0xFFB703, radius: 21, pos: [260, -120, 10] },
+
+  // Cluster 4: Cybersecurity & Zero-Trust (0xFF007F - Vibrant Coral)
+  { name: "Zero-Trust IAM & OAuth2", tier: "Super Dream", match: "96.8%", companies: "Cisco, Microsoft, Palo Alto Networks", archetypeId: 4, archetype: "Cyber & Security", color: 0xFF007F, radius: 23, pos: [-80, -90, 80] },
+  { name: "Penetration Testing & Red Team", tier: "Super Dream", match: "95.4%", companies: "Palo Alto Networks, CrowdStrike, Cisco", archetypeId: 4, archetype: "Cyber & Security", color: 0xFF007F, radius: 22, pos: [-190, -160, 40] },
+  { name: "Cloud Security Posture (CSPM)", tier: "Super Dream", match: "96.1%", companies: "Amazon, Microsoft, Google", archetypeId: 4, archetype: "Cyber & Security", color: 0xFF007F, radius: 21, pos: [-110, 40, 100] },
+  { name: "Cryptographic Protocols & TLS", tier: "Super Dream", match: "97.0%", companies: "Qualcomm, Apple, Google", archetypeId: 4, archetype: "Cyber & Security", color: 0xFF007F, radius: 20, pos: [-70, 200, -20] },
+  { name: "Threat Modeling & SIEM", tier: "Dream", match: "93.9%", companies: "Cisco, Fortinet, Oracle", archetypeId: 4, archetype: "Cyber & Security", color: 0xFF007F, radius: 19, pos: [-170, -70, -60] }
 ];
 
 // Central Three.js Scene Controller Contract
@@ -998,13 +1180,12 @@ const sceneController = {
     if (canvas) {
       canvas.addEventListener('webglcontextlost', (e) => {
         e.preventDefault();
-        console.warn('WebGL context lost. Pausing 3D constellation.');
-        this.pause('contextlost');
+        console.warn('WebGL Context Lost: pausing 3D engine');
+        this.pause('context_lost');
       });
       canvas.addEventListener('webglcontextrestored', () => {
-        console.info('WebGL context restored. Re-initialising scene.');
-        this.resume('contextlost');
-        cleanup3DScene();
+        console.log('WebGL Context Restored: rebuilding 3D constellation');
+        this.resume('context_lost');
         init3DScene();
       });
     }
@@ -1016,7 +1197,7 @@ const sceneController = {
         if (rTimer) clearTimeout(rTimer);
         rTimer = setTimeout(() => {
           onCanvasResize();
-        }, 120);
+        }, 80);
       });
       this.resizeObserver.observe(wrapper);
     }
@@ -1036,22 +1217,9 @@ const sceneController = {
     if (this.pauseReasons.size === 0 && appState.motionMode !== 'reduced') {
       isRenderingActive = true;
       if (typeof window._sceneAnimate === 'function' && !animFrameId) {
-        animFrameId = requestAnimationFrame(window._sceneAnimate);
+        window._sceneAnimate();
       }
     }
-  },
-
-  setTheme(theme) {
-    if (scene && renderer) {
-      const isCeramic = theme === 'ceramic';
-      const fogColor = isCeramic ? 0xF8F9FA : 0x060608;
-      if (scene.fog) scene.fog.color.setHex(fogColor);
-      renderer.setClearColor(fogColor, isCeramic ? 0.35 : 0.0);
-    }
-  },
-
-  resetCamera() {
-    reset3DCamera();
   },
 
   dispose() {
@@ -1096,15 +1264,15 @@ function init3DScene() {
 
   const isCeramicTheme = document.documentElement.getAttribute('data-theme') === 'ceramic';
   const isMinimalist = document.body.classList.contains('designhead-minimalist');
-  const width = wrapper.clientWidth || 500;
-  const height = wrapper.clientHeight || 380;
+  const width = wrapper.clientWidth || 600;
+  const height = wrapper.clientHeight || 520;
 
   scene = new THREE.Scene();
-  const fogColor = isCeramicTheme ? 0xF8F9FA : (isMinimalist ? 0x0A0B10 : 0x060608);
-  scene.fog = new THREE.FogExp2(fogColor, 0.0012);
+  const fogColor = isCeramicTheme ? 0xF8F9FA : (isMinimalist ? 0x0A0B10 : 0x07080E);
+  scene.fog = new THREE.FogExp2(fogColor, 0.0011);
 
-  camera = new THREE.PerspectiveCamera(55, width / height, 1, 2500);
-  camera.position.z = 520;
+  camera = new THREE.PerspectiveCamera(52, width / height, 1, 3000);
+  camera.position.z = cameraZ;
 
   try {
     renderer = new THREE.WebGLRenderer({
@@ -1119,37 +1287,83 @@ function init3DScene() {
     return;
   }
 
-  renderer.setPixelRatio(Math.min(window.devicePixelRatio, 1.5));
+  renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 1.5));
   renderer.setSize(width, height);
-  renderer.setClearColor(fogColor, isCeramicTheme ? 0.35 : 0.0);
+  renderer.setClearColor(fogColor, isCeramicTheme ? 0.2 : 0.0);
 
-  // 1. Quantum Background Particles Cloud
-  const particleCount = isMinimalist ? 60 : 160;
+  // 1. Central Holographic Quantum Core (Dual Icosahedron + Octahedron + Gimbal Rings)
+  centralCoreGroup = new THREE.Group();
+
+  const coreWireGeo = new THREE.IcosahedronGeometry(42, 1);
+  const coreWireMat = new THREE.MeshBasicMaterial({
+    color: isCeramicTheme ? 0x2563EB : 0x00F2FE,
+    wireframe: true,
+    transparent: true,
+    opacity: isCeramicTheme ? 0.35 : 0.65
+  });
+  const coreWireMesh = new THREE.Mesh(coreWireGeo, coreWireMat);
+  centralCoreGroup.add(coreWireMesh);
+
+  const coreInnerGeo = new THREE.OctahedronGeometry(22, 0);
+  const coreInnerMat = new THREE.MeshBasicMaterial({
+    color: isCeramicTheme ? 0x3B82F6 : 0xFF007F,
+    transparent: true,
+    opacity: 0.85
+  });
+  const coreInnerMesh = new THREE.Mesh(coreInnerGeo, coreInnerMat);
+  centralCoreGroup.add(coreInnerMesh);
+
+  // Gimbal Torus Ring 1 (Cyan)
+  const ring1Geo = new THREE.TorusGeometry(72, 1.4, 16, 64);
+  const ring1Mat = new THREE.MeshBasicMaterial({
+    color: isCeramicTheme ? 0x0284C7 : 0x00F2FE,
+    transparent: true,
+    opacity: 0.45
+  });
+  const ring1Mesh = new THREE.Mesh(ring1Geo, ring1Mat);
+  ring1Mesh.rotation.x = Math.PI / 3;
+  centralCoreGroup.add(ring1Mesh);
+
+  // Gimbal Torus Ring 2 (Magenta / Violet)
+  const ring2Geo = new THREE.TorusGeometry(84, 1.4, 16, 64);
+  const ring2Mat = new THREE.MeshBasicMaterial({
+    color: isCeramicTheme ? 0x7C3AED : 0x9D4EDD,
+    transparent: true,
+    opacity: 0.35
+  });
+  const ring2Mesh = new THREE.Mesh(ring2Geo, ring2Mat);
+  ring2Mesh.rotation.y = Math.PI / 4;
+  centralCoreGroup.add(ring2Mesh);
+
+  scene.add(centralCoreGroup);
+
+  // 2. Quantum Background Particles Cloud (350+ particles)
+  const particleCount = isMinimalist ? 100 : 350;
   const positions = new Float32Array(particleCount * 3);
   const colors = new Float32Array(particleCount * 3);
 
   const neonColors = [
-    new THREE.Color(0x00F2FE), // Cyan
-    new THREE.Color(0xFF007F), // Magenta
+    new THREE.Color(0x00F2FE), // Electric Cyan
+    new THREE.Color(0x9D4EDD), // Neon Violet
     new THREE.Color(0x00F5D4), // Mint Emerald
-    new THREE.Color(0x7928CA), // Deep Violet
-    new THREE.Color(0xFFB703)  // Amber
+    new THREE.Color(0xFFB703), // Solar Amber
+    new THREE.Color(0xFF007F)  // Vibrant Coral
   ];
-  const minimalistColors = [
-    new THREE.Color(0xFFFFFF),
-    new THREE.Color(0xE2E8F0),
-    new THREE.Color(0xCBD5E1),
-    new THREE.Color(0x94A3B8)
+  const ceramicColors = [
+    new THREE.Color(0x2563EB),
+    new THREE.Color(0x7C3AED),
+    new THREE.Color(0x059669),
+    new THREE.Color(0xD97706),
+    new THREE.Color(0xDC2626)
   ];
-
-  const activeColors = isMinimalist ? minimalistColors : neonColors;
+  const activePalette = isCeramicTheme ? ceramicColors : neonColors;
 
   for (let i = 0; i < particleCount; i++) {
-    positions[i * 3] = (Math.random() - 0.5) * 1100;
-    positions[i * 3 + 1] = (Math.random() - 0.5) * 800;
-    positions[i * 3 + 2] = (Math.random() - 0.5) * 800;
+    positions[i * 3] = (Math.random() - 0.5) * 1250;
+    positions[i * 3 + 1] = (Math.random() - 0.5) * 900;
+    positions[i * 3 + 2] = (Math.random() - 0.5) * 950;
 
-    const c = activeColors[i % activeColors.length];
+    const c = activePalette[i % activePalette.length];
     colors[i * 3] = c.r;
     colors[i * 3 + 1] = c.g;
     colors[i * 3 + 2] = c.b;
@@ -1159,22 +1373,21 @@ function init3DScene() {
   particleGeo.setAttribute('position', new THREE.BufferAttribute(positions, 3));
   particleGeo.setAttribute('color', new THREE.BufferAttribute(colors, 3));
 
-  // Canvas texture sprite for soft rounded particles
   const spriteCanvas = document.createElement('canvas');
   spriteCanvas.width = 32;
   spriteCanvas.height = 32;
   const sCtx = spriteCanvas.getContext('2d');
   const grad = sCtx.createRadialGradient(16, 16, 0, 16, 16, 16);
   grad.addColorStop(0, 'rgba(255,255,255,1)');
-  grad.addColorStop(0.3, 'rgba(255,255,255,0.8)');
-  grad.addColorStop(0.7, 'rgba(0,242,254,0.3)');
+  grad.addColorStop(0.35, 'rgba(255,255,255,0.85)');
+  grad.addColorStop(0.7, 'rgba(0,242,254,0.35)');
   grad.addColorStop(1, 'rgba(0,0,0,0)');
   sCtx.fillStyle = grad;
   sCtx.fillRect(0, 0, 32, 32);
 
   const spriteTex = new THREE.CanvasTexture(spriteCanvas);
   const particleMat = new THREE.PointsMaterial({
-    size: isMinimalist ? 12 : 16,
+    size: isMinimalist ? 12 : 18,
     vertexColors: true,
     map: spriteTex,
     transparent: true,
@@ -1185,11 +1398,11 @@ function init3DScene() {
   particlesMesh = new THREE.Points(particleGeo, particleMat);
   scene.add(particlesMesh);
 
-  // 2. Synaptic Neural Connecting Lines
+  // 3. Synaptic Neural Connecting Lines
   const lineMat = new THREE.LineBasicMaterial({
     color: isCeramicTheme ? 0x94A3B8 : (isMinimalist ? 0x64748B : 0x00F2FE),
     transparent: true,
-    opacity: isMinimalist ? 0.12 : 0.28,
+    opacity: isMinimalist ? 0.15 : 0.32,
     blending: isCeramicTheme ? THREE.NormalBlending : THREE.AdditiveBlending
   });
 
@@ -1201,7 +1414,7 @@ function init3DScene() {
       const dy = n1.pos[1] - n2.pos[1];
       const dz = n1.pos[2] - n2.pos[2];
       const dist = Math.sqrt(dx * dx + dy * dy + dz * dz);
-      if (dist < 190) {
+      if (dist < 210) {
         linePos.push(n1.pos[0], n1.pos[1], n1.pos[2]);
         linePos.push(n2.pos[0], n2.pos[1], n2.pos[2]);
       }
@@ -1212,7 +1425,7 @@ function init3DScene() {
   linesMesh = new THREE.LineSegments(lineGeo, lineMat);
   scene.add(linesMesh);
 
-  // 3. Placement Skill Nodes (Interactive Meshes)
+  // 4. Placement Skill Nodes (Interactive Meshes)
   spatialNodes = [];
   PLACEMENT_SKILLS_3D.forEach((skill, idx) => {
     const group = new THREE.Group();
@@ -1220,18 +1433,16 @@ function init3DScene() {
 
     const nodeColor = isMinimalist ? 0xFFFFFF : skill.color;
 
-    // Outer wireframe polyhedron
-    const wireGeo = new THREE.IcosahedronGeometry(skill.radius * 0.85, 1);
+    const wireGeo = new THREE.IcosahedronGeometry(skill.radius * 0.9, 1);
     const wireMat = new THREE.MeshBasicMaterial({
       color: nodeColor,
       wireframe: true,
       transparent: true,
-      opacity: isMinimalist ? 0.35 : 0.65
+      opacity: isMinimalist ? 0.35 : 0.72
     });
     const wireMesh = new THREE.Mesh(wireGeo, wireMat);
     group.add(wireMesh);
 
-    // Inner glowing sphere core
     const coreGeo = new THREE.SphereGeometry(skill.radius * 0.45, 16, 16);
     const coreMat = new THREE.MeshBasicMaterial({
       color: nodeColor,
@@ -1241,36 +1452,39 @@ function init3DScene() {
     const coreMesh = new THREE.Mesh(coreGeo, coreMat);
     group.add(coreMesh);
 
-    // Orbiting data ring
-    const ringGeo = new THREE.RingGeometry(skill.radius * 1.25, skill.radius * 1.35, 24);
+    const ringGeo = new THREE.RingGeometry(skill.radius * 1.25, skill.radius * 1.38, 28);
     const ringMat = new THREE.MeshBasicMaterial({
       color: nodeColor,
       side: THREE.DoubleSide,
       transparent: true,
-      opacity: isMinimalist ? 0.2 : 0.4
+      opacity: isMinimalist ? 0.22 : 0.45
     });
     const ringMesh = new THREE.Mesh(ringGeo, ringMat);
-    ringMesh.rotation.x = Math.PI / 3 + idx * 0.2;
+    ringMesh.rotation.x = Math.PI / 3 + idx * 0.25;
     group.add(ringMesh);
 
-    // Store coordinate presets for 3D mode morphing
-    // Globe preset (spherical projection)
     const phi = Math.acos(-1 + (2 * idx) / PLACEMENT_SKILLS_3D.length);
     const theta = Math.sqrt(PLACEMENT_SKILLS_3D.length * Math.PI) * phi;
-    const globeR = 190;
+    const globeR = 210;
     const globePos = [
       globeR * Math.cos(theta) * Math.sin(phi),
       globeR * Math.sin(theta) * Math.sin(phi),
       globeR * Math.cos(phi)
     ];
 
-    // Radar preset (isometric circular rings)
-    const ringRadius = 70 + (idx % 3) * 65;
+    const tierRadii = [80, 130, 185, 230];
+    const ringRadius = tierRadii[idx % tierRadii.length];
     const angle = (idx / PLACEMENT_SKILLS_3D.length) * Math.PI * 2;
     const radarPos = [
       Math.cos(angle) * ringRadius,
       Math.sin(angle) * ringRadius * 0.45 - 20,
       Math.sin(angle) * ringRadius * 0.8
+    ];
+
+    const warpPos = [
+      skill.pos[0] * 1.8,
+      skill.pos[1] * 1.8,
+      (idx * 35) - 300
     ];
 
     group.userData = {
@@ -1281,6 +1495,7 @@ function init3DScene() {
       constellationPos: [...skill.pos],
       globePos: globePos,
       radarPos: radarPos,
+      warpPos: warpPos,
       targetPos: [...skill.pos],
       baseRadius: skill.radius
     };
@@ -1289,17 +1504,28 @@ function init3DScene() {
     scene.add(group);
   });
 
-  // 4. Mode-specific 3D objects (Globe Rings & Radar Beam)
+  // 5. Mode Overlays
   create3DModeOverlays(scene, isMinimalist);
 
-  // Wire canvas event listeners
-  canvas.addEventListener('mousemove', onCanvasMouseMove, { passive: true });
-  canvas.addEventListener('mouseleave', onCanvasMouseLeave);
+  // Wire canvas interactive drag & wheel controls
+  canvas.addEventListener('mousedown', onCanvasPointerDown);
+  window.addEventListener('mousemove', onCanvasPointerMove);
+  window.addEventListener('mouseup', onCanvasPointerUp);
+
+  canvas.addEventListener('touchstart', onCanvasTouchStart, { passive: false });
+  window.addEventListener('touchmove', onCanvasTouchMove, { passive: false });
+  window.addEventListener('touchend', onCanvasTouchEnd);
+
+  canvas.addEventListener('wheel', onCanvasWheel, { passive: false });
   canvas.addEventListener('click', onCanvasClick);
+  canvas.addEventListener('mouseleave', onCanvasMouseLeave);
   window.addEventListener('resize', onCanvasResize);
 
   // Wire 3D Mode Toolbar Buttons
   init3DModeButtons();
+
+  // Update Diagnostics Badge
+  updateDiagnosticsBadge(width, height);
 
   // Animation Loop
   function animate() {
@@ -1307,57 +1533,67 @@ function init3DScene() {
     if (!isRenderingActive) return;
     animFrameId = requestAnimationFrame(animate);
 
-    // Camera damping tracking mouse
+    if (!isOrbitDragging) {
+      orbitVelocity.x *= 0.94;
+      orbitVelocity.y *= 0.94;
+      orbitRotation.y += orbitVelocity.y;
+      orbitRotation.x += orbitVelocity.x;
+    }
+
     targetX += (mouseX - targetX) * 0.05;
     targetY += (mouseY - targetY) * 0.05;
+    cameraZ += (targetCameraZ - cameraZ) * 0.08;
 
-    camera.position.x = targetX;
-    camera.position.y = -targetY;
+    camera.position.x = targetX + Math.sin(orbitRotation.y) * 40;
+    camera.position.y = -targetY + Math.sin(orbitRotation.x) * 30;
+    camera.position.z = cameraZ;
     camera.lookAt(0, 0, 0);
 
     const speed = (isMinimalist ? 0.0004 : 0.001) * orbitSpeedMultiplier;
 
-    // Rotate particles and lines
+    if (centralCoreGroup) {
+      centralCoreGroup.rotation.y += speed * 1.5;
+      centralCoreGroup.rotation.x += speed * 0.8;
+      const breathe = 1.0 + Math.sin(Date.now() * 0.002) * 0.06;
+      centralCoreGroup.scale.set(breathe, breathe, breathe);
+    }
+
     particlesMesh.rotation.y += speed;
     particlesMesh.rotation.x += speed * 0.4;
     linesMesh.rotation.y += speed;
     linesMesh.rotation.x += speed * 0.4;
 
-    // Animate radar beam if in radar mode
     if (radarMesh && radarMesh.visible) {
-      radarMesh.rotation.z += 0.025;
+      radarMesh.rotation.z += 0.028;
     }
 
-    // Animate globe mesh if in globe mode
     if (globeMesh && globeMesh.visible) {
-      globeMesh.rotation.y += 0.005;
+      globeMesh.rotation.y += 0.006;
     }
 
-    // Morph nodes towards their active mode target coordinates
     const now = Date.now() * 0.0018;
     spatialNodes.forEach((node, idx) => {
-      // Position lerp
-      node.position.x += (node.userData.targetPos[0] - node.position.x) * 0.06;
-      node.position.y += (node.userData.targetPos[1] - node.position.y) * 0.06;
-      node.position.z += (node.userData.targetPos[2] - node.position.z) * 0.06;
+      node.position.x += (node.userData.targetPos[0] - node.position.x) * 0.065;
+      node.position.y += (node.userData.targetPos[1] - node.position.y) * 0.065;
+      node.position.z += (node.userData.targetPos[2] - node.position.z) * 0.065;
 
-      // Bobbing & rotation
-      node.userData.wireMesh.rotation.y += 0.012 * (idx % 2 === 0 ? 1 : -1);
-      node.userData.wireMesh.rotation.x += 0.008;
-      node.userData.ringMesh.rotation.z += 0.015;
+      node.userData.wireMesh.rotation.y += 0.014 * (idx % 2 === 0 ? 1 : -1);
+      node.userData.wireMesh.rotation.x += 0.009;
+      node.userData.ringMesh.rotation.z += 0.018;
 
-      // Slight floating float in constellation mode
       if (current3DMode === 'constellation') {
-        node.position.y += Math.sin(now + idx) * 0.35;
+        node.position.y += Math.sin(now + idx) * 0.4;
+      } else if (current3DMode === 'warp') {
+        node.position.z += 3.5;
+        if (node.position.z > 350) node.position.z = -350;
       }
     });
 
-    // Animate shockwave particles if active
     if (shockwaveParticles.length > 0) {
       for (let i = shockwaveParticles.length - 1; i >= 0; i--) {
         const p = shockwaveParticles[i];
         p.position.add(p.userData.velocity);
-        p.userData.life -= 0.02;
+        p.userData.life -= 0.025;
         p.material.opacity = p.userData.life;
         if (p.userData.life <= 0) {
           scene.remove(p);
@@ -1368,8 +1604,7 @@ function init3DScene() {
       }
     }
 
-    // Raycast on hover
-    if (raycaster && mouseVec && mouseVec.x !== -999) {
+    if (raycaster && mouseVec && mouseVec.x !== -999 && !isOrbitDragging) {
       raycaster.setFromCamera(mouseVec, camera);
       const interactiveTargets = spatialNodes.map(n => n.userData.wireMesh);
       const intersects = raycaster.intersectObjects(interactiveTargets);
@@ -1380,7 +1615,7 @@ function init3DScene() {
         const hitMesh = intersects[0].object;
         const parentNode = spatialNodes.find(n => n.userData.wireMesh === hitMesh);
         if (parentNode) {
-          parentNode.scale.lerp(new THREE.Vector3(1.35, 1.35, 1.35), 0.2);
+          parentNode.scale.lerp(new THREE.Vector3(1.4, 1.4, 1.4), 0.25);
           show3DNodeTooltip(parentNode.userData.skill, intersects[0].point);
         }
       } else {
@@ -1399,121 +1634,113 @@ function init3DScene() {
   animate();
 }
 
-function create3DModeOverlays(targetScene, isMinimalist) {
-  // Globe Wireframe Sphere
-  const sphereGeo = new THREE.SphereGeometry(190, 20, 20);
-  const sphereMat = new THREE.MeshBasicMaterial({
-    color: isMinimalist ? 0x94A3B8 : 0x00F2FE,
-    wireframe: true,
-    transparent: true,
-    opacity: 0.12
-  });
-  globeMesh = new THREE.Mesh(sphereGeo, sphereMat);
-  globeMesh.visible = false;
-  targetScene.add(globeMesh);
-
-  // Radar Wireframe Cones and Sweep Beam
-  const radarGroup = new THREE.Group();
-  const ringGeo1 = new THREE.RingGeometry(68, 70, 48);
-  const ringGeo2 = new THREE.RingGeometry(138, 140, 48);
-  const ringGeo3 = new THREE.RingGeometry(208, 210, 48);
-  const rMat = new THREE.MeshBasicMaterial({
-    color: isMinimalist ? 0xCBD5E1 : 0x00F5D4,
-    side: THREE.DoubleSide,
-    transparent: true,
-    opacity: 0.22
-  });
-  radarGroup.add(new THREE.Mesh(ringGeo1, rMat));
-  radarGroup.add(new THREE.Mesh(ringGeo2, rMat));
-  radarGroup.add(new THREE.Mesh(ringGeo3, rMat));
-
-  // Radar Sweep Beam
-  const sweepGeo = new THREE.RingGeometry(0, 210, 32, 1, 0, Math.PI / 4);
-  const sweepMat = new THREE.MeshBasicMaterial({
-    color: isMinimalist ? 0xE2E8F0 : 0x00F5D4,
-    side: THREE.DoubleSide,
-    transparent: true,
-    opacity: 0.25
-  });
-  const sweepMesh = new THREE.Mesh(sweepGeo, sweepMat);
-  radarGroup.add(sweepMesh);
-  radarGroup.rotation.x = Math.PI / 2.8;
-  radarGroup.position.y = -40;
-  radarGroup.visible = false;
-
-  radarMesh = radarGroup;
-  targetScene.add(radarMesh);
+function onCanvasPointerDown(e) {
+  isOrbitDragging = true;
+  prevPointerPos = { x: e.clientX, y: e.clientY };
 }
 
-function init3DModeButtons() {
-  if (window._3dButtonsInitialized) return;
-  window._3dButtonsInitialized = true;
+function onCanvasPointerMove(e) {
+  const canvas = document.getElementById('spatial-hero-canvas');
+  if (!canvas) return;
+  const rect = canvas.getBoundingClientRect();
+  const x = e.clientX - rect.left;
+  const y = e.clientY - rect.top;
 
-  const modeButtons = document.querySelectorAll('.btn-3d-mode');
-  modeButtons.forEach(btn => {
-    btn.addEventListener('click', () => {
-      modeButtons.forEach(b => b.classList.remove('active'));
-      btn.classList.add('active');
-      const mode = btn.getAttribute('data-mode');
-      set3DVisualizerMode(mode);
-    });
-  });
+  mouseX = (x - rect.width / 2) * 0.4;
+  mouseY = (y - rect.height / 2) * 0.4;
 
-  const burstBtn = document.getElementById('btn-3d-burst');
-  if (burstBtn) {
-    burstBtn.addEventListener('click', trigger3DShockwave);
+  if (mouseVec) {
+    mouseVec.x = (x / rect.width) * 2 - 1;
+    mouseVec.y = -(y / rect.height) * 2 + 1;
+  }
+
+  if (isOrbitDragging) {
+    const deltaX = e.clientX - prevPointerPos.x;
+    const deltaY = e.clientY - prevPointerPos.y;
+    prevPointerPos = { x: e.clientX, y: e.clientY };
+
+    orbitVelocity.y = deltaX * 0.005;
+    orbitVelocity.x = deltaY * 0.005;
+    orbitRotation.y += orbitVelocity.y;
+    orbitRotation.x += orbitVelocity.x;
   }
 }
 
-function set3DVisualizerMode(mode) {
-  current3DMode = mode;
-  if (!spatialNodes || spatialNodes.length === 0) return;
+function onCanvasPointerUp() {
+  isOrbitDragging = false;
+}
 
-  if (globeMesh) globeMesh.visible = (mode === 'globe');
-  if (radarMesh) radarMesh.visible = (mode === 'radar');
+function onCanvasTouchStart(e) {
+  if (e.touches.length === 1) {
+    isOrbitDragging = true;
+    prevPointerPos = { x: e.touches[0].clientX, y: e.touches[0].clientY };
+  }
+}
 
-  spatialNodes.forEach(node => {
-    if (mode === 'constellation') {
-      node.userData.targetPos = [...node.userData.constellationPos];
-    } else if (mode === 'globe') {
-      node.userData.targetPos = [...node.userData.globePos];
-    } else if (mode === 'radar') {
-      node.userData.targetPos = [...node.userData.radarPos];
+function onCanvasTouchMove(e) {
+  if (e.touches.length === 1 && isOrbitDragging) {
+    const deltaX = e.touches[0].clientX - prevPointerPos.x;
+    const deltaY = e.touches[0].clientY - prevPointerPos.y;
+    prevPointerPos = { x: e.touches[0].clientX, y: e.touches[0].clientY };
+
+    orbitVelocity.y = deltaX * 0.006;
+    orbitVelocity.x = deltaY * 0.006;
+    orbitRotation.y += orbitVelocity.y;
+    orbitRotation.x += orbitVelocity.x;
+    e.preventDefault();
+  }
+}
+
+function onCanvasTouchEnd() {
+  isOrbitDragging = false;
+}
+
+function onCanvasWheel(e) {
+  e.preventDefault();
+  targetCameraZ = Math.max(260, Math.min(880, targetCameraZ + e.deltaY * 0.45));
+}
+
+function onCanvasClick(e) {
+  const canvas = e.currentTarget;
+  const rect = canvas.getBoundingClientRect();
+  const x = e.clientX - rect.left;
+  const y = e.clientY - rect.top;
+
+  const clickVec = new THREE.Vector2(
+    (x / rect.width) * 2 - 1,
+    -(y / rect.height) * 2 + 1
+  );
+
+  if (raycaster && camera) {
+    raycaster.setFromCamera(clickVec, camera);
+    const interactiveTargets = spatialNodes.map(n => n.userData.wireMesh);
+    const intersects = raycaster.intersectObjects(interactiveTargets);
+
+    if (intersects.length > 0) {
+      const hitMesh = intersects[0].object;
+      const parentNode = spatialNodes.find(n => n.userData.wireMesh === hitMesh);
+      if (parentNode) {
+        const skill = parentNode.userData.skill;
+        targetCameraZ = 340;
+        targetX = parentNode.position.x * 0.6;
+        targetY = -parentNode.position.y * 0.6;
+
+        trigger3DShockwave(parentNode.position.x, parentNode.position.y, parentNode.position.z, skill.color);
+        show3DNodeTooltip(skill, intersects[0].point);
+
+        if (typeof skill.archetypeId === 'number' && typeof selectArchetype === 'function') {
+          selectArchetype(skill.archetypeId);
+        }
+
+        if (window.spatialAudio) window.spatialAudio.nodeSelect();
+        showToast(`Targeted Cluster Node: ${skill.name} (${skill.tier})`);
+        return;
+      }
     }
-  });
-
-  showToast(`3D Mode: ${mode.charAt(0).toUpperCase() + mode.slice(1)} Visualizer Active`);
-}
-
-function trigger3DShockwave() {
-  if (!scene || typeof THREE === 'undefined') return;
-
-  const count = 40;
-  const isMinimalist = document.body.classList.contains('designhead-minimalist');
-  const shockColors = isMinimalist ? [0xFFFFFF, 0xE2E8F0] : [0x00F2FE, 0xFF007F, 0x00F5D4, 0xFFB703];
-
-  for (let i = 0; i < count; i++) {
-    const geo = new THREE.SphereGeometry(3 + Math.random() * 3, 8, 8);
-    const color = shockColors[i % shockColors.length];
-    const mat = new THREE.MeshBasicMaterial({ color: color, transparent: true, opacity: 1 });
-    const mesh = new THREE.Mesh(geo, mat);
-
-    const angle = Math.random() * Math.PI * 2;
-    const phi = Math.random() * Math.PI;
-    const speed = 4 + Math.random() * 8;
-
-    mesh.userData = {
-      velocity: new THREE.Vector3(
-        Math.sin(phi) * Math.cos(angle) * speed,
-        Math.sin(phi) * Math.sin(angle) * speed,
-        Math.cos(phi) * speed
-      ),
-      life: 1.0
-    };
-
-    shockwaveParticles.push(mesh);
-    scene.add(mesh);
   }
+
+  trigger3DShockwave();
+  if (window.spatialAudio) window.spatialAudio.burst();
 }
 
 function show3DNodeTooltip(skill, hitPoint) {
@@ -1533,28 +1760,12 @@ function show3DNodeTooltip(skill, hitPoint) {
 
   tooltip.style.display = 'block';
 
-  // Position tooltip relative to wrapper bounds
   const rect = wrapper.getBoundingClientRect();
   const screenX = ((mouseVec.x + 1) / 2) * rect.width;
   const screenY = ((-mouseVec.y + 1) / 2) * rect.height;
 
-  tooltip.style.left = `${Math.min(screenX + 15, rect.width - 210)}px`;
-  tooltip.style.top = `${Math.min(screenY + 15, rect.height - 110)}px`;
-}
-
-function onCanvasMouseMove(e) {
-  const canvas = e.currentTarget;
-  const rect = canvas.getBoundingClientRect();
-  const x = e.clientX - rect.left;
-  const y = e.clientY - rect.top;
-
-  mouseX = (x - rect.width / 2) * 0.35;
-  mouseY = (y - rect.height / 2) * 0.35;
-
-  if (mouseVec) {
-    mouseVec.x = (x / rect.width) * 2 - 1;
-    mouseVec.y = -(y / rect.height) * 2 + 1;
-  }
+  tooltip.style.left = `${Math.min(screenX + 15, rect.width - 230)}px`;
+  tooltip.style.top = `${Math.min(screenY + 15, rect.height - 120)}px`;
 }
 
 function onCanvasMouseLeave() {
@@ -1564,10 +1775,6 @@ function onCanvasMouseLeave() {
   }
   const tooltip = document.getElementById('canvas-3d-tooltip');
   if (tooltip) tooltip.style.display = 'none';
-}
-
-function onCanvasClick(e) {
-  trigger3DShockwave();
 }
 
 function onCanvasResize() {
@@ -1580,6 +1787,207 @@ function onCanvasResize() {
   camera.updateProjectionMatrix();
   renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 1.5));
   renderer.setSize(w, h);
+  updateDiagnosticsBadge(w, h);
+}
+
+function updateDiagnosticsBadge(w, h) {
+  const badgeText = document.getElementById('canvas-engine-text');
+  if (badgeText) {
+    badgeText.textContent = `WebGL Engine • ${w}x${h} • ${PLACEMENT_SKILLS_3D.length} Nodes • ${current3DMode.toUpperCase()}`;
+  }
+}
+
+function set3DVisualizerMode(mode) {
+  current3DMode = mode;
+  const wrapper = document.getElementById('spatial-canvas-wrapper');
+
+  if (wrapper) {
+    wrapper.classList.toggle('warp-streak-active', mode === 'warp');
+  }
+
+  spatialNodes.forEach(node => {
+    if (mode === 'constellation') {
+      node.userData.targetPos = [...node.userData.constellationPos];
+    } else if (mode === 'globe') {
+      node.userData.targetPos = [...node.userData.globePos];
+    } else if (mode === 'radar') {
+      node.userData.targetPos = [...node.userData.radarPos];
+    } else if (mode === 'warp') {
+      node.userData.targetPos = [...node.userData.warpPos];
+    }
+  });
+
+  if (globeMesh) globeMesh.visible = (mode === 'globe');
+  if (radarMesh) radarMesh.visible = (mode === 'radar');
+  if (linesMesh) linesMesh.visible = (mode === 'constellation');
+
+  if (window.spatialAudio) window.spatialAudio.modeSwitch();
+
+  const modeNames = {
+    constellation: 'Quantum Constellation Web',
+    globe: '3D Spherical Hologram Globe',
+    radar: 'Placement Range Sonar Radar',
+    warp: 'Hyper-Warp Speed Starfield'
+  };
+  showToast(`Switched 3D Mode: ${modeNames[mode] || mode}`);
+
+  if (wrapper) {
+    updateDiagnosticsBadge(wrapper.clientWidth, wrapper.clientHeight);
+  }
+}
+
+function trigger3DShockwave(cx = 0, cy = 0, cz = 0, colorHex = 0x00F2FE) {
+  if (appState.motionMode === 'reduced' || !scene) return;
+
+  const count = 42;
+  for (let i = 0; i < count; i++) {
+    const pGeo = new THREE.SphereGeometry(2.5, 8, 8);
+    const pMat = new THREE.MeshBasicMaterial({
+      color: colorHex,
+      transparent: true,
+      opacity: 1.0,
+      blending: THREE.AdditiveBlending
+    });
+    const mesh = new THREE.Mesh(pGeo, pMat);
+    mesh.position.set(cx, cy, cz);
+
+    const angle = Math.random() * Math.PI * 2;
+    const phi = Math.random() * Math.PI;
+    const speed = 4 + Math.random() * 8;
+
+    mesh.userData = {
+      velocity: new THREE.Vector3(
+        Math.sin(phi) * Math.cos(angle) * speed,
+        Math.sin(phi) * Math.sin(angle) * speed,
+        Math.cos(phi) * speed
+      ),
+      life: 1.0
+    };
+
+    shockwaveParticles.push(mesh);
+    scene.add(mesh);
+  }
+}
+
+function create3DModeOverlays(targetScene, isMinimalist) {
+  const globeGroup = new THREE.Group();
+  const sphereGeo = new THREE.SphereGeometry(210, 24, 24);
+  const sphereMat = new THREE.MeshBasicMaterial({
+    color: isMinimalist ? 0x94A3B8 : 0x00F2FE,
+    wireframe: true,
+    transparent: true,
+    opacity: 0.16
+  });
+  globeGroup.add(new THREE.Mesh(sphereGeo, sphereMat));
+
+  const eqGeo = new THREE.RingGeometry(212, 214, 48);
+  const eqMat = new THREE.MeshBasicMaterial({ color: 0x9D4EDD, side: THREE.DoubleSide, transparent: true, opacity: 0.35 });
+  const eqMesh = new THREE.Mesh(eqGeo, eqMat);
+  eqMesh.rotation.x = Math.PI / 2;
+  globeGroup.add(eqMesh);
+
+  globeMesh = globeGroup;
+  globeMesh.visible = false;
+  targetScene.add(globeMesh);
+
+  const radarGroup = new THREE.Group();
+  const ringGeo1 = new THREE.RingGeometry(78, 80, 48);
+  const ringGeo2 = new THREE.RingGeometry(128, 130, 48);
+  const ringGeo3 = new THREE.RingGeometry(183, 185, 48);
+  const ringGeo4 = new THREE.RingGeometry(228, 230, 48);
+  const rMat = new THREE.MeshBasicMaterial({
+    color: isMinimalist ? 0xCBD5E1 : 0x00F5D4,
+    side: THREE.DoubleSide,
+    transparent: true,
+    opacity: 0.26
+  });
+  radarGroup.add(new THREE.Mesh(ringGeo1, rMat));
+  radarGroup.add(new THREE.Mesh(ringGeo2, rMat));
+  radarGroup.add(new THREE.Mesh(ringGeo3, rMat));
+  radarGroup.add(new THREE.Mesh(ringGeo4, rMat));
+
+  const sweepGeo = new THREE.RingGeometry(0, 230, 36, 1, 0, Math.PI / 3.5);
+  const sweepMat = new THREE.MeshBasicMaterial({
+    color: isMinimalist ? 0xE2E8F0 : 0x00F5D4,
+    side: THREE.DoubleSide,
+    transparent: true,
+    opacity: 0.28
+  });
+  const sweepMesh = new THREE.Mesh(sweepGeo, sweepMat);
+  radarGroup.add(sweepMesh);
+  radarGroup.rotation.x = Math.PI / 2.7;
+  radarGroup.position.y = -30;
+  radarGroup.visible = false;
+
+  radarMesh = radarGroup;
+  targetScene.add(radarMesh);
+}
+
+function init3DModeButtons() {
+  const modeButtons = document.querySelectorAll('.btn-3d-mode');
+  modeButtons.forEach(btn => {
+    btn.onclick = () => {
+      modeButtons.forEach(b => b.classList.remove('active'));
+      btn.classList.add('active');
+      const mode = btn.getAttribute('data-mode');
+      set3DVisualizerMode(mode);
+    };
+  });
+
+  const burstBtn = document.getElementById('btn-3d-burst');
+  if (burstBtn) {
+    burstBtn.onclick = () => {
+      trigger3DShockwave();
+      if (window.spatialAudio) window.spatialAudio.burst();
+      showToast('Detonated Quantum 3D Shockwave!');
+    };
+  }
+
+  const zoomInBtn = document.getElementById('btn-3d-zoom-in');
+  const zoomOutBtn = document.getElementById('btn-3d-zoom-out');
+  const resetCamBtn = document.getElementById('btn-3d-reset-cam-stage');
+
+  if (zoomInBtn) {
+    zoomInBtn.onclick = () => {
+      targetCameraZ = Math.max(260, targetCameraZ - 90);
+      if (window.spatialAudio) window.spatialAudio.click();
+    };
+  }
+  if (zoomOutBtn) {
+    zoomOutBtn.onclick = () => {
+      targetCameraZ = Math.min(880, targetCameraZ + 90);
+      if (window.spatialAudio) window.spatialAudio.click();
+    };
+  }
+  if (resetCamBtn) {
+    resetCamBtn.onclick = () => {
+      reset3DCamera();
+    };
+  }
+}
+
+function reset3DCamera() {
+  targetX = 0;
+  targetY = 0;
+  mouseX = 0;
+  mouseY = 0;
+  targetCameraZ = 520;
+  orbitRotation = { x: 0, y: 0 };
+  orbitVelocity = { x: 0, y: 0 };
+  currentFocusNodeIdx = -1;
+  orbitSpeedMultiplier = 1.0;
+
+  if (camera) {
+    camera.position.set(0, 0, 520);
+    camera.lookAt(0, 0, 0);
+  }
+
+  spatialNodes.forEach(n => n.scale.set(1.0, 1.0, 1.0));
+  const tooltip = document.getElementById('canvas-3d-tooltip');
+  if (tooltip) tooltip.style.display = 'none';
+
+  if (window.spatialAudio) window.spatialAudio.click();
+  showToast('Reset 3D Constellation Camera to Origin');
 }
 
 function toggle3DAcceleration() {
@@ -1594,6 +2002,7 @@ function toggle3DAcceleration() {
     btn.classList.toggle('active', isAccelerated);
     btn.setAttribute('aria-pressed', String(isAccelerated));
   }
+  if (window.spatialAudio) window.spatialAudio.click();
   showToast(isAccelerated ? '3D Orbit Warp Activated (3.5x Speed)' : '3D Orbit Normal Speed (1.0x)');
 }
 
@@ -1606,6 +2015,7 @@ function focusNextArchetypeNode() {
   const pos = targetNode.userData.targetPos || [targetNode.position.x, targetNode.position.y, targetNode.position.z];
   targetX = pos[0] * 0.6;
   targetY = -pos[1] * 0.6;
+  targetCameraZ = 380;
 
   spatialNodes.forEach((n, idx) => {
     if (idx === currentFocusNodeIdx) {
@@ -1616,34 +2026,13 @@ function focusNextArchetypeNode() {
     }
   });
 
-  const skillName = targetNode.userData.skill?.name || 'Skill Node';
-  showToast(`Focused Cluster Node: ${skillName}`);
-}
-
-function reset3DCamera() {
-  targetX = 0;
-  targetY = 0;
-  mouseX = 0;
-  mouseY = 0;
-  currentFocusNodeIdx = -1;
-  orbitSpeedMultiplier = 1.0;
-
-  if (camera) {
-    camera.position.set(0, 0, 520);
-    camera.lookAt(0, 0, 0);
+  const skill = targetNode.userData.skill;
+  if (skill && typeof skill.archetypeId === 'number' && typeof selectArchetype === 'function') {
+    selectArchetype(skill.archetypeId);
   }
 
-  const accBtn = document.getElementById('btn-3d-accelerate');
-  if (accBtn) {
-    accBtn.classList.remove('active');
-    accBtn.setAttribute('aria-pressed', 'false');
-  }
-
-  spatialNodes.forEach(n => n.scale.set(1.0, 1.0, 1.0));
-  const tooltip = document.getElementById('canvas-3d-tooltip');
-  if (tooltip) tooltip.style.display = 'none';
-
-  showToast('Reset 3D Constellation Camera to Origin');
+  if (window.spatialAudio) window.spatialAudio.nodeSelect();
+  showToast(`Focused Cluster Node: ${skill?.name || 'Skill Node'}`);
 }
 
 function update3DSceneAesthetic(designheadMode) {
@@ -1655,10 +2044,13 @@ function cleanup3DScene() {
   if (animFrameId) cancelAnimationFrame(animFrameId);
   const canvas = document.getElementById('spatial-hero-canvas');
   if (canvas) {
-    canvas.removeEventListener('mousemove', onCanvasMouseMove);
-    canvas.removeEventListener('mouseleave', onCanvasMouseLeave);
+    canvas.removeEventListener('mousedown', onCanvasPointerDown);
+    canvas.removeEventListener('wheel', onCanvasWheel);
     canvas.removeEventListener('click', onCanvasClick);
+    canvas.removeEventListener('mouseleave', onCanvasMouseLeave);
   }
+  window.removeEventListener('mousemove', onCanvasPointerMove);
+  window.removeEventListener('mouseup', onCanvasPointerUp);
   window.removeEventListener('resize', onCanvasResize);
 
   if (particlesMesh) {
@@ -1668,6 +2060,12 @@ function cleanup3DScene() {
   if (linesMesh) {
     if (linesMesh.geometry) linesMesh.geometry.dispose();
     if (linesMesh.material) linesMesh.material.dispose();
+  }
+  if (centralCoreGroup) {
+    centralCoreGroup.traverse(child => {
+      if (child.geometry) child.geometry.dispose();
+      if (child.material) child.material.dispose();
+    });
   }
   if (spatialNodes) {
     spatialNodes.forEach(node => {
@@ -1688,13 +2086,12 @@ function cleanup3DScene() {
   if (renderer) renderer.dispose();
 }
 
-// 2D Canvas Fallback Engine if Three.js / WebGL is unavailable
 function init2DFallbackConstellation(canvas, wrapper) {
   const ctx = canvas.getContext('2d');
   if (!ctx) return;
 
-  const w = (canvas.width = wrapper.clientWidth || 500);
-  const h = (canvas.height = wrapper.clientHeight || 380);
+  const w = (canvas.width = wrapper.clientWidth || 600);
+  const h = (canvas.height = wrapper.clientHeight || 500);
 
   const dots = [];
   for (let i = 0; i < 35; i++) {
@@ -1713,7 +2110,6 @@ function init2DFallbackConstellation(canvas, wrapper) {
     ctx.strokeStyle = 'rgba(0, 242, 254, 0.15)';
     ctx.fillStyle = '#00F2FE';
 
-    // Lines
     for (let i = 0; i < dots.length; i++) {
       for (let j = i + 1; j < dots.length; j++) {
         const dx = dots[i].x - dots[j].x;
@@ -1728,7 +2124,6 @@ function init2DFallbackConstellation(canvas, wrapper) {
       }
     }
 
-    // Dots
     dots.forEach(d => {
       d.x += d.vx;
       d.y += d.vy;
@@ -1746,21 +2141,20 @@ function init2DFallbackConstellation(canvas, wrapper) {
 }
 
 // ==============================================================================
-// 7. CARD PARALLAX TILT & SPECULAR GLARE PHYSICS
+// 7. DEEP 3D CARD PARALLAX TILT & SPECULAR GLARE PHYSICS (ACROSS ALL CARDS)
 // ==============================================================================
 function init3DCardTilt() {
   if (appState.motionMode === 'reduced') return;
   const canHover = window.matchMedia('(hover: hover) and (pointer: fine)').matches;
   if (!canHover) return;
 
-  // Apply 3D perspective tilt only to designated showcase and hero cards
-  const tiltCards = document.querySelectorAll('.card-3d-tilt, .spatial-tilt-card, #hero-diagnostic-card');
+  const cardSelector = '.kpi-card, .archetype-card, .company-card, .prompt-card, .btn-lab-item, .step-card, .analyzer-form-card, .report-workspace-card, .snapshot-band-card, .faq-item, .card-3d-tilt, .spatial-tilt-card, #hero-diagnostic-card';
+  const tiltCards = document.querySelectorAll(cardSelector);
 
   tiltCards.forEach(card => {
     if (card.dataset.tiltBound) return;
     card.dataset.tiltBound = 'true';
 
-    // Inject specular reflection glare if not present
     let glare = card.querySelector('.specular-glare');
     if (!glare) {
       glare = document.createElement('div');
@@ -1775,24 +2169,20 @@ function init3DCardTilt() {
       const centerX = rect.width / 2;
       const centerY = rect.height / 2;
 
-      // Restrained clamp (max ±3.5 degrees) for stable readability
-      const rawX = ((y - centerY) / centerY) * -4;
-      const rawY = ((x - centerX) / centerX) * 4;
-      const rotateX = Math.max(-3.5, Math.min(3.5, rawX));
-      const rotateY = Math.max(-3.5, Math.min(3.5, rawY));
+      const rotateX = (((y - centerY) / centerY) * -9.5).toFixed(2);
+      const rotateY = (((x - centerX) / centerX) * 9.5).toFixed(2);
 
-      card.style.transform = `perspective(1000px) rotateX(${rotateX.toFixed(2)}deg) rotateY(${rotateY.toFixed(2)}deg) translateZ(6px)`;
+      card.style.transform = `perspective(1000px) rotateX(${rotateX}deg) rotateY(${rotateY}deg) scale3d(1.025, 1.025, 1.025)`;
 
-      // Dynamic Specular Light Glare
-      const glareX = (x / rect.width) * 100;
-      const glareY = (y / rect.height) * 100;
-      glare.style.background = `radial-gradient(circle 280px at ${glareX}% ${glareY}%, rgba(255, 255, 255, 0.18) 0%, transparent 65%)`;
+      const percentX = (x / rect.width) * 100;
+      const percentY = (y / rect.height) * 100;
       glare.style.opacity = '1';
-    }, { passive: true });
+      glare.style.background = `radial-gradient(circle at ${percentX}% ${percentY}%, rgba(255, 255, 255, 0.22) 0%, rgba(255, 255, 255, 0) 65%)`;
+    });
 
     card.addEventListener('mouseleave', () => {
-      card.style.transform = 'perspective(1000px) rotateX(0deg) rotateY(0deg) translateZ(0px)';
-      if (glare) glare.style.opacity = '0';
+      card.style.transform = 'perspective(1000px) rotateX(0deg) rotateY(0deg) scale3d(1, 1, 1)';
+      glare.style.opacity = '0';
     });
   });
 }
@@ -1811,17 +2201,103 @@ function initHoverButtons() {
       const rect = btn.getBoundingClientRect();
       const x = e.clientX - rect.left - rect.width / 2;
       const y = e.clientY - rect.top - rect.height / 2;
-      // Clamped gentle magnetic pull (max ±4px)
-      const clampedX = Math.max(-4.5, Math.min(4.5, x * 0.12));
-      const clampedY = Math.max(-4.5, Math.min(4.5, y * 0.12));
-      btn.style.transform = `translate(${clampedX.toFixed(1)}px, ${clampedY.toFixed(1)}px) scale(1.015)`;
+      const clampedX = Math.max(-5.0, Math.min(5.0, x * 0.15));
+      const clampedY = Math.max(-5.0, Math.min(5.0, y * 0.15));
+      btn.style.transform = `translate(${clampedX.toFixed(1)}px, ${clampedY.toFixed(1)}px) scale(1.02)`;
     }, { passive: true });
 
     btn.addEventListener('mouseleave', () => {
       btn.style.transform = 'translate(0px, 0px) scale(1)';
     });
+
+    btn.addEventListener('click', () => {
+      if (window.spatialAudio) window.spatialAudio.click();
+    });
   });
 }
+
+// ==============================================================================
+// 7.5 INTERACTIVE 3D NEUMORPHIC LIGHTING PUCK CONTROLLER
+// ==============================================================================
+function initNeumorphicLightingPuck() {
+  const well = document.getElementById('neu-light-well');
+  const puck = document.getElementById('neu-light-puck');
+  const angleLabel = document.getElementById('neu-light-angle-label');
+  if (!well || !puck) return;
+
+  let isPuckDragging = false;
+
+  function updatePuck(clientX, clientY) {
+    const rect = well.getBoundingClientRect();
+    const centerX = rect.left + rect.width / 2;
+    const centerY = rect.top + rect.height / 2;
+
+    const dx = clientX - centerX;
+    const dy = clientY - centerY;
+    const maxR = rect.width / 2 - 18;
+
+    const distance = Math.min(maxR, Math.sqrt(dx * dx + dy * dy));
+    const angleRad = Math.atan2(dy, dx);
+
+    const px = Math.cos(angleRad) * distance;
+    const py = Math.sin(angleRad) * distance;
+
+    puck.style.transform = `translate(${px}px, ${py}px)`;
+
+    let degrees = Math.round((angleRad * 180) / Math.PI);
+    if (degrees < 0) degrees += 360;
+
+    const shadowDist = Math.max(3, Math.round((distance / maxR) * 14));
+    const shadowX = Math.round(Math.cos(angleRad) * shadowDist);
+    const shadowY = Math.round(Math.sin(angleRad) * shadowDist);
+
+    document.documentElement.style.setProperty('--neu-shadow-x', `${shadowX}px`);
+    document.documentElement.style.setProperty('--neu-shadow-y', `${shadowY}px`);
+
+    const compass = ['E', 'SE', 'S', 'SW', 'W', 'NW', 'N', 'NE'];
+    const compassIdx = Math.round(degrees / 45) % 8;
+    if (angleLabel) {
+      angleLabel.textContent = `${degrees}° (${compass[compassIdx]})`;
+    }
+  }
+
+  well.addEventListener('mousedown', (e) => {
+    isPuckDragging = true;
+    updatePuck(e.clientX, e.clientY);
+  });
+
+  window.addEventListener('mousemove', (e) => {
+    if (isPuckDragging) {
+      updatePuck(e.clientX, e.clientY);
+    }
+  });
+
+  window.addEventListener('mouseup', () => {
+    if (isPuckDragging) {
+      isPuckDragging = false;
+      if (window.spatialAudio) window.spatialAudio.click();
+    }
+  });
+
+  well.addEventListener('touchstart', (e) => {
+    if (e.touches.length === 1) {
+      isPuckDragging = true;
+      updatePuck(e.touches[0].clientX, e.touches[0].clientY);
+      e.preventDefault();
+    }
+  }, { passive: false });
+
+  window.addEventListener('touchmove', (e) => {
+    if (isPuckDragging && e.touches.length === 1) {
+      updatePuck(e.touches[0].clientX, e.touches[0].clientY);
+    }
+  }, { passive: false });
+
+  window.addEventListener('touchend', () => {
+    isPuckDragging = false;
+  });
+}
+
 
 // ==============================================================================
 // 8. BACKEND HEALTH CHECK & API STATUS SYNC
@@ -4841,6 +5317,7 @@ document.addEventListener('DOMContentLoaded', () => {
   // 9. Interaction Lab & Neumorphic Studio
   initInteractionLab();
   initNeumorphicWorkbench();
+  initNeumorphicLightingPuck();
 
   // 10. Voice Assistant, Senior Executive Review & In-Doc Tailoring Setup
   initResultsWorkspaceTabs();
