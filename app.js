@@ -3712,11 +3712,11 @@ ${text}
 function initVoiceAssistantController() {
   const orbBtn = document.getElementById('voice-orb-btn');
   const drawer = document.getElementById('voice-assistant-drawer');
-  const closeBtn = document.getElementById('voice-drawer-close-btn') || document.getElementById('voice-drawer-close');
+  const closeBtn = document.getElementById('voice-drawer-close-btn');
   const recordBtn = document.getElementById('voice-record-btn');
   const applyBtn = document.getElementById('voice-apply-btn');
   const discardBtn = document.getElementById('voice-discard-btn');
-  const quickDictateBtn = document.getElementById('btn-quick-dictate-jd') || document.getElementById('btn-quick-dictate');
+  const quickDictateBtn = document.getElementById('btn-quick-dictate-jd');
   const destSelect = document.getElementById('voice-dest-select');
   const localeSelect = document.getElementById('voice-locale-select');
 
@@ -4709,6 +4709,98 @@ async function handleActivateLLMProvider() {
 }
 
 // ==============================================================================
+
+// ==============================================================================
+// 17. PLACEMENT SNAPSHOT CONTROLLER (17-SEP-2026 HAVELOC DATASET)
+// ==============================================================================
+function initPlacementSnapshot() {
+  const searchInput = document.getElementById('snapshot-company-search');
+  const tableBody = document.getElementById('snapshot-table-body');
+  if (!tableBody) return;
+
+  function bindTargetButtons() {
+    tableBody.querySelectorAll('.btn-use-context').forEach(btn => {
+      btn.addEventListener('click', () => {
+        const company = btn.getAttribute('data-company');
+        const highest = btn.getAttribute('data-highest');
+        const jdInput = document.getElementById('jd-textarea');
+        if (jdInput) {
+          const contextNote = `Target Company: ${company} (Placement Snapshot Benchmark: Highest listed CTC ₹${highest} LPA)\nRole Expectations:\n`;
+          if (!jdInput.value.trim()) {
+            jdInput.value = contextNote;
+          } else if (!jdInput.value.includes(company)) {
+            jdInput.value = contextNote + jdInput.value;
+          }
+          const charCount = document.getElementById('jd-char-count');
+          if (charCount) charCount.textContent = `${jdInput.value.length} chars`;
+          showToast(`Target context added for ${company}. Now upload your resume to analyze alignment.`);
+          const analyzerSec = document.getElementById('analyzer');
+          if (analyzerSec) analyzerSec.scrollIntoView({ behavior: 'smooth' });
+        }
+      });
+    });
+  }
+
+  // Bind initial static rows
+  bindTargetButtons();
+
+  fetch('/placement_snapshot_2026.json')
+    .then(res => {
+      if (!res.ok) throw new Error('Snapshot endpoint returned ' + res.status);
+      return res.json();
+    })
+    .then(data => {
+      if (!data || !data.top_recruiters) return;
+
+      const totalOffersEl = document.getElementById('kpi-total-offers');
+      if (totalOffersEl && data.total_offers) totalOffersEl.textContent = Number(data.total_offers).toLocaleString();
+
+      const employersEl = document.getElementById('kpi-unique-employers');
+      if (employersEl && data.unique_employers) employersEl.textContent = data.unique_employers;
+
+      const profilesEl = document.getElementById('kpi-job-profiles');
+      if (profilesEl && data.job_profiles) profilesEl.textContent = data.job_profiles;
+
+      const avgCtcEl = document.getElementById('kpi-avg-ctc');
+      if (avgCtcEl && data.average_ctc_lpa) avgCtcEl.innerHTML = `₹${data.average_ctc_lpa} <span style="font-size:1rem;font-weight:600;">LPA</span>`;
+
+      const medianCtcEl = document.getElementById('kpi-median-ctc');
+      if (medianCtcEl && data.median_ctc_lpa) medianCtcEl.innerHTML = `₹${data.median_ctc_lpa} <span style="font-size:1rem;font-weight:600;">LPA</span>`;
+
+      const highestCtcEl = document.getElementById('kpi-highest-ctc');
+      if (highestCtcEl && data.highest_ctc_lpa) highestCtcEl.innerHTML = `₹${data.highest_ctc_lpa} <span style="font-size:1rem;font-weight:600;">LPA</span>`;
+
+      tableBody.innerHTML = data.top_recruiters.map(r => `
+        <tr>
+          <td>${r.rank}</td>
+          <td><strong>${r.company}</strong></td>
+          <td style="text-align:right;">${r.offers}</td>
+          <td style="text-align:right;">${r.profiles}</td>
+          <td style="text-align:right;">₹${r.highest_ctc_lpa} LPA</td>
+          <td style="text-align:center;">
+            <button type="button" class="btn-use-context" data-company="${r.company}" data-highest="${r.highest_ctc_lpa}">Target</button>
+          </td>
+        </tr>
+      `).join('');
+
+      bindTargetButtons();
+    })
+    .catch(err => {
+      console.warn('Placement snapshot using static fallback:', err);
+    });
+
+  if (searchInput) {
+    searchInput.addEventListener('input', (e) => {
+      const q = e.target.value.toLowerCase().trim();
+      const rows = tableBody.querySelectorAll('tr');
+      rows.forEach(row => {
+        row.style.display = row.textContent.toLowerCase().includes(q) ? '' : 'none';
+      });
+    });
+  }
+}
+
+
 // 16. INITIALIZE ON DOM READY
 // ==============================================================================
 document.addEventListener('DOMContentLoaded', () => {
@@ -4730,6 +4822,9 @@ document.addEventListener('DOMContentLoaded', () => {
   // 4. Backend Health Check & LLM Hub
   checkBackendHealth();
   initLLMControlHub();
+
+  // 4.5 Placement Snapshot (17-Sep-2026 SRMIST)
+  initPlacementSnapshot();
 
   // 5. Resume Analyzer Workspace
   initResumeAnalyzer();

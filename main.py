@@ -112,6 +112,16 @@ async def serve_manifest():
         return FileResponse(p, media_type="application/json")
     raise HTTPException(status_code=404)
 
+@app.get("/placement_snapshot_2026.json")
+@app.get("/api/placement-snapshot")
+async def serve_placement_snapshot():
+    """Serves the verified SRMIST 2026 Batch Placement Portal Snapshot (dated 17-Sep-2026)."""
+    p = os.path.join(os.path.dirname(__file__), "placement_snapshot_2026.json")
+    if os.path.exists(p):
+        return FileResponse(p, media_type="application/json")
+    raise HTTPException(status_code=404, detail="Placement snapshot dataset not found.")
+
+
 
 # --- Diagnostic & Metadata Endpoints ---
 
