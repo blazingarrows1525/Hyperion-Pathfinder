@@ -3,8 +3,9 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Resume Checker — Placement Intelligence & 3D Interactive Genome</title>
-  <meta name="description" content="Compare your resume evidence with a target job description and explore patterns in a verified corpus of 226 alumni resume records across five career archetypes.">
+  <title>Resume Checker — Placement Intelligence</title>
+  <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='8' fill='%231E6655'/%3E%3Ccircle cx='16' cy='16' r='9' fill='none' stroke='%23FFFCF6' stroke-width='2.2'/%3E%3Cpath d='M19.6 12.4l-2.3 5-5 2.3 2.3-5z' fill='%23FFFCF6'/%3E%3C/svg%3E">
+  <meta name="description" content="Compare your resume with a target job description, see where the evidence falls short, and explore an indexed corpus of alumni resumes and the 2026 placement snapshot.">
   
   <!-- Theme before first paint: only a display preference is read from storage. -->
   <script>
@@ -24,11 +25,20 @@
 
   <link rel="stylesheet" href="styles.css">
   
-  <!-- External Libraries: Three.js for 3D WebGL, Lucide for Icons, Marked for Safe Markdown, Canvas Confetti -->
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
-  <script src="https://unpkg.com/lucide@latest"></script>
-  <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
-  <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.9.3/dist/confetti.browser.min.js"></script>
+  <!-- Third-party scripts: exact versions with Subresource Integrity. If a file is
+       altered or blocked it does not run; the page degrades (2D atlas, plain icons). -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"
+          integrity="sha384-CI3ELBVUz9XQO+97x6nwMDPosPR5XvsxW2ua7N1Xeygeh1IxtgqtCkGfQY9WWdHu"
+          crossorigin="anonymous"></script>
+  <script src="https://unpkg.com/lucide@1.65.0/dist/umd/lucide.min.js"
+          integrity="sha384-oAT1xXQFdqehMqVDwRuUtxysEdTboTptoL1DtOoG6nCanpYN0HU8xpv+lIU3jh4V"
+          crossorigin="anonymous"></script>
+  <script src="https://cdn.jsdelivr.net/npm/marked@15.0.12/marked.min.js"
+          integrity="sha384-948ahk4ZmxYVYOc+rxN1H2gM1EJ2Duhp7uHtZ4WSLkV4Vtx5MUqnV+l7u9B+jFv+"
+          crossorigin="anonymous"></script>
+  <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.9.3/dist/confetti.browser.min.js"
+          integrity="sha384-sPwMflxqfAN+Q5mvlkLmHiX3PORGbZSXHiSGPTXT9VHCD/AB+b+r+vJWsqprv+7k"
+          crossorigin="anonymous"></script>
   <!-- DOMPurify sanitizes all rendered Markdown (allowlist). Pinned + SRI: if the
        file is altered or blocked it will not run, and reports render as plain text. -->
   <script src="https://cdn.jsdelivr.net/npm/dompurify@3.4.17/dist/purify.min.js"
@@ -100,9 +110,9 @@
               </div>
               <div class="prefs-row">
                 <span class="prefs-label">Motion</span>
-                <button type="button" id="btn-motion-toggle" class="pref-toggle" title="Switch between full and reduced motion" aria-label="Toggle reduced motion">
+                <button type="button" id="btn-motion-toggle" class="pref-toggle" title="Cycle motion: System, Calm, Full" aria-label="Motion: System. Activate to change.">
                   <i data-lucide="orbit" style="width:15px;height:15px;"></i>
-                  <span id="motion-mode-label">Full</span>
+                  <span id="motion-mode-label">System</span>
                 </button>
               </div>
               <div class="prefs-row">
@@ -1420,7 +1430,7 @@
     <button type="button" id="voice-orb-btn" class="voice-orb-btn" aria-label="Open Voice Assistant &amp; Dictation" aria-expanded="false" title="Click to open Hands-Free Voice Assistant">
       <div class="voice-orb-pulse" id="voice-orb-pulse-ring" aria-hidden="true"></div>
       <div class="voice-orb-inner">
-        <i data-lucide="mic" id="voice-orb-icon" style="width:22px;height:22px;color:var(--color-on-accent);"></i>
+        <i data-lucide="mic" id="voice-orb-icon" style="width:22px;height:22px;"></i>
       </div>
       <span class="voice-orb-badge" id="voice-orb-badge-text">Voice</span>
     </button>
@@ -1535,96 +1545,34 @@
   <!-- =======================================================================
        MODAL: LLM SERVICE & MODEL CONTROL HUB
        ======================================================================= -->
-  <div id="modal-llm-control-hub" class="llm-modal-backdrop" style="display:none;" role="dialog" aria-modal="true" aria-labelledby="llm-modal-title">
-    <div class="llm-modal-card neu-card">
-      <div class="llm-modal-header">
-        <div style="display:flex;align-items:center;gap:10px;">
-          <div class="brand-icon-box" style="width:36px;height:36px;">
-            <i data-lucide="cpu" style="color:var(--accent-cyan);width:20px;height:20px;"></i>
-          </div>
-          <div>
-            <h3 id="llm-modal-title" style="margin:0;font-size:1.15rem;font-weight:700;color:var(--text-primary);">LLM Engine & Model Control Hub</h3>
-            <p style="margin:0;font-size:0.78rem;color:var(--text-muted);">Multi-provider runtime configuration: Gemini, OpenAI, Groq, Ollama, or the local deterministic engine (no LLM)</p>
-          </div>
-        </div>
-        <button type="button" id="btn-close-llm-modal" class="btn-icon-circle" aria-label="Close LLM modal">
-          <i data-lucide="x" style="width:14px;height:14px;"></i>
+  <!-- Engine status: read-only. Providers are configured on the server, never in the browser. -->
+  <div id="modal-llm-control-hub" class="modal-backdrop" role="dialog" aria-modal="true" aria-labelledby="llm-modal-title">
+    <div class="modal-dialog">
+      <div class="modal-header">
+        <h2 id="llm-modal-title" class="modal-title">Analysis engine</h2>
+        <button type="button" id="btn-close-llm-modal" class="modal-close-btn" aria-label="Close dialog">
+          <i data-lucide="x" style="width:18px;height:18px;"></i>
         </button>
       </div>
 
-      <div class="llm-modal-body">
-        <!-- Active Provider Status Card -->
-        <div class="llm-status-banner">
-          <div style="display:flex;align-items:center;gap:8px;">
-            <span class="status-dot-pulse"></span>
-            <span style="font-size:0.8rem;color:var(--text-secondary);">Current Active Engine:</span>
-            <strong id="llm-active-name" style="color:var(--accent-cyan);">Checking…</strong>
-          </div>
+      <div class="engine-active">
+        <p class="detail-label">Active now</p>
+        <p class="engine-active-name">
+          <strong id="llm-active-name">Checking…</strong>
           <span id="llm-active-model-tag" class="llm-model-tag">—</span>
-        </div>
-
-        <!-- Provider Selection Tabs -->
-        <div class="llm-provider-tabs" role="tablist">
-          <button type="button" class="llm-tab-btn active" data-provider="neural_local">⚙️ Local (no LLM)</button>
-          <button type="button" class="llm-tab-btn" data-provider="gemini">⚡ Google Gemini</button>
-          <button type="button" class="llm-tab-btn" data-provider="openai">🤖 OpenAI</button>
-          <button type="button" class="llm-tab-btn" data-provider="groq">🚀 Groq LPU</button>
-          <button type="button" class="llm-tab-btn" data-provider="ollama">💻 Ollama Local</button>
-        </div>
-
-        <!-- Provider Details Form -->
-        <div class="llm-form-container">
-          <div id="llm-provider-desc" class="llm-provider-desc">
-            Zero-latency, zero-cost deterministic synthesis with all 18 prompt engineering frameworks. 100% offline & privacy-safe.
-          </div>
-
-          <div class="form-group" id="group-llm-api-key" style="display:none;">
-            <label for="llm-input-api-key">API Key <span style="color:var(--accent-coral);">*</span></label>
-            <div class="input-with-action">
-              <input type="password" id="llm-input-api-key" class="neu-textarea" placeholder="Paste your API key here (e.g. AIzaSy... or gsk_... or sk-...)">
-              <button type="button" id="btn-toggle-key-visibility" class="btn-icon-inside" title="Show/Hide API Key">
-                <i data-lucide="eye" style="width:14px;height:14px;"></i>
-              </button>
-            </div>
-            <span class="form-hint">Stored strictly in browser memory for this session. Never written to disk.</span>
-          </div>
-
-          <div class="form-group" id="group-llm-model">
-            <label for="llm-select-model">Model ID</label>
-            <input type="text" id="llm-select-model" class="neu-textarea" value="deterministic-fallback" placeholder="e.g. gemini-2.0-flash, gpt-4o-mini, llama-3.3-70b-versatile">
-          </div>
-
-          <div class="form-group" id="group-llm-endpoint" style="display:none;">
-            <label for="llm-input-endpoint">Custom Base URL (Optional)</label>
-            <input type="text" id="llm-input-endpoint" class="neu-textarea" placeholder="e.g. http://localhost:11434/v1">
-          </div>
-
-          <!-- Live Ping Test Result Box -->
-          <div id="llm-ping-result-box" class="llm-ping-result" style="display:none;">
-            <div style="display:flex;justify-content:space-between;align-items:center;">
-              <span id="llm-ping-status" style="font-weight:700;">Ping Test Passed</span>
-              <span id="llm-ping-latency" class="badge-latency">14.2 ms</span>
-            </div>
-            <p id="llm-ping-reply" style="margin:4px 0 0;font-size:0.78rem;color:var(--text-secondary);"></p>
-          </div>
-        </div>
+        </p>
+        <p id="llm-active-note" class="engine-note"></p>
       </div>
 
-      <div class="llm-modal-footer">
-        <button type="button" id="btn-test-llm-ping" class="neu-btn btn-sm">
-          <i data-lucide="activity" style="width:14px;height:14px;"></i>
-          <span>Test Connection</span>
-        </button>
-        <button type="button" id="btn-activate-llm-provider" class="neu-btn neu-btn-primary btn-sm">
-          <i data-lucide="check" style="width:14px;height:14px;"></i>
-          <span>Activate Provider</span>
-        </button>
+      <p class="detail-label">Engines this server supports</p>
+      <ul id="llm-provider-list" class="engine-list" aria-live="polite"></ul>
+
+      <div class="engine-config-note">
+        <h3 class="block-title"><i data-lucide="server-cog" style="width:16px;height:16px;"></i> Configured on the server</h3>
+        <p>Engines are switched with environment variables on the server, for example <code>GEMINI_API_KEY</code>, <code>OPENAI_API_KEY</code>, <code>GROQ_API_KEY</code> or <code>OLLAMA_BASE_URL</code> in <code>.env</code>, followed by a restart. This page never asks for an API key and never stores one.</p>
       </div>
     </div>
   </div>
-
-  <!-- Cyber Scanline Overlay for Maximalist Mode -->
-  <div class="cyber-scanline" id="cyber-scanline" aria-hidden="true"></div>
 
 
   <!-- Application Logic -->

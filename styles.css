@@ -1128,6 +1128,14 @@ main section[id] {
   .atlas-hero-lede { grid-template-columns: 1fr; gap: 18px; }
 }
 
+@media (max-width: 400px) {
+  .masthead-inner { gap: 6px !important; }
+  .nav-actions { gap: 6px; }
+  .brand-name { font-size: 1.12rem; }
+  .engine-status-badge, .btn-prefs { width: 36px !important; height: 36px; }
+  .btn-mobile-menu { width: 38px; height: 38px; }
+}
+
 @media (max-width: 640px) {
   .masthead-inner { padding: 0 16px; gap: 10px; height: 62px; }
   .masthead-cta { display: none; }
@@ -5282,9 +5290,9 @@ main section[id] {
 /* --- Hands-Free Voice Assistant Widget --- */
 .voice-assistant-widget {
   position: fixed;
-  bottom: 28px;
-  right: 28px;
-  z-index: 9999;
+  bottom: 24px;
+  right: 24px;
+  z-index: 800; /* below the masthead (900) and dialogs (999) */
   display: flex;
   flex-direction: column;
   align-items: flex-end;
@@ -5295,9 +5303,10 @@ main section[id] {
   width: 62px;
   height: 62px;
   border-radius: 50%;
-  background: var(--neu-base);
-  box-shadow: var(--neu-raised-lg), 0 0 20px rgba(255, 255, 255, 0.12);
-  border: 2px solid rgba(var(--tint-rgb), 0.25);
+  background: var(--color-surface-raised);
+  color: var(--color-forest);
+  box-shadow: var(--shadow-raised);
+  border: 1px solid var(--color-border-strong);
   cursor: pointer;
   display: flex;
   flex-direction: column;
@@ -5309,9 +5318,14 @@ main section[id] {
 }
 
 .voice-orb-btn:hover {
-  transform: scale(1.08);
-  border-color: rgba(var(--tint-rgb), 0.7);
-  box-shadow: 0 16px 36px rgba(var(--shade-rgb), 0.41), 0 0 28px rgba(255, 255, 255, 0.35);
+  transform: translateY(-1px);
+  border-color: var(--color-forest);
+}
+
+@media (max-width: 640px) {
+  .voice-assistant-widget { bottom: 14px; right: 12px; }
+  .voice-orb-btn { width: 48px; height: 48px; }
+  .voice-orb-badge { display: none; }
 }
 
 .voice-orb-btn:focus-visible {
@@ -5919,169 +5933,102 @@ main section[id] {
 }
 
 /* ==============================================================================
-   LLM SERVICE & MODEL CONTROL HUB MODAL
+   ENGINE STATUS DIALOG — read-only; configuration happens on the server
    ============================================================================== */
-
-
-.llm-modal-backdrop {
-  position: fixed;
-  inset: 0;
-  z-index: 10000;
-  background: rgba(var(--shade-rgb), 0.42);
-  backdrop-filter: blur(14px);
-  -webkit-backdrop-filter: blur(14px);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  padding: 20px;
-  animation: fadeIn 0.2s ease-out;
-}
-
-.llm-modal-card {
-  width: 100%;
-  max-width: 620px;
-  background: var(--bg-surface);
-  border: 1px solid rgba(var(--tint-rgb), 0.15);
-  border-radius: var(--radius-2xl);
-  box-shadow: 0 25px 60px rgba(var(--shade-rgb), 0.27), var(--neu-raised-lg);
-  display: flex;
-  flex-direction: column;
-  overflow: hidden;
-  animation: slideUp 0.25s var(--ease-standard);
-}
-
-.llm-modal-header {
-  padding: 20px 24px;
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  border-bottom: 1px solid rgba(var(--tint-rgb), 0.08);
-}
-
-.llm-modal-body {
-  padding: 22px 24px;
-  display: flex;
-  flex-direction: column;
-  gap: 18px;
-  max-height: 70vh;
-  overflow-y: auto;
-}
-
-.llm-status-banner {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  background: rgba(var(--surface-rgb), 0.7);
-  border: 1px solid rgba(var(--lagoon-rgb), 0.25);
+.engine-active {
+  margin-bottom: 18px;
+  padding: 14px 16px;
   border-radius: var(--radius-lg);
-  padding: 12px 16px;
+  background: var(--color-surface-sage);
 }
 
-.status-dot-pulse {
-  width: 8px;
-  height: 8px;
-  border-radius: 50%;
-  background: var(--color-forest);
-  box-shadow: 0 0 10px var(--color-forest);
+.engine-active .detail-label {
+  margin-top: 0;
+}
+
+.engine-active-name {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 10px;
+  font-size: 1.05rem;
+  color: var(--color-ink);
 }
 
 .llm-model-tag {
-  font-size: 0.72rem;
-  font-weight: 700;
-  background: rgba(var(--tint-rgb), 0.08);
-  padding: 3px 8px;
-  border-radius: var(--radius-full);
-  color: var(--text-muted);
+  padding: 2px 8px;
+  border-radius: var(--radius-sm);
+  background: var(--color-surface);
+  font-family: var(--font-mono);
+  font-size: 0.76rem;
+  color: var(--color-ink-soft);
 }
 
-.llm-provider-tabs {
-  display: flex;
-  gap: 6px;
-  overflow-x: auto;
-  padding-bottom: 4px;
-}
-
-.llm-tab-btn {
-  padding: 8px 14px;
-  font-family: var(--font-body);
-  font-size: 0.78rem;
-  font-weight: 700;
-  color: var(--text-muted);
-  background: rgba(var(--tint-rgb), 0.04);
-  border: 1px solid rgba(var(--tint-rgb), 0.08);
-  border-radius: var(--radius-full);
-  cursor: pointer;
-  white-space: nowrap;
-  transition: all 0.2s;
-}
-
-.llm-tab-btn:hover {
-  color: var(--color-ink);
-  border-color: rgba(var(--tint-rgb), 0.2);
-}
-
-.llm-tab-btn.active {
-  background: var(--neu-base);
-  color: var(--accent-cyan);
-  border-color: var(--accent-cyan);
-  box-shadow: 0 0 12px rgba(var(--lagoon-rgb), 0.3);
-}
-
-.llm-provider-desc {
-  font-size: 0.82rem;
+.engine-note {
+  margin-top: 6px;
+  font-size: 0.84rem;
   line-height: 1.5;
-  color: var(--text-secondary);
-  background: rgba(var(--tint-rgb), 0.03);
-  padding: 12px 14px;
-  border-radius: var(--radius-md);
-  border-left: 3px solid var(--accent-cyan);
-  margin-bottom: 12px;
+  color: var(--color-ink-soft);
 }
 
-.input-with-action {
-  position: relative;
+.engine-list {
+  list-style: none;
   display: flex;
-  align-items: center;
+  flex-direction: column;
+  margin-bottom: 18px;
+  border-top: 1px solid var(--color-border);
 }
 
-.btn-icon-inside {
-  position: absolute;
-  right: 12px;
-  background: transparent;
-  border: none;
-  color: var(--text-muted);
-  cursor: pointer;
+.engine-item {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 14px;
+  padding: 12px 0;
+  border-bottom: 1px solid var(--color-border);
 }
 
-.btn-icon-inside:hover {
+.engine-item strong {
+  font-size: 0.92rem;
   color: var(--color-ink);
 }
 
-.llm-ping-result {
-  background: rgba(var(--forest-rgb), 0.08);
-  border: 1px solid rgba(var(--forest-rgb), 0.3);
-  border-radius: var(--radius-md);
-  padding: 10px 14px;
-  color: var(--color-forest);
-  font-size: 0.82rem;
+.engine-item p {
+  margin-top: 2px;
+  font-size: 0.8rem;
+  line-height: 1.45;
+  color: var(--color-muted);
 }
 
-.badge-latency {
+.engine-status {
+  flex-shrink: 0;
+  padding: 3px 10px;
+  border-radius: var(--radius-full);
   font-size: 0.72rem;
-  background: rgba(var(--forest-rgb), 0.2);
-  padding: 2px 6px;
+  font-weight: 700;
+  white-space: nowrap;
+}
+
+.engine-status.is-active { background: rgba(var(--forest-rgb), 0.14); color: var(--color-forest-ink); }
+.engine-status.is-ready { background: rgba(var(--lagoon-rgb), 0.14); color: var(--color-lagoon-ink); }
+.engine-status.is-off { background: var(--color-surface-inset); color: var(--color-ink-soft); }
+
+.engine-config-note {
+  padding: 14px 16px;
+  border: 1px dashed var(--color-border-strong);
+  border-radius: var(--radius-lg);
+  font-size: 0.86rem;
+  line-height: 1.55;
+  color: var(--color-ink-soft);
+}
+
+.engine-config-note code {
+  padding: 1px 5px;
   border-radius: 4px;
+  background: rgba(var(--tint-rgb), 0.07);
+  font-family: var(--font-mono);
+  font-size: 0.84em;
 }
-
-.llm-modal-footer {
-  padding: 16px 24px;
-  display: flex;
-  align-items: center;
-  justify-content: flex-end;
-  gap: 12px;
-  border-top: 1px solid rgba(var(--tint-rgb), 0.08);
-}
-
 
 /* ==============================================================================
    ENHANCED SPATIAL 3D & DEEP ANIMATION UPGRADES (MASTER PROMPT V2)

@@ -114,3 +114,16 @@ All analyzer IDs used by `app.js` are kept; the changes are structural.
 | WebGL missing or context lost (old: blank or 2D dots) | replaced | `#atlas-fallback`: an SVG atlas of the same five clusters, still selectable, with the brief's note. `webglcontextrestored` rebuilds the scene. |
 | — | added | `#atlas-evidence-card` (Evidence map: count, curated skills, link to Genome). Legend hover and focus preview the node, and `selectArchetype()` syncs the scene, legend, Genome and fallback. |
 | Showcase "Spatial 3D Constellation Camera" (`#btn-3d-accelerate`, `#btn-3d-cluster-focus`, `#btn-3d-reset-cam`) and `toggle3DAcceleration` / `focusNextArchetypeNode` | removed | Duplicated the stage controls |
+
+## Security, deployment and motion (M6 / M7)
+
+| Removed / changed | Status | Replacement |
+|---|---|---|
+| LLM control hub with a public API-key form (`#llm-input-api-key` type=password, model and endpoint inputs, provider tabs, `#btn-test-llm-ping`, `#btn-activate-llm-provider`), posting to unauthenticated `/api/llm/configure` and `/api/llm/test` | removed | `#modal-llm-control-hub` is now a read-only "Analysis engine" dialog: the active engine, each provider's state as the backend reports it, and server `.env` instructions. The browser never asks for or stores a key. The endpoints still exist on the server (owner item). |
+| `appState.backendBaseUrl = 'http://127.0.0.1:8000'` | removed | `apiUrl()` / `resolveApiBase()`: same origin by default, `window.CAREER_CONFIG.API_BASE_URL` for split deployments; all 8 fetches use it |
+| `lucide@latest`, unversioned `marked`, `three` r128 and `canvas-confetti` without integrity | pinned | Exact versions (`lucide@1.65.0`, `marked@15.0.12`, the versions already served) with `integrity` + `crossorigin` on every third-party script |
+| Missing favicon (404) | fixed | Inline SVG favicon |
+| `#cyber-scanline` element | removed | No styles remained |
+| Motion toggle Full ↔ Reduced (ignored later OS changes) | replaced | `#btn-motion-toggle` cycles System / Calm / Full (stored as a display preference, `career_ui_motion_v1`); System follows `prefers-reduced-motion` live. Calm clears tilt and magnetic offsets and makes the atlas static. |
+| Card tilt ±9.5° | reduced | ±3.5° (brief: 2–4°); handlers re-check motion at event time |
+| Voice orb: cream icon on a cream surface (invisible), `z-index: 9999` above dialogs | fixed | Forest icon on paper, `z-index: 800`, icon-only 48 px on phones |

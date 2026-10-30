@@ -83,6 +83,21 @@ function initSpatialAudioController() {
 }
 
 // ==============================================================================
+// API BASE URL — same origin by default. A deployment that serves the UI from a
+// different host sets window.CAREER_CONFIG = { API_BASE_URL: 'https://api…' }
+// before app.js loads.
+// ==============================================================================
+function resolveApiBase() {
+  const configured = window.CAREER_CONFIG && window.CAREER_CONFIG.API_BASE_URL;
+  if (configured && typeof configured === 'string') return configured.replace(/\/$/, '');
+  return '';
+}
+
+function apiUrl(path) {
+  return `${resolveApiBase()}${path.startsWith('/') ? path : `/${path}`}`;
+}
+
+// ==============================================================================
 // THEME PALETTE — the single colour source for canvases, charts and Three.js.
 // Reads the active theme's CSS tokens, so a theme switch only needs a re-read.
 // ==============================================================================
@@ -130,7 +145,6 @@ const appState = {
   // Motion & Environment
   motionMode: window.matchMedia('(prefers-reduced-motion: reduce)').matches ? 'reduced' : 'full',
   apiStatus: 'checking', // 'checking' | 'connected' | 'offline' | 'demo'
-  backendBaseUrl: 'http://127.0.0.1:8000',
 
   // Analyzer State
   analyzer: {
@@ -1761,16 +1775,17 @@ function init3DCardTilt() {
     }
 
     card.addEventListener('mousemove', (e) => {
+      if (appState.motionMode === 'reduced') return;
       const rect = card.getBoundingClientRect();
       const x = e.clientX - rect.left;
       const y = e.clientY - rect.top;
       const centerX = rect.width / 2;
       const centerY = rect.height / 2;
 
-      const rotateX = (((y - centerY) / centerY) * -9.5).toFixed(2);
-      const rotateY = (((x - centerX) / centerX) * 9.5).toFixed(2);
+      const rotateX = (((y - centerY) / centerY) * -3.5).toFixed(2);
+      const rotateY = (((x - centerX) / centerX) * 3.5).toFixed(2);
 
-      card.style.transform = `perspective(1000px) rotateX(${rotateX}deg) rotateY(${rotateY}deg) scale3d(1.025, 1.025, 1.025)`;
+      card.style.transform = `perspective(1000px) rotateX(${rotateX}deg) rotateY(${rotateY}deg) scale3d(1.01, 1.01, 1.01)`;
 
       const percentX = (x / rect.width) * 100;
       const percentY = (y / rect.height) * 100;
@@ -1796,6 +1811,7 @@ function initHoverButtons() {
     btn.dataset.magneticBound = 'true';
 
     btn.addEventListener('mousemove', (e) => {
+      if (appState.motionMode === 'reduced') return;
       const rect = btn.getBoundingClientRect();
       const x = e.clientX - rect.left - rect.width / 2;
       const y = e.clientY - rect.top - rect.height / 2;
@@ -1915,7 +1931,7 @@ async function checkBackendHealth() {
     const controller = new AbortController();
     const timeoutId = setTimeout(() => controller.abort(), 2500);
 
-    const response = await fetch(`${appState.backendBaseUrl}/health`, {
+    const response = await fetch(apiUrl('/health'), {
       method: 'GET',
       signal: controller.signal
     });
@@ -2160,7 +2176,7 @@ async function executeAnalysis() {
     const formData = new FormData();
     formData.append('resume_file', file);
 
-    const url = new URL(`${appState.backendBaseUrl}/analyze`);
+    const url = new URL(apiUrl('/analyze'), window.location.href);
     url.searchParams.append('job_description', jd);
 
     const personaInput = document.querySelector('input[name="executive_persona"]:checked');
@@ -2215,7 +2231,7 @@ async function executeAnalysis() {
     markdownArea.innerHTML = `
       <div style="padding:16px;background:rgba(var(--terracotta-rgb),0.1);border-radius:8px;border:1px solid rgba(var(--terracotta-rgb),0.3);">
         <strong style="color:var(--accent-coral);">Connection to Backend Failed</strong>
-        <p style="margin-top:6px;font-size:0.88rem;">Ensure the backend is running at <code>http://127.0.0.1:8000</code> or toggle <strong>Demo Mode</strong> to preview the report layout.</p>
+        <p style="margin-top:6px;font-size:0.88rem;">Check that the API server is running and reachable from this page, or switch on <strong>Demo mode</strong> to preview the report layout.</p>
         <button type="button" class="btn-preset-chip" style="margin-top:10px;" onclick="enableDemoAndRun()">Run Illustrative Demo Analysis</button>
       </div>
     `;
@@ -2436,7 +2452,7 @@ let corpusSummaryPromise = null;
 // manifest (which lists degraded files by name) is never fetched client-side.
 function loadCorpusSummary() {
   if (!corpusSummaryPromise) {
-    corpusSummaryPromise = fetch('/api/corpus-summary')
+    corpusSummaryPromise = fetch(apiUrl('/api/corpus-summary'))
       .then(res => (res.ok ? res.json() : null))
       .then(summary => {
         if (summary) appState.corpusSummary = summary;
@@ -3099,7 +3115,7 @@ function buildStudioFramework(entry) {
 
 function loadFrameworkRegistry() {
   const note = document.getElementById('framework-registry-note');
-  return fetch('/api/frameworks')
+  return fetch(apiUrl('/api/frameworks'))
     .then(res => {
       if (!res.ok) throw new Error('Framework registry returned ' + res.status);
       return res.json();
@@ -3597,25 +3613,62 @@ function setNeuPreviewShape(shape) {
   }
 }
 
+// Motion preference: System (follows prefers-reduced-motion), Calm or Full.
+// appState.motionMode stays the effective value used everywhere ('reduced' = calm).
+const MOTION_STORAGE_KEY = 'career_ui_motion_v1';
+const systemMotionQuery = window.matchMedia('(prefers-reduced-motion: reduce)');
+const MOTION_LABELS = { system: 'System', calm: 'Calm', full: 'Full' };
+
+function getSavedMotionSetting() {
+  try {
+    const saved = localStorage.getItem(MOTION_STORAGE_KEY);
+    if (saved === 'system' || saved === 'calm' || saved === 'full') return saved;
+  } catch (err) { /* storage unavailable: follow the system */ }
+  return 'system';
+}
+
+function applyMotionSetting(setting, { persist = true, announce = false } = {}) {
+  const calm = setting === 'calm' || (setting === 'system' && systemMotionQuery.matches);
+  appState.motionSetting = setting;
+  appState.motionMode = calm ? 'reduced' : 'full';
+  document.body.setAttribute('data-motion', appState.motionMode);
+
+  const label = document.getElementById('motion-mode-label');
+  const text = setting === 'system' ? `System (${calm ? 'calm' : 'full'})` : MOTION_LABELS[setting];
+  if (label) label.textContent = text;
+  const btn = document.getElementById('btn-motion-toggle');
+  if (btn) btn.setAttribute('aria-label', `Motion: ${text}. Activate to change.`);
+
+  if (typeof careerAtlas !== 'undefined' && careerAtlas) careerAtlas.setReducedMotion(calm);
+  if (calm) {
+    // drop any tilt or magnetic offset already applied
+    document.querySelectorAll('[data-tilt-bound], [data-magnetic-bound]').forEach(el => { el.style.transform = ''; });
+  } else {
+    init3DCardTilt();
+    initHoverButtons();
+  }
+  if (persist) {
+    try { localStorage.setItem(MOTION_STORAGE_KEY, setting); } catch (err) { /* preference only */ }
+  }
+  if (announce) showToast(`Motion: ${text}`);
+}
+
 function initAccessibilityAndMotion() {
   const motionBtn = document.getElementById('btn-motion-toggle');
   const motionLabel = document.getElementById('motion-mode-label');
 
-  if (motionBtn && motionLabel) {
+  applyMotionSetting(getSavedMotionSetting(), { persist: false });
+  if (motionBtn) {
     motionBtn.addEventListener('click', () => {
-      appState.motionMode = appState.motionMode === 'full' ? 'reduced' : 'full';
-      document.body.setAttribute('data-motion', appState.motionMode);
-      motionLabel.textContent = appState.motionMode === 'full' ? 'Full' : 'Reduced';
-      motionBtn.setAttribute('aria-pressed', String(appState.motionMode === 'reduced'));
-
-      if (careerAtlas) careerAtlas.setReducedMotion(appState.motionMode === 'reduced');
-      if (appState.motionMode === 'reduced') {
-        showToast('Reduced motion: the atlas stays still and transitions are instant.');
-      } else {
-        init3DCardTilt();
-        initHoverButtons();
-        showToast('Full motion enabled.');
-      }
+      const order = ['system', 'calm', 'full'];
+      const next = order[(order.indexOf(appState.motionSetting) + 1) % order.length];
+      applyMotionSetting(next, { announce: true });
+    });
+  }
+  // "System" follows the operating-system setting live.
+  if (systemMotionQuery.addEventListener) {
+    systemMotionQuery.addEventListener('change', () => {
+      if (appState.motionSetting === 'system') applyMotionSetting('system', { persist: false });
     });
   }
 
@@ -3634,6 +3687,7 @@ function initAccessibilityAndMotion() {
     if (e.key === 'Escape') {
       closeCompanyModal();
       closeCompareModal();
+      closeModal('modal-llm-control-hub');
     }
   });
 
@@ -4105,7 +4159,7 @@ async function recalculateDraftFit() {
       base_revision_id: appState.resumeDraft.currentRevisionId
     };
 
-    const response = await fetch(`${appState.backendBaseUrl}/api/markup/recalculate`, {
+    const response = await fetch(apiUrl('/api/markup/recalculate'), {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(payload)
@@ -4607,7 +4661,7 @@ async function submitCoachQuery(overrideText) {
       framework_id: chosenFramework
     };
 
-    const response = await fetch(`${appState.backendBaseUrl}/api/coach/chat`, {
+    const response = await fetch(apiUrl('/api/coach/chat'), {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(payload)
@@ -4940,7 +4994,8 @@ function initDesignheadController() {
   const btnMax = document.getElementById('btn-designhead-maximalist');
   if (!btnMin || !btnMax) return;
 
-  const savedMode = localStorage.getItem('resume_checker_mode') || 'maximalist';
+  let savedMode = 'maximalist';
+  try { savedMode = localStorage.getItem('resume_checker_mode') || 'maximalist'; } catch (err) { /* storage blocked */ }
   setDesignheadMode(savedMode, false);
 
   btnMin.addEventListener('click', () => setDesignheadMode('minimalist', true));
@@ -4965,7 +5020,7 @@ function setDesignheadMode(mode, triggerToast = true) {
     if (triggerToast) showToast('3D detail: High', 'info');
   }
 
-  localStorage.setItem('resume_checker_mode', mode);
+  try { localStorage.setItem('resume_checker_mode', mode); } catch (err) { /* preference only */ }
 
   if (typeof update3DSceneAesthetic === 'function') {
     update3DSceneAesthetic(mode);
@@ -4976,206 +5031,72 @@ function setDesignheadMode(mode, triggerToast = true) {
 // 15. LLM SERVICE RUNTIME MANAGEMENT & TELEMETRY HUB
 // ==============================================================================
 let cachedLLMProviders = [];
-let selectedProviderTab = 'neural_local';
 
 function initLLMControlHub() {
-  const modal = document.getElementById('modal-llm-control-hub');
   const openBtn = document.getElementById('btn-llm-control-hub');
   const closeBtn = document.getElementById('btn-close-llm-modal');
-  const testBtn = document.getElementById('btn-test-llm-ping');
-  const activateBtn = document.getElementById('btn-activate-llm-provider');
-  const keyToggleBtn = document.getElementById('btn-toggle-key-visibility');
-
-  if (!modal || !openBtn) return;
-
-  openBtn.addEventListener('click', () => {
-    modal.style.display = 'flex';
-    refreshLLMProvidersList();
-  });
-
-  if (closeBtn) {
-    closeBtn.addEventListener('click', () => {
-      modal.style.display = 'none';
+  if (openBtn) {
+    openBtn.addEventListener('click', () => {
+      if (prefsDisclosure) prefsDisclosure.setOpen(false);
+      refreshLLMProvidersList();
+      openModal('modal-llm-control-hub');
     });
   }
-
-  modal.addEventListener('click', (e) => {
-    if (e.target === modal) modal.style.display = 'none';
-  });
-
-  if (keyToggleBtn) {
-    keyToggleBtn.addEventListener('click', () => {
-      const input = document.getElementById('llm-input-api-key');
-      if (input) {
-        input.type = input.type === 'password' ? 'text' : 'password';
-      }
-    });
-  }
-
-  // Provider tabs switching
-  document.querySelectorAll('.llm-tab-btn').forEach(tab => {
-    tab.addEventListener('click', () => {
-      document.querySelectorAll('.llm-tab-btn').forEach(t => t.classList.remove('active'));
-      tab.classList.add('active');
-      const provId = tab.getAttribute('data-provider');
-      selectedProviderTab = provId;
-      updateLLMProviderFormView(provId);
-    });
-  });
-
-  // Test ping
-  if (testBtn) {
-    testBtn.addEventListener('click', handleTestLLMConnection);
-  }
-
-  // Activate provider
-  if (activateBtn) {
-    activateBtn.addEventListener('click', handleActivateLLMProvider);
-  }
-
-  // Initial boot fetch
+  if (closeBtn) closeBtn.addEventListener('click', () => closeModal('modal-llm-control-hub'));
   refreshLLMProvidersList();
 }
 
+// Read-only view of GET /api/llm/providers. Switching engines is a server
+// configuration task; the browser never sends or stores provider credentials.
 async function refreshLLMProvidersList() {
   try {
-    const res = await fetch('/api/llm/providers');
+    const res = await fetch(apiUrl('/api/llm/providers'));
     if (!res.ok) return;
     const data = await res.json();
-
     cachedLLMProviders = data.providers || [];
-
-    // Update active badges
-    const navLabel = document.getElementById('nav-active-llm-label');
-    const activeName = document.getElementById('llm-active-name');
-    const activeModel = document.getElementById('llm-active-model-tag');
 
     // The local provider is deterministic template synthesis, not a language
     // model; say so instead of showing a model name. Detect it by its stable
     // model id rather than by a display string.
     const isLocalEngine = data.active_model === 'deterministic-fallback';
+    const navLabel = document.getElementById('nav-active-llm-label');
+    const activeName = document.getElementById('llm-active-name');
+    const activeModel = document.getElementById('llm-active-model-tag');
+    const activeNote = document.getElementById('llm-active-note');
     if (navLabel) navLabel.textContent = isLocalEngine ? 'Local engine (no LLM)' : data.active_provider;
     if (activeName) activeName.textContent = data.active_provider;
     if (activeModel) activeModel.textContent = data.active_model;
+    if (activeNote) {
+      activeNote.textContent = isLocalEngine
+        ? 'No language model is configured, so reports come from the deterministic local engine.'
+        : 'Reports are written by this model; the score itself always comes from the fixed rubric.';
+    }
 
+    const list = document.getElementById('llm-provider-list');
+    if (list) {
+      list.innerHTML = cachedLLMProviders.map(p => {
+        const isActive = p.name === data.active_provider;
+        // Only claim what the backend reports: whether a key is set, not whether a service is up.
+        const status = isActive ? 'Active'
+          : p.requires_key ? (p.is_ready ? 'Key set on the server' : 'Not configured')
+          : 'No key needed';
+        return `
+          <li class="engine-item${isActive ? ' is-active' : ''}">
+            <div>
+              <strong>${escapeHTML(p.name)}</strong>
+              <p>${escapeHTML(p.description || '')}</p>
+            </div>
+            <span class="engine-status ${isActive ? 'is-active' : (p.requires_key && p.is_ready ? 'is-ready' : 'is-off')}">${status}</span>
+          </li>`;
+      }).join('');
+    }
   } catch (err) {
     console.warn('Unable to query /api/llm/providers:', err);
   }
 }
 
-function updateLLMProviderFormView(providerId) {
-  const keyGroup = document.getElementById('group-llm-api-key');
-  const endpointGroup = document.getElementById('group-llm-endpoint');
-  const modelInput = document.getElementById('llm-select-model');
-  const descEl = document.getElementById('llm-provider-desc');
-  const pingBox = document.getElementById('llm-ping-result-box');
 
-  if (pingBox) pingBox.style.display = 'none';
 
-  if (providerId === 'neural_local') {
-    if (keyGroup) keyGroup.style.display = 'none';
-    if (endpointGroup) endpointGroup.style.display = 'none';
-    if (modelInput) modelInput.value = 'deterministic-fallback';
-    if (descEl) descEl.textContent = 'No language model: deterministic, template-based responses built from the 18 prompt frameworks. Runs offline with no external API calls and no API key.';
-  } else if (providerId === 'gemini') {
-    if (keyGroup) keyGroup.style.display = 'block';
-    if (endpointGroup) endpointGroup.style.display = 'none';
-    if (modelInput) modelInput.value = 'gemini-2.0-flash';
-    if (descEl) descEl.textContent = "Google's state-of-the-art Gemini 2.0 & 1.5 Flash models via the official OpenAI-compatible endpoint. Blazing sub-second inference.";
-  } else if (providerId === 'openai') {
-    if (keyGroup) keyGroup.style.display = 'block';
-    if (endpointGroup) endpointGroup.style.display = 'none';
-    if (modelInput) modelInput.value = 'gpt-4o-mini';
-    if (descEl) descEl.textContent = 'OpenAI flagship GPT-4o, GPT-4o-mini, and o3-mini models for deep contextual engineering reasoning.';
-  } else if (providerId === 'groq') {
-    if (keyGroup) keyGroup.style.display = 'block';
-    if (endpointGroup) endpointGroup.style.display = 'none';
-    if (modelInput) modelInput.value = 'llama-3.3-70b-versatile';
-    if (descEl) descEl.textContent = 'Groq LPU high-throughput hardware inference running Meta Llama-3.3-70B and DeepSeek-R1-distill at 500+ tokens/sec.';
-  } else if (providerId === 'ollama') {
-    if (keyGroup) keyGroup.style.display = 'none';
-    if (endpointGroup) endpointGroup.style.display = 'block';
-    if (modelInput) modelInput.value = 'llama3';
-    if (descEl) descEl.textContent = 'Local privacy-first daemon running on http://localhost:11434/v1. Zero external network egress.';
-  }
-}
-
-async function handleTestLLMConnection() {
-  const pingBox = document.getElementById('llm-ping-result-box');
-  const pingStatus = document.getElementById('llm-ping-status');
-  const pingLatency = document.getElementById('llm-ping-latency');
-  const pingReply = document.getElementById('llm-ping-reply');
-  const apiKey = (document.getElementById('llm-input-api-key')?.value || '').trim();
-  const model = (document.getElementById('llm-select-model')?.value || '').trim();
-  const endpoint = (document.getElementById('llm-input-endpoint')?.value || '').trim();
-
-  if (pingBox) {
-    pingBox.style.display = 'block';
-    pingStatus.textContent = 'Probing Provider Endpoint...';
-    pingLatency.textContent = '...';
-    pingReply.textContent = 'Sending test packet...';
-  }
-
-  try {
-    const res = await fetch('/api/llm/test', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        provider_id: selectedProviderTab,
-        api_key: apiKey || null,
-        model: model || null,
-        base_url: endpoint || null
-      })
-    });
-
-    const data = await res.json();
-    if (data.success) {
-      pingStatus.textContent = 'Connection Verified (Success)';
-      pingStatus.style.color = 'var(--color-forest)';
-      pingLatency.textContent = `${data.latency_ms} ms`;
-      pingReply.textContent = `Provider reply: "${data.reply}"`;
-    } else {
-      pingStatus.textContent = 'Probe Failed';
-      pingStatus.style.color = 'var(--color-danger)';
-      pingLatency.textContent = `${data.latency_ms || 0} ms`;
-      pingReply.textContent = data.error || 'Check your credentials or network connectivity.';
-    }
-  } catch (err) {
-    if (pingStatus) pingStatus.textContent = 'Network Error';
-    if (pingReply) pingReply.textContent = String(err);
-  }
-}
-
-async function handleActivateLLMProvider() {
-  const modal = document.getElementById('modal-llm-control-hub');
-  const apiKey = (document.getElementById('llm-input-api-key')?.value || '').trim();
-  const model = (document.getElementById('llm-select-model')?.value || '').trim();
-  const endpoint = (document.getElementById('llm-input-endpoint')?.value || '').trim();
-
-  try {
-    const res = await fetch('/api/llm/configure', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        provider_id: selectedProviderTab,
-        api_key: apiKey || null,
-        model: model || null,
-        base_url: endpoint || null
-      })
-    });
-
-    const data = await res.json();
-    if (data.success) {
-      showToast(`LLM Activated: ${data.provider_name} (${data.model})`, 'success');
-      if (modal) modal.style.display = 'none';
-      refreshLLMProvidersList();
-    } else {
-      showToast(`Activation failed: ${data.error || 'Invalid configuration.'}`, 'error');
-    }
-  } catch (err) {
-    showToast(`Error activating provider: ${err}`, 'error');
-  }
-}
 
 // ==============================================================================
 
@@ -5198,7 +5119,7 @@ function initPlacementSnapshot() {
     searchInput.addEventListener('input', () => filterSnapshotTable(searchInput.value));
   }
 
-  fetch('/placement_snapshot_2026.json')
+  fetch(apiUrl('/placement_snapshot_2026.json'))
     .then(res => {
       if (!res.ok) throw new Error('Snapshot endpoint returned ' + res.status);
       return res.json();
