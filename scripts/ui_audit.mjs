@@ -3,7 +3,10 @@
 //
 //   node scripts/ui_audit.mjs --out docs/terra-atelier/after [--url http://127.0.0.1:8000/]
 //        [--widths 360,375,1440] [--sections hero,analyzer] [--no-shots] [--theme grove]
-//        [--reduced-motion]
+//        [--reduced-motion] [--eval "js run in the page before measuring"] [--tag name]
+//
+// --eval may return a Promise; it runs after load (and after --theme). --tag names
+// the screenshot files <section>.<tag>.jpg so several states can share one folder.
 //
 // Writes <out>/<width>/<section>.jpg and <out>/audit.json (overflow, console errors,
 // failed requests, static DOM checks). Requires the backend to be running.
@@ -24,6 +27,8 @@ const OUT = resolve(opt('out', 'ui-audit-out'));
 const SHOTS = !flag('no-shots');
 const THEME = opt('theme', '');
 const REDUCED = flag('reduced-motion');
+const EVAL = opt('eval', '');
+const TAG = opt('tag', '');
 const VIEWPORTS = {
   360: 780, 375: 812, 390: 844, 414: 896, 430: 932, 768: 1024, 800: 900,
   980: 900, 1024: 768, 1280: 800, 1440: 900, 1920: 1080,
@@ -122,6 +127,10 @@ async function load(width, height) {
     await evaluate(`(window.setTheme ? setTheme(${JSON.stringify(THEME)}) : document.documentElement.setAttribute('data-theme', ${JSON.stringify(THEME)}), true)`);
   }
   await sleep(2500);
+  if (EVAL) {
+    await evaluate(`(async () => { ${EVAL}\n })().then(() => true)`);
+    await sleep(800);
+  }
 }
 
 const STATIC_CHECKS = `(() => {
@@ -184,8 +193,9 @@ try {
         if (!found) { entry.shots.push(`${id}: missing`); continue; }
         await sleep(900);
         const shot = await send('Page.captureScreenshot', { format: 'jpeg', quality: 72 });
-        writeFileSync(join(OUT, String(width), `${id}.jpg`), Buffer.from(shot.data, 'base64'));
-        entry.shots.push(`${width}/${id}.jpg`);
+        const file = `${id}${TAG ? `.${TAG}` : ''}.jpg`;
+        writeFileSync(join(OUT, String(width), file), Buffer.from(shot.data, 'base64'));
+        entry.shots.push(`${width}/${file}`);
       }
     }
     entry.consoleErrors = [...new Set(consoleErrors)];
@@ -196,7 +206,7 @@ try {
       + ` errors=${entry.consoleErrors.length} failed=${entry.failedRequests.length}`);
   }
 } finally {
-  writeFileSync(join(OUT, 'audit.json'), JSON.stringify(report, null, 2));
+  writeFileSync(join(OUT, TAG ? `audit.${TAG}.json` : 'audit.json'), JSON.stringify(report, null, 2));
   ws.close();
   proc.kill();
   await sleep(500);

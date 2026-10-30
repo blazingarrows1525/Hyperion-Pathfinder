@@ -99,3 +99,18 @@ All analyzer IDs used by `app.js` are kept; the changes are structural.
 | FAQ copy ("226 verified benchmark alumni resumes", "proven career archetypes", "placement alignment score") | rewritten | Five plain answers; the privacy answer discloses that the JD travels as a URL parameter and can reach access logs |
 | — | added | `dl.method-notes`: corpus, snapshot, scoring and curated material, with figures filled from `[data-evidence]` / `[data-snapshot]` |
 | Footer links (Home, Button Lab, …) | replaced | Wordmark line plus links matching the new navigation |
+
+## Career Atlas (3D)
+
+| Removed / changed | Status | Replacement |
+|---|---|---|
+| Old constellation module: `PLACEMENT_SKILLS_3D` (25 invented skill nodes in an invented 5-group taxonomy), central "quantum core", 350 particles, globe/radar/warp overlays, `sceneController`, a 2D canvas fallback, about 1,050 lines | replaced | `class CareerAtlas`: five clay nodes, one per K-Means archetype, sized by corpus count from `/api/corpus-summary`, on a matte paper disc. Seeded illustrative dots (≤150, ≤70 on Low detail or phones) and uniform arcs (no implied similarity weights). |
+| Mode buttons Constellation / Skill Globe / Sonar Radar / Hyper-Warp + `#btn-3d-burst` | replaced | `.btn-3d-mode[data-mode]` Atlas / Orbit / Evidence map with `aria-pressed`. The particle burst is removed. |
+| Continuous render loop | replaced | Render on demand: a frame runs only while easing; nothing renders while the scene is still. Paused offscreen (IntersectionObserver) and in hidden tabs; ResizeObserver; DPR ≤ 1.5 (1 on Low detail). Theme changes recolour materials in place. |
+| Wheel zoom | removed | No scroll hijacking; `#btn-3d-zoom-in`, `#btn-3d-zoom-out` and `#btn-3d-reset-cam-stage` are buttons. Orbit mode captures drags (with a visible hint); Atlas keeps `touch-action: pan-y`. |
+| Tooltip "Illustrative skill map — not a measured match…" | replaced | Same `#canvas-3d-tooltip`: label, record count, share of corpus, cluster id. Escape hides it. |
+| `#canvas-engine-badge` "WebGL Engine • 900x460 • 25 Nodes • CONSTELLATION" | replaced | A plain caption: "Illustrative layout · cluster sizes from the alumni corpus". Renderer diagnostics are available only with `?debug3d` (`window.careerAtlas`). |
+| Reduced motion hid the canvas (blank stage) | fixed | The atlas stays visible; easing becomes instant and parallax is off. |
+| WebGL missing or context lost (old: blank or 2D dots) | replaced | `#atlas-fallback`: an SVG atlas of the same five clusters, still selectable, with the brief's note. `webglcontextrestored` rebuilds the scene. |
+| — | added | `#atlas-evidence-card` (Evidence map: count, curated skills, link to Genome). Legend hover and focus preview the node, and `selectArchetype()` syncs the scene, legend, Genome and fallback. |
+| Showcase "Spatial 3D Constellation Camera" (`#btn-3d-accelerate`, `#btn-3d-cluster-focus`, `#btn-3d-reset-cam`) and `toggle3DAcceleration` / `focusNextArchetypeNode` | removed | Duplicated the stage controls |

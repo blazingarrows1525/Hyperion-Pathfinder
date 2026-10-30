@@ -5614,163 +5614,308 @@ main section[id] {
 }
 
 /* ==============================================================================
-   3D WEBGL SPATIAL CANVAS & STAGE
+   CAREER ATLAS STAGE — toolbar, tooltip, evidence card, 2D fallback
    ============================================================================== */
+/* Atlas mode keeps page scrolling free on touch; Orbit captures drags in the map. */
+.spatial-hero-canvas {
+  touch-action: pan-y;
+}
 
+.spatial-canvas-wrapper.is-orbit .spatial-hero-canvas {
+  touch-action: none;
+  cursor: grab;
+}
 
-/* 3D Visualizer Mode Controller Bar */
-.spatial-3d-controls-bar {
+.spatial-canvas-wrapper.is-orbit .spatial-hero-canvas:active {
+  cursor: grabbing;
+}
+
+.atlas-toolbar {
   position: absolute;
+  left: 16px;
+  right: 16px;
   bottom: 14px;
-  left: 50%;
-  transform: translateX(-50%);
   display: flex;
   align-items: center;
-  gap: 6px;
-  background: rgba(var(--surface-rgb), 0.85);
-  backdrop-filter: blur(12px);
-  -webkit-backdrop-filter: blur(12px);
-  padding: 5px 8px;
-  border-radius: var(--radius-full);
-  border: 1px solid rgba(var(--tint-rgb), 0.15);
-  box-shadow: 0 8px 24px rgba(var(--shade-rgb), 0.18);
-  z-index: 10;
+  justify-content: space-between;
+  gap: 10px;
+  pointer-events: none;
 }
 
+.atlas-toolbar > * {
+  pointer-events: auto;
+}
 
-.btn-3d-mode, .btn-3d-burst {
+.atlas-modes,
+.spatial-zoom-controls {
   display: inline-flex;
-  align-items: center;
-  gap: 5px;
-  padding: 5px 10px;
-  font-family: var(--font-body);
-  font-size: 0.72rem;
-  font-weight: 700;
-  color: var(--text-secondary);
-  background: transparent;
-  border: none;
+  gap: 2px;
+  padding: 3px;
   border-radius: var(--radius-full);
-  cursor: pointer;
-  transition: all 0.2s;
+  border: 1px solid var(--color-border);
+  background: rgba(var(--surface-rgb), 0.82);
+  -webkit-backdrop-filter: blur(10px);
+  backdrop-filter: blur(10px);
+  box-shadow: var(--shadow-sm);
+}
+
+.btn-3d-mode {
+  min-height: 32px;
+  padding: 0 13px;
   white-space: nowrap;
+  border: 0;
+  border-radius: var(--radius-full);
+  background: transparent;
+  font-family: inherit;
+  font-size: 0.82rem;
+  font-weight: 600;
+  color: var(--color-ink-soft);
+  cursor: pointer;
 }
 
-.btn-3d-mode:hover, .btn-3d-burst:hover {
+.btn-3d-mode:hover {
   color: var(--color-ink);
-  background: rgba(var(--tint-rgb), 0.08);
 }
-
 
 .btn-3d-mode.active {
-  background: var(--neu-base);
-  color: var(--accent-cyan);
-  box-shadow: 0 0 10px rgba(var(--lagoon-rgb), 0.3);
-}
-
-
-.btn-3d-burst {
-  color: var(--accent-amber);
-  border-left: 1px solid rgba(var(--tint-rgb), 0.15);
-  padding-left: 10px;
-}
-
-/* 3D Engine Diagnostics Badge */
-.canvas-engine-badge {
-  position: absolute;
-  top: 14px;
-  right: 14px;
-  display: flex;
-  align-items: center;
-  gap: 7px;
-  font-size: 0.68rem;
-  font-weight: 700;
-  letter-spacing: 0.04em;
-  color: var(--text-muted);
-  background: rgba(var(--surface-rgb), 0.65);
-  padding: 4px 10px;
-  border-radius: var(--radius-full);
-  border: 1px solid rgba(var(--tint-rgb), 0.08);
-  backdrop-filter: blur(8px);
-  z-index: 5;
-}
-
-.pulse-indicator {
-  width: 6px;
-  height: 6px;
-  border-radius: 50%;
   background: var(--color-forest);
-  box-shadow: 0 0 8px var(--color-forest);
-  animation: pulseGreen 2s infinite;
+  color: var(--color-on-accent);
 }
 
-@keyframes pulseGreen {
-  0% { transform: scale(1); opacity: 1; }
-  50% { transform: scale(1.4); opacity: 0.5; }
-  100% { transform: scale(1); opacity: 1; }
+.btn-3d-icon-sm {
+  width: 32px;
+  height: 32px;
+  display: grid;
+  place-items: center;
+  border: 0;
+  border-radius: 50%;
+  background: transparent;
+  color: var(--color-ink-soft);
+  cursor: pointer;
 }
 
-/* 3D Raycasting Tooltip */
+.btn-3d-icon-sm:hover {
+  background: rgba(var(--tint-rgb), 0.07);
+  color: var(--color-ink);
+}
+
+/* Glass is used for small overlays only: tooltip, hint, evidence card. */
 .canvas-3d-tooltip {
   position: absolute;
-  z-index: 30;
-  background: rgba(var(--surface-rgb), 0.94);
-  border: 1px solid var(--accent-cyan);
+  z-index: 3;
+  max-width: 230px;
+  padding: 10px 12px;
+  border: 1px solid var(--color-border);
   border-radius: var(--radius-md);
-  padding: 10px 14px;
-  min-width: 200px;
-  box-shadow: 0 10px 30px rgba(var(--lagoon-rgb), 0.3), 0 0 15px rgba(var(--shade-rgb), 0.36);
-  pointer-events: none;
+  background: rgba(var(--surface-rgb), 0.9);
+  -webkit-backdrop-filter: blur(12px);
   backdrop-filter: blur(12px);
-  transition: opacity 0.15s ease, transform 0.15s ease;
+  box-shadow: var(--shadow-card);
+  pointer-events: none;
 }
 
 .canvas-3d-tooltip .tooltip-header {
   display: flex;
   align-items: center;
   gap: 8px;
-  margin-bottom: 8px;
-  border-bottom: 1px solid rgba(var(--tint-rgb), 0.1);
-  padding-bottom: 6px;
+  font-size: 0.88rem;
+  color: var(--color-ink);
 }
 
 .canvas-3d-tooltip .tooltip-dot {
-  width: 8px;
-  height: 8px;
+  width: 10px;
+  height: 10px;
+  flex-shrink: 0;
   border-radius: 50%;
-  background: var(--accent-cyan);
-  box-shadow: 0 0 8px var(--accent-cyan);
+  background: var(--arch, var(--color-forest));
 }
 
-.canvas-3d-tooltip .tooltip-row {
-  display: flex;
-  justify-content: space-between;
+.canvas-3d-tooltip .tooltip-sub {
+  display: block;
+  margin-top: 4px;
+  font-size: 0.76rem;
+  line-height: 1.4;
+  color: var(--color-ink-soft);
+}
+
+.spatial-drag-hint {
+  position: absolute;
+  top: 14px;
+  left: 16px;
+  display: inline-flex;
   align-items: center;
+  gap: 6px;
+  padding: 6px 12px;
+  border-radius: var(--radius-full);
+  background: rgba(var(--surface-rgb), 0.85);
+  -webkit-backdrop-filter: blur(10px);
+  backdrop-filter: blur(10px);
+  font-size: 0.76rem;
+  font-weight: 600;
+  color: var(--color-ink-soft);
+}
+
+.spatial-drag-hint[hidden],
+.atlas-evidence-card[hidden],
+.atlas-fallback[hidden] {
+  display: none;
+}
+
+.atlas-evidence-card {
+  position: absolute;
+  top: 14px;
+  right: 16px;
+  width: min(280px, calc(100% - 32px));
+  padding: 14px 16px;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-lg);
+  background: rgba(var(--surface-rgb), 0.92);
+  -webkit-backdrop-filter: blur(12px);
+  backdrop-filter: blur(12px);
+  box-shadow: var(--shadow-card);
+}
+
+.evidence-card-kicker {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 0.7rem;
+  font-weight: 700;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--color-muted);
+}
+
+.evidence-card-title {
+  margin-top: 4px;
+  font-family: var(--font-display);
+  font-size: 1.2rem;
+  font-weight: 400;
+  line-height: 1.2;
+  color: var(--color-ink);
+}
+
+.evidence-card-count {
+  margin: 2px 0 8px;
+  font-family: var(--font-mono);
+  font-size: 0.76rem;
+  color: var(--color-ink-soft);
+}
+
+.evidence-card-label {
+  margin-bottom: 6px;
+  font-size: 0.7rem;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--color-ink);
+}
+
+.evidence-card-label span {
+  margin-left: 4px;
+  font-weight: 600;
+  text-transform: none;
+  color: var(--color-muted);
+}
+
+.atlas-evidence-card .skill-chips {
+  margin-bottom: 8px;
+}
+
+.atlas-evidence-card .skill-chips li {
+  padding: 3px 9px;
   font-size: 0.74rem;
-  margin-bottom: 4px;
-  gap: 8px;
 }
 
-.canvas-3d-tooltip .tooltip-row span {
-  color: var(--text-muted);
+.atlas-caption {
+  position: absolute;
+  right: 16px;
+  bottom: 58px;
+  margin: 0;
+  font-size: 0.72rem;
+  color: var(--color-muted);
+  pointer-events: none;
 }
 
-.canvas-3d-tooltip .badge-tier {
-  font-size: 0.68rem;
-  background: rgba(var(--lagoon-rgb), 0.15);
-  color: var(--accent-cyan);
-  padding: 2px 6px;
-  border-radius: 4px;
+/* 2D fallback: the same five clusters as an SVG map */
+.spatial-hero-canvas[hidden] {
+  display: none !important;
 }
 
-/* Maximalist HUD Telemetry Strip */
+.spatial-canvas-wrapper.is-fallback .atlas-toolbar,
+.spatial-canvas-wrapper.is-fallback .atlas-caption,
+.spatial-canvas-wrapper.is-fallback .atlas-evidence-card,
+.spatial-canvas-wrapper.is-fallback .spatial-drag-hint {
+  display: none;
+}
 
+.atlas-fallback {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  padding: 16px;
+}
 
-/* Audio Synth Frequency Bars */
+.atlas-fallback-svg {
+  width: 100%;
+  height: 100%;
+  max-height: 360px;
+}
 
+.fb-disc {
+  fill: var(--color-surface);
+  stroke: var(--color-border);
+}
 
-@keyframes synthBounce {
-  0% { transform: scaleY(0.3); opacity: 0.5; }
-  100% { transform: scaleY(1.0); opacity: 1; }
+.fb-ring {
+  fill: none;
+  stroke: var(--color-border-strong);
+  stroke-dasharray: 4 6;
+}
+
+.fb-links path {
+  fill: none;
+  stroke: var(--color-border-strong);
+  stroke-width: 1.5;
+  opacity: 0.7;
+}
+
+.fb-node {
+  cursor: pointer;
+}
+
+.fb-node circle {
+  fill: var(--arch);
+  stroke: var(--color-surface);
+  stroke-width: 3;
+}
+
+.fb-node.is-selected circle {
+  stroke: var(--color-ink);
+}
+
+.fb-node text {
+  font-family: var(--font-body);
+  font-size: 13px;
+  font-weight: 600;
+  fill: var(--color-ink);
+}
+
+.atlas-fallback-note {
+  margin-top: 6px;
+  text-align: center;
+  font-size: 0.82rem;
+  color: var(--color-ink-soft);
+}
+
+@media (max-width: 640px) {
+  .atlas-toolbar { left: 10px; right: 10px; bottom: 10px; }
+  .btn-3d-mode { padding: 0 9px; font-size: 0.76rem; }
+  .atlas-caption { display: none; }
+  .atlas-evidence-card { top: auto; bottom: 58px; left: 10px; right: 10px; width: auto; max-height: 55%; overflow: auto; }
+  .fb-node text { font-size: 18px; }
 }
 
 /* ==============================================================================
@@ -5949,63 +6094,9 @@ main section[id] {
 
 
 /* 3. 3D Drag & Zoom Hint */
-.spatial-drag-hint {
-  position: absolute;
-  top: 14px;
-  left: 14px;
-  display: inline-flex;
-  align-items: center;
-  gap: 6px;
-  padding: 5px 12px;
-  border-radius: var(--radius-full);
-  background: rgba(var(--surface-rgb), 0.75);
-  backdrop-filter: blur(10px);
-  -webkit-backdrop-filter: blur(10px);
-  border: 1px solid rgba(var(--tint-rgb), 0.12);
-  font-family: var(--font-mono);
-  font-size: 0.7rem;
-  color: var(--text-secondary);
-  pointer-events: none;
-  z-index: 5;
-  letter-spacing: 0.02em;
-  animation: fadeInHint 0.8s ease 0.3s both;
-}
 
-
-@keyframes fadeInHint {
-  from { opacity: 0; transform: translateY(-6px); }
-  to { opacity: 1; transform: translateY(0); }
-}
 
 /* 4. 3D Stage Zoom Controls */
-.spatial-zoom-controls {
-  display: flex;
-  align-items: center;
-  gap: 4px;
-  padding-left: 6px;
-  border-left: 1px solid rgba(var(--tint-rgb), 0.15);
-}
-
-.btn-3d-icon-sm {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  width: 26px;
-  height: 26px;
-  border-radius: 50%;
-  background: rgba(var(--tint-rgb), 0.08);
-  color: var(--text-secondary);
-  border: 1px solid rgba(var(--tint-rgb), 0.12);
-  cursor: pointer;
-  transition: all 0.2s ease;
-}
-
-.btn-3d-icon-sm:hover {
-  background: rgba(var(--lagoon-rgb), 0.25);
-  color: var(--color-ink);
-  border-color: rgba(var(--lagoon-rgb), 0.6);
-  transform: scale(1.1);
-}
 
 
 /* 5. Spatial Audio Synthesizer Toggle in Header */
@@ -6100,11 +6191,6 @@ main section[id] {
 }
 
 /* 8. Tactical Radar Mode Sweeping Animation */
-@keyframes radarSweepPulse {
-  0% { transform: scale(0.98); opacity: 0.3; }
-  50% { transform: scale(1.02); opacity: 0.6; }
-  100% { transform: scale(0.98); opacity: 0.3; }
-}
 
 /* 9. Hyper-Warp Particle Streak Glow */
 

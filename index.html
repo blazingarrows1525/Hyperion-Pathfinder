@@ -174,65 +174,49 @@
           <!-- Career Atlas: one wide 3D stage with a DOM legend of the five real archetypes -->
           <figure class="atlas-stage" id="hero-3d-stage" aria-labelledby="atlas-stage-caption">
             <div class="spatial-canvas-wrapper" id="spatial-canvas-wrapper">
-              <canvas id="spatial-hero-canvas" class="spatial-hero-canvas" aria-label="3D Career Constellation and Skill Genome Canvas"></canvas>
-              
-              <!-- 3D Raycasting Hover Tooltip -->
+              <canvas id="spatial-hero-canvas" class="spatial-hero-canvas" role="img" aria-label="Career Atlas: the five archetype clusters of the alumni corpus, sized by record count. Use the legend to select a cluster."></canvas>
+              <div id="atlas-fallback" class="atlas-fallback" hidden></div>
+
+              <!-- Hover / tap tooltip: label, count, cluster -->
               <div id="canvas-3d-tooltip" class="canvas-3d-tooltip" style="display:none;" role="tooltip">
                 <div class="tooltip-header">
-                  <span class="tooltip-dot"></span>
+                  <span class="tooltip-dot" aria-hidden="true"></span>
                   <strong id="tooltip-node-title">—</strong>
                 </div>
                 <div class="tooltip-body">
-                  <span class="tooltip-sub">Illustrative skill map — not a measured match, placement tier or recruiter list.</span>
+                  <span class="tooltip-sub">—</span>
                 </div>
               </div>
 
-              <!-- 3D Visualizer Mode Controller Bar -->
-              <div class="spatial-3d-controls-bar" role="toolbar" aria-label="3D Visualizer Modes">
-                <button type="button" class="btn-3d-mode active" data-mode="constellation" title="Quantum Constellation & Neural Web">
-                  <i data-lucide="network" style="width:13px;height:13px;"></i>
-                  <span>Constellation</span>
-                </button>
-                <button type="button" class="btn-3d-mode" data-mode="globe" title="3D Skill Hologram Globe">
-                  <i data-lucide="globe" style="width:13px;height:13px;"></i>
-                  <span>Skill Globe</span>
-                </button>
-                <button type="button" class="btn-3d-mode" data-mode="radar" title="3D Placement Sonar Radar">
-                  <i data-lucide="radar" style="width:13px;height:13px;"></i>
-                  <span>Sonar Radar</span>
-                </button>
-                <button type="button" class="btn-3d-mode" data-mode="warp" title="Hyper-Warp Speed Starfield">
-                  <i data-lucide="zap" style="width:13px;height:13px;"></i>
-                  <span>Hyper-Warp</span>
-                </button>
-                <button type="button" id="btn-3d-burst" class="btn-3d-burst" title="Trigger Quantum Particle Burst Shockwave">
-                  <i data-lucide="sparkles" style="width:13px;height:13px;"></i>
-                  <span>Burst</span>
-                </button>
-                <div class="spatial-zoom-controls">
-                  <button type="button" id="btn-3d-zoom-in" class="btn-3d-icon-sm" title="Zoom In (+)" aria-label="Zoom in 3D camera">
-                    <i data-lucide="zoom-in" style="width:12px;height:12px;"></i>
+              <!-- View modes and camera controls -->
+              <div class="atlas-toolbar" role="toolbar" aria-label="Career Atlas view">
+                <div class="atlas-modes" role="group" aria-label="View mode">
+                  <button type="button" class="btn-3d-mode active" data-mode="atlas" aria-pressed="true">Atlas</button>
+                  <button type="button" class="btn-3d-mode" data-mode="orbit" aria-pressed="false">Orbit</button>
+                  <button type="button" class="btn-3d-mode" data-mode="evidence" aria-pressed="false">Evidence map</button>
+                </div>
+                <div class="spatial-zoom-controls" role="group" aria-label="Camera">
+                  <button type="button" id="btn-3d-zoom-in" class="btn-3d-icon-sm" title="Zoom in" aria-label="Zoom in">
+                    <i data-lucide="zoom-in" style="width:15px;height:15px;"></i>
                   </button>
-                  <button type="button" id="btn-3d-zoom-out" class="btn-3d-icon-sm" title="Zoom Out (-)" aria-label="Zoom out 3D camera">
-                    <i data-lucide="zoom-out" style="width:12px;height:12px;"></i>
+                  <button type="button" id="btn-3d-zoom-out" class="btn-3d-icon-sm" title="Zoom out" aria-label="Zoom out">
+                    <i data-lucide="zoom-out" style="width:15px;height:15px;"></i>
                   </button>
-                  <button type="button" id="btn-3d-reset-cam-stage" class="btn-3d-icon-sm" title="Reset Camera View" aria-label="Reset camera orientation">
-                    <i data-lucide="rotate-ccw" style="width:12px;height:12px;"></i>
+                  <button type="button" id="btn-3d-reset-cam-stage" class="btn-3d-icon-sm" title="Reset camera" aria-label="Reset camera">
+                    <i data-lucide="rotate-ccw" style="width:15px;height:15px;"></i>
                   </button>
                 </div>
               </div>
 
-              <!-- 3D Drag & Zoom Hint -->
-              <div class="spatial-drag-hint" id="spatial-drag-hint" aria-hidden="true">
-                <i data-lucide="move" style="width:12px;height:12px;"></i>
-                <span>Drag 360° to rotate • Scroll to zoom • Click nodes</span>
-              </div>
+              <p class="spatial-drag-hint" id="spatial-drag-hint" hidden>
+                <i data-lucide="move" style="width:13px;height:13px;"></i> Drag inside the map to rotate · tap a cluster to select it
+              </p>
 
-              <!-- 3D Engine Diagnostics Badge -->
-              <div class="canvas-engine-badge" id="canvas-engine-badge">
-                <span class="pulse-indicator"></span>
-                <span id="canvas-engine-text">WebGL Engine • 18 Skill Nodes Active</span>
-              </div>
+              <div id="atlas-evidence-card" class="atlas-evidence-card" aria-live="polite" hidden></div>
+
+              <p class="atlas-caption" id="canvas-engine-badge">
+                <span id="canvas-engine-text">Illustrative layout · cluster sizes from the alumni corpus</span>
+              </p>
             </div>
 
             <figcaption class="atlas-legend" id="atlas-stage-caption">
@@ -1270,24 +1254,6 @@
                   </div>
                 </div>
 
-                <!-- Control 3: Three.js 3D Constellation Orbit Controls -->
-                <div class="neu-inset-panel" style="display:flex;flex-direction:column;gap:10px;">
-                  <div style="font-size:0.85rem;font-weight:600;color:var(--text-primary);display:flex;align-items:center;gap:6px;">
-                    <i data-lucide="orbit" style="width:15px;height:15px;color:var(--accent-blue);"></i>
-                    <span>Spatial 3D Constellation Camera</span>
-                  </div>
-                  <div style="display:flex;gap:8px;flex-wrap:wrap;">
-                    <button type="button" class="neu-btn" style="padding:8px 14px;font-size:0.78rem;" id="btn-3d-accelerate" onclick="toggle3DAcceleration()">
-                      <i data-lucide="fast-forward" style="width:13px;height:13px;"></i> Orbit Warp
-                    </button>
-                    <button type="button" class="neu-btn" style="padding:8px 14px;font-size:0.78rem;" id="btn-3d-cluster-focus" onclick="focusNextArchetypeNode()">
-                      <i data-lucide="crosshair" style="width:13px;height:13px;"></i> Next Cluster
-                    </button>
-                    <button type="button" class="neu-btn" style="padding:8px 14px;font-size:0.78rem;" id="btn-3d-reset-cam" onclick="reset3DCamera()">
-                      <i data-lucide="rotate-ccw" style="width:13px;height:13px;"></i> Reset View
-                    </button>
-                  </div>
-                </div>
 
               </div>
 

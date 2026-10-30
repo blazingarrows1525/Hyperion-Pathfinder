@@ -1000,1059 +1000,746 @@ Responsibilities:
 ];
 
 // ==============================================================================
+// 6. CAREER ATLAS — the one WebGL scene on the page (Three.js r128)
+// Five clay nodes for the five K-Means archetypes, sized by their corpus
+// counts, on a matte paper disc, with a capped number of small dots as
+// illustrative corpus points (never individual alumni). Links between
+// neighbouring clusters are uniform: no similarity weight is implied.
+// Renders on demand only, pauses offscreen or in a hidden tab, recolours in
+// place on theme change, handles context loss and falls back to an SVG map.
 // ==============================================================================
-// 6. SPATIAL 3D CONSTELLATION & QUANTUM ENGINE (THREE.JS R128)
-// ==============================================================================
-let scene, camera, renderer;
-let particlesMesh, linesMesh, spatialNodes = [];
-let globeMesh, radarMesh;
-let centralCoreGroup = null;
-let animFrameId = null;
-let mouseX = 0, mouseY = 0;
-let targetX = 0, targetY = 0;
-let cameraZ = 520, targetCameraZ = 520;
-let isRenderingActive = true;
-let current3DMode = 'constellation';
-let orbitSpeedMultiplier = 1.0;
-let currentFocusNodeIdx = -1;
-let raycaster = null;
-let mouseVec = null;
-let shockwaveParticles = [];
+let scene = null;
+let camera = null;
+let renderer = null;
+let careerAtlas = null;
 
-// Interactive 3D Orbit Drag State
-let isOrbitDragging = false;
-let prevPointerPos = { x: 0, y: 0 };
-let orbitRotation = { x: 0, y: 0 };
-let orbitVelocity = { x: 0, y: 0 };
+const ATLAS_MODE_LABELS = { atlas: 'Atlas', orbit: 'Orbit', evidence: 'Evidence map' };
 
-// Curated 25 High-Value Placement Skills organized across 5 Career Archetypes
-// Illustrative 3D skill constellation: name, color, radius and position
-// drive the scene only. These nodes carry no measured match, placement tier
-// or recruiter data, and their grouping is not the five K-Means archetypes.
-const PLACEMENT_SKILLS_3D = [
-  // Cluster 0: Software Architecture (0x00F2FE - Electric Cyan)
-  { name: "Distributed Systems", archetypeId: 0, archetype: "Software Architecture", color: 0x00F2FE, radius: 24, pos: [-180, 80, -30] },
-  { name: "System Design & Scalability", archetypeId: 0, archetype: "Software Architecture", color: 0x00F2FE, radius: 28, pos: [-150, -110, 30] },
-  { name: "Redis Distributed Cache", archetypeId: 0, archetype: "Software Architecture", color: 0x00F2FE, radius: 20, pos: [-240, -20, 50] },
-  { name: "Kafka Event Streams", archetypeId: 0, archetype: "Software Architecture", color: 0x00F2FE, radius: 22, pos: [-160, 160, -50] },
-  { name: "High-Concurrency Go", archetypeId: 0, archetype: "Software Architecture", color: 0x00F2FE, radius: 21, pos: [-120, -50, -80] },
+function webglAvailable() {
+  try {
+    const probe = document.createElement('canvas');
+    return !!(window.WebGLRenderingContext && (probe.getContext('webgl') || probe.getContext('experimental-webgl')));
+  } catch (err) {
+    return false;
+  }
+}
 
-  // Cluster 1: AI/ML Systems (0x9D4EDD - Neon Violet)
-  { name: "PyTorch & Transformers", archetypeId: 1, archetype: "AI/ML Systems", color: 0x9D4EDD, radius: 26, pos: [190, 110, 40] },
-  { name: "LangGraph Agent Workflows", archetypeId: 1, archetype: "AI/ML Systems", color: 0x9D4EDD, radius: 24, pos: [80, -150, 40] },
-  { name: "FAISS Vector Search", archetypeId: 1, archetype: "AI/ML Systems", color: 0x9D4EDD, radius: 22, pos: [50, 60, 90] },
-  { name: "RAG Pipeline Engineering", archetypeId: 1, archetype: "AI/ML Systems", color: 0x9D4EDD, radius: 23, pos: [150, 190, 20] },
-  { name: "MLOps & Model Deployment", archetypeId: 1, archetype: "AI/ML Systems", color: 0x9D4EDD, radius: 22, pos: [-30, 110, 60] },
+// Cluster i sits on an ellipse around the disc centre.
+function atlasNodePosition(index, total) {
+  const angle = (index / total) * Math.PI * 2 - Math.PI / 2 - 0.3;
+  return { x: Math.cos(angle) * 185, z: Math.sin(angle) * 118 };
+}
 
-  // Cluster 2: Cloud & DevOps (0x00F5D4 - Mint Emerald)
-  { name: "Kubernetes & Cloud Native", archetypeId: 2, archetype: "Cloud & DevOps", color: 0x00F5D4, radius: 24, pos: [0, -40, 70] },
-  { name: "Docker & Containerization", archetypeId: 2, archetype: "Cloud & DevOps", color: 0x00F5D4, radius: 18, pos: [100, 160, -20] },
-  { name: "Terraform & AWS Infra", archetypeId: 2, archetype: "Cloud & DevOps", color: 0x00F5D4, radius: 20, pos: [0, 190, -40] },
-  { name: "CI/CD & GitHub Actions", archetypeId: 2, archetype: "Cloud & DevOps", color: 0x00F5D4, radius: 18, pos: [220, 180, 30] },
-  { name: "Linux Observability & eBPF", archetypeId: 2, archetype: "Cloud & DevOps", color: 0x00F5D4, radius: 19, pos: [90, 40, -70] },
+function getAtlasNodeData() {
+  return archetypesDatabase.map(arch => {
+    const c = getArchetypeCorpusCount(arch);
+    return { id: arch.id, label: getArchetypeLabel(arch), count: c ? c.count : null, pct: c ? c.pct : null };
+  });
+}
 
-  // Cluster 3: Product Strategy & FinTech (0xFFB703 - Solar Amber)
-  { name: "Low-Latency C++ Engine", archetypeId: 3, archetype: "Core Engineering", color: 0xFFB703, radius: 24, pos: [180, -90, -40] },
-  { name: "Quantitative Risk Modeling", archetypeId: 3, archetype: "Core Engineering", color: 0xFFB703, radius: 22, pos: [240, -40, 20] },
-  { name: "High-Frequency Algorithmic Systems", archetypeId: 3, archetype: "Core Engineering", color: 0xFFB703, radius: 25, pos: [150, -180, -20] },
-  { name: "Product Growth & Unit Economics", archetypeId: 3, archetype: "Core Engineering", color: 0xFFB703, radius: 18, pos: [200, 50, -60] },
-  { name: "Financial Derivatives Architecture", archetypeId: 3, archetype: "Core Engineering", color: 0xFFB703, radius: 21, pos: [260, -120, 10] },
+// Deterministic pseudo-random numbers, so the illustrative dots never reshuffle.
+function seededRandom(seed) {
+  let t = seed >>> 0;
+  return () => {
+    t += 0x6D2B79F5;
+    let r = Math.imul(t ^ (t >>> 15), 1 | t);
+    r ^= r + Math.imul(r ^ (r >>> 7), 61 | r);
+    return ((r ^ (r >>> 14)) >>> 0) / 4294967296;
+  };
+}
 
-  // Cluster 4: Cybersecurity & Zero-Trust (0xFF007F - Vibrant Coral)
-  { name: "Zero-Trust IAM & OAuth2", archetypeId: 4, archetype: "Cyber & Security", color: 0xFF007F, radius: 23, pos: [-80, -90, 80] },
-  { name: "Penetration Testing & Red Team", archetypeId: 4, archetype: "Cyber & Security", color: 0xFF007F, radius: 22, pos: [-190, -160, 40] },
-  { name: "Cloud Security Posture (CSPM)", archetypeId: 4, archetype: "Cyber & Security", color: 0xFF007F, radius: 21, pos: [-110, 40, 100] },
-  { name: "Cryptographic Protocols & TLS", archetypeId: 4, archetype: "Cyber & Security", color: 0xFF007F, radius: 20, pos: [-70, 200, -20] },
-  { name: "Threat Modeling & SIEM", archetypeId: 4, archetype: "Cyber & Security", color: 0xFF007F, radius: 19, pos: [-170, -70, -60] }
-];
+class CareerAtlas {
+  constructor(canvas, wrapper) {
+    this.canvas = canvas;
+    this.wrapper = wrapper;
+    this.mode = 'atlas';
+    this.selectedId = appState.genome.selectedArchetypeId;
+    this.hoverId = null;
+    this.previewId = null;
+    this.reducedMotion = appState.motionMode === 'reduced';
+    this.pauseReasons = new Set();
+    this.frame = null;
+    this.disposed = false;
+    this.listeners = [];
+    this.dragging = false;
+    this.lastPointer = { x: 0, y: 0 };
+    this.rot = { x: 0, y: 0 };
+    this.targetRot = { x: 0, y: 0 };
+    this.velocity = { x: 0, y: 0 };
+    this.parallax = { x: 0, y: 0 };
+    this.zoom = 1;
+    this.targetZoom = 1;
+    this.focus = { x: 0, z: 0 };
+    this.size = { w: 1, h: 1 };
+  }
 
-// Central Three.js Scene Controller Contract
-const sceneController = {
-  pauseReasons: new Set(),
-  isLifecycleBound: false,
-  resizeObserver: null,
+  get lowDetail() {
+    return document.body.classList.contains('designhead-minimalist') || this.size.w < 560;
+  }
 
-  init(canvas, wrapper) {
-    if (!this.isLifecycleBound && wrapper) {
-      this.bindLifecycle(canvas, wrapper);
+  init() {
+    try {
+      this.renderer = new THREE.WebGLRenderer({ canvas: this.canvas, antialias: true, alpha: true, powerPreference: 'low-power' });
+    } catch (err) {
+      console.warn('Career Atlas: WebGL renderer unavailable', err);
+      return false;
     }
-    init3DScene();
-  },
+    this.renderer.setClearColor(0x000000, 0);
+    this.scene = new THREE.Scene();
+    this.camera = new THREE.PerspectiveCamera(36, 1, 10, 4000);
+    this.raycaster = new THREE.Raycaster();
+    this.pointerNdc = new THREE.Vector2();
+    this.cameraTarget = new THREE.Vector3();
+    renderer = this.renderer;
+    scene = this.scene;
+    camera = this.camera;
 
-  bindLifecycle(canvas, wrapper) {
-    this.isLifecycleBound = true;
+    this.buildScene();
+    this.applyPalette();
+    this.bindEvents();
+    this.resize();
+    return true;
+  }
 
-    // 1. Tab visibility listener
-    document.addEventListener('visibilitychange', () => {
-      if (document.hidden) {
-        this.pause('hidden');
-      } else {
-        this.resume('hidden');
+  // ---- scene graph --------------------------------------------------------------
+  buildScene() {
+    this.root = new THREE.Group();
+    this.scene.add(this.root);
+
+    // One consistent light direction (top-left) with a soft hemisphere fill.
+    this.hemi = new THREE.HemisphereLight(0xffffff, 0x888888, 0.7);
+    this.sun = new THREE.DirectionalLight(0xffffff, 0.9);
+    this.sun.position.set(-280, 460, 300);
+    this.scene.add(this.hemi, this.sun);
+
+    // Matte paper disc with two thin contour rings.
+    this.discGeo = new THREE.CylinderGeometry(300, 306, 10, 80);
+    this.discMat = new THREE.MeshStandardMaterial({ roughness: 1, metalness: 0 });
+    const disc = new THREE.Mesh(this.discGeo, this.discMat);
+    disc.scale.set(1, 1, 0.64);
+    disc.position.y = -6;
+    this.root.add(disc);
+
+    this.lineMat = new THREE.LineBasicMaterial({ transparent: true, opacity: 0.5 });
+    this.ringGeos = [150, 238].map(r => {
+      const pts = [];
+      for (let i = 0; i <= 120; i++) {
+        const a = (i / 120) * Math.PI * 2;
+        pts.push(new THREE.Vector3(Math.cos(a) * r, 0, Math.sin(a) * r * 0.64));
       }
+      const geo = new THREE.BufferGeometry().setFromPoints(pts);
+      this.root.add(new THREE.Line(geo, this.lineMat));
+      return geo;
     });
 
-    // 2. Offscreen scroll observer
-    if ('IntersectionObserver' in window && wrapper) {
-      const observer = new IntersectionObserver((entries) => {
-        entries.forEach(entry => {
-          if (entry.isIntersecting) {
-            this.resume('offscreen');
-          } else {
-            this.pause('offscreen');
-          }
-        });
-      }, { threshold: 0.05 });
-      observer.observe(wrapper);
-    }
+    // Five archetype nodes: shared geometry, one material each.
+    const data = getAtlasNodeData();
+    this.nodeGeo = new THREE.SphereGeometry(1, 40, 28);
+    this.plinthGeo = new THREE.CylinderGeometry(1, 1.12, 1, 40);
+    this.haloGeo = new THREE.RingGeometry(1.3, 1.46, 64);
+    this.nodes = data.map((d, i) => {
+      const pos = atlasNodePosition(i, data.length);
+      const group = new THREE.Group();
+      group.position.set(pos.x, 0, pos.z);
+      const mat = new THREE.MeshStandardMaterial({ roughness: 0.68, metalness: 0, transparent: true }); // matte clay
+      const plinthMat = new THREE.MeshStandardMaterial({ roughness: 0.95, metalness: 0, transparent: true });
+      const haloMat = new THREE.MeshBasicMaterial({ transparent: true, opacity: 0, side: THREE.DoubleSide, depthWrite: false });
+      const mesh = new THREE.Mesh(this.nodeGeo, mat);
+      const plinth = new THREE.Mesh(this.plinthGeo, plinthMat);
+      const halo = new THREE.Mesh(this.haloGeo, haloMat);
+      halo.rotation.x = -Math.PI / 2;
+      mesh.userData.archetypeId = d.id;
+      group.add(plinth, mesh, halo);
+      this.root.add(group);
+      return { ...d, pos, group, mesh, plinth, halo, mat, plinthMat, haloMat, radius: 30, lift: 1, opacity: 1, haloOpacity: 0 };
+    });
+    this.pickables = this.nodes.map(n => n.mesh);
 
-    // 3. WebGL Context lost / restored
-    if (canvas) {
-      canvas.addEventListener('webglcontextlost', (e) => {
-        e.preventDefault();
-        console.warn('WebGL Context Lost: pausing 3D engine');
-        this.pause('context_lost');
-      });
-      canvas.addEventListener('webglcontextrestored', () => {
-        console.log('WebGL Context Restored: rebuilding 3D constellation');
-        this.resume('context_lost');
-        init3DScene();
-      });
-    }
+    // Uniform arcs between neighbouring clusters.
+    this.linkGeos = this.nodes.map((a, i) => {
+      const b = this.nodes[(i + 1) % this.nodes.length];
+      const curve = new THREE.QuadraticBezierCurve3(
+        new THREE.Vector3(a.pos.x, 8, a.pos.z),
+        new THREE.Vector3((a.pos.x + b.pos.x) / 2, 46, (a.pos.z + b.pos.z) / 2),
+        new THREE.Vector3(b.pos.x, 8, b.pos.z)
+      );
+      const geo = new THREE.BufferGeometry().setFromPoints(curve.getPoints(24));
+      this.root.add(new THREE.Line(geo, this.lineMat));
+      return geo;
+    });
 
-    // 4. ResizeObserver on wrapper
-    if ('ResizeObserver' in window && wrapper) {
-      let rTimer = null;
-      this.resizeObserver = new ResizeObserver(() => {
-        if (rTimer) clearTimeout(rTimer);
-        rTimer = setTimeout(() => {
-          onCanvasResize();
-        }, 80);
-      });
-      this.resizeObserver.observe(wrapper);
+    // Illustrative corpus dots: one geometry, a round sprite, colours per cluster.
+    const sprite = document.createElement('canvas');
+    sprite.width = sprite.height = 32;
+    const ctx = sprite.getContext('2d');
+    const grad = ctx.createRadialGradient(16, 16, 0, 16, 16, 16);
+    grad.addColorStop(0, 'rgba(255,255,255,1)');
+    grad.addColorStop(0.6, 'rgba(255,255,255,0.9)');
+    grad.addColorStop(1, 'rgba(255,255,255,0)');
+    ctx.fillStyle = grad;
+    ctx.fillRect(0, 0, 32, 32);
+    this.dotTexture = new THREE.CanvasTexture(sprite);
+    this.dotGeo = new THREE.BufferGeometry();
+    this.dotMat = new THREE.PointsMaterial({ size: 7, map: this.dotTexture, vertexColors: true, transparent: true, depthWrite: false, opacity: 0.85 });
+    this.dots = new THREE.Points(this.dotGeo, this.dotMat);
+    this.root.add(this.dots);
+
+    this.updateNodeSizes();
+    this.buildDots();
+  }
+
+  updateNodeSizes() {
+    const counts = this.nodes.map(n => n.count).filter(c => typeof c === 'number');
+    const max = counts.length ? Math.max(...counts) : null;
+    this.nodes.forEach(n => {
+      n.radius = max && typeof n.count === 'number' ? 15 + 27 * Math.sqrt(n.count / max) : 30;
+      n.plinth.scale.set(n.radius * 0.64, 6, n.radius * 0.64);
+      n.plinth.position.y = 3;
+      n.halo.scale.setScalar(n.radius);
+      n.halo.position.y = 1.5;
+    });
+  }
+
+  // Dot count per cluster follows its share of the corpus, capped overall.
+  buildDots() {
+    const total = this.lowDetail ? 70 : 150;
+    const known = this.nodes.every(n => typeof n.count === 'number');
+    const sum = known ? this.nodes.reduce((s, n) => s + n.count, 0) : this.nodes.length;
+    const rand = seededRandom(226);
+    const positions = [];
+    this.dotOwners = [];
+    this.nodes.forEach((n, i) => {
+      const share = known ? n.count / sum : 1 / this.nodes.length;
+      const count = Math.max(4, Math.round(total * share));
+      for (let k = 0; k < count; k++) {
+        const angle = rand() * Math.PI * 2;
+        const dist = n.radius + 10 + rand() * 46;
+        positions.push(n.pos.x + Math.cos(angle) * dist, 2 + rand() * 18, n.pos.z + Math.sin(angle) * dist * 0.7);
+        this.dotOwners.push(i);
+      }
+    });
+    this.dotGeo.setAttribute('position', new THREE.Float32BufferAttribute(positions, 3));
+    this.dotGeo.setAttribute('color', new THREE.Float32BufferAttribute(new Array(this.dotOwners.length * 3).fill(1), 3));
+    this.dotMat.size = this.lowDetail ? 6 : 7;
+    this.paintDots();
+  }
+
+  paintDots() {
+    if (!this.palette || !this.dotOwners) return;
+    const colors = this.dotGeo.getAttribute('color');
+    const c = new THREE.Color();
+    this.dotOwners.forEach((owner, i) => {
+      c.set(this.palette.archetypes[this.nodes[owner].id]);
+      const dim = this.mode === 'evidence' && this.nodes[owner].id !== this.selectedId;
+      colors.setXYZ(i, dim ? c.r * 0.55 + 0.4 : c.r, dim ? c.g * 0.55 + 0.4 : c.g, dim ? c.b * 0.55 + 0.4 : c.b);
+    });
+    colors.needsUpdate = true;
+  }
+
+  applyPalette() {
+    this.palette = getThemePalette();
+    const p = this.palette;
+    this.discMat.color.set(p.isDark ? p.surface : p.canvas);
+    this.lineMat.color.set(p.borderStrong);
+    this.hemi.color.set(p.surface);
+    this.hemi.groundColor.set(p.border);
+    this.hemi.intensity = p.isDark ? 0.55 : 0.75;
+    this.sun.intensity = p.isDark ? 0.7 : 0.9;
+    this.nodes.forEach(n => {
+      n.mat.color.set(p.archetypes[n.id]);
+      n.plinthMat.color.set(p.isDark ? p.border : p.canvas);
+      n.haloMat.color.set(p.archetypes[n.id]);
+    });
+    this.dotMat.blending = p.isDark ? THREE.AdditiveBlending : THREE.NormalBlending;
+    this.paintDots();
+    this.requestRender();
+  }
+
+  refreshCounts() {
+    const data = getAtlasNodeData();
+    this.nodes.forEach((n, i) => Object.assign(n, { label: data[i].label, count: data[i].count, pct: data[i].pct }));
+    this.updateNodeSizes();
+    this.buildDots();
+    this.requestRender();
+  }
+
+  // ---- state changes -----------------------------------------------------------
+  setMode(mode) {
+    if (!ATLAS_MODE_LABELS[mode]) return;
+    this.mode = mode;
+    this.wrapper.classList.toggle('is-orbit', mode === 'orbit');
+    if (mode !== 'orbit') {
+      this.targetRot.x = 0;
+      this.targetRot.y = 0;
+      this.velocity.x = this.velocity.y = 0;
     }
-  },
+    this.paintDots();
+    this.requestRender();
+  }
+
+  setSelected(id) {
+    this.selectedId = id;
+    this.paintDots();
+    this.requestRender();
+  }
+
+  // Keyboard focus or hover on a legend item highlights its node.
+  preview(id) {
+    this.previewId = id;
+    this.requestRender();
+  }
+
+  setReducedMotion(reduced) {
+    this.reducedMotion = reduced;
+    this.requestRender();
+  }
+
+  zoomBy(factor) {
+    this.targetZoom = Math.min(1.45, Math.max(0.62, this.targetZoom * factor));
+    this.requestRender();
+  }
+
+  resetCamera() {
+    this.targetRot.x = this.targetRot.y = 0;
+    this.velocity.x = this.velocity.y = 0;
+    this.targetZoom = 1;
+    this.requestRender();
+  }
+
+  // ---- loop: one frame per request, more only while something is easing ---------
+  requestRender() {
+    if (this.disposed || this.frame || this.pauseReasons.size) return;
+    this.frame = requestAnimationFrame(() => this.tick());
+  }
 
   pause(reason) {
     this.pauseReasons.add(reason);
-    isRenderingActive = false;
-    if (animFrameId) {
-      cancelAnimationFrame(animFrameId);
-      animFrameId = null;
+    if (this.frame) {
+      cancelAnimationFrame(this.frame);
+      this.frame = null;
     }
-  },
+  }
 
   resume(reason) {
     this.pauseReasons.delete(reason);
-    if (this.pauseReasons.size === 0 && appState.motionMode !== 'reduced') {
-      isRenderingActive = true;
-      if (typeof window._sceneAnimate === 'function' && !animFrameId) {
-        window._sceneAnimate();
-      }
+    this.requestRender();
+  }
+
+  tick() {
+    this.frame = null;
+    if (this.disposed || this.pauseReasons.size) return;
+    const k = this.reducedMotion ? 1 : 0.16;
+    let moving = false;
+    const ease = (from, to) => {
+      const next = from + (to - from) * k;
+      if (Math.abs(to - next) > 0.0005) moving = true;
+      return Math.abs(to - next) > 0.0005 ? next : to;
+    };
+
+    // Inertia after an orbit drag stops within a short interval.
+    if (!this.dragging && (Math.abs(this.velocity.x) > 0.0004 || Math.abs(this.velocity.y) > 0.0004)) {
+      this.targetRot.y += this.velocity.x;
+      this.targetRot.x += this.velocity.y;
+      this.velocity.x *= this.reducedMotion ? 0 : 0.82;
+      this.velocity.y *= this.reducedMotion ? 0 : 0.82;
+      this.clampRotation();
+      moving = true;
     }
-  },
+    this.rot.x = ease(this.rot.x, this.targetRot.x);
+    this.rot.y = ease(this.rot.y, this.targetRot.y);
+    this.zoom = ease(this.zoom, this.mode === 'evidence' ? this.targetZoom * 0.78 : this.targetZoom);
+
+    const selected = this.nodes.find(n => n.id === this.selectedId);
+    // keeps the selected node left of centre, clear of the evidence card
+    const focusX = this.mode === 'evidence' && selected ? selected.pos.x * 0.55 + 120 : 0;
+    const focusZ = this.mode === 'evidence' && selected ? selected.pos.z * 0.55 : 0;
+    this.focus.x = ease(this.focus.x, focusX);
+    this.focus.z = ease(this.focus.z, focusZ);
+
+    const highlighted = this.previewId !== null ? this.previewId : this.hoverId;
+    this.nodes.forEach(n => {
+      const isSelected = n.id === this.selectedId;
+      n.lift = ease(n.lift, isSelected ? 1.12 : n.id === highlighted ? 1.07 : 1);
+      n.opacity = ease(n.opacity, this.mode === 'evidence' && !isSelected ? 0.35 : 1);
+      n.haloOpacity = ease(n.haloOpacity, isSelected ? 0.9 : n.id === highlighted ? 0.45 : 0);
+      const r = n.radius * n.lift;
+      n.mesh.scale.setScalar(r);
+      n.mesh.position.y = r + 6;
+      n.mat.opacity = n.opacity;
+      n.plinthMat.opacity = n.opacity;
+      n.haloMat.opacity = n.haloOpacity;
+    });
+
+    this.updateCamera();
+    this.renderer.render(this.scene, this.camera);
+    if (moving) this.requestRender();
+  }
+
+  clampRotation() {
+    this.targetRot.y = Math.max(-0.95, Math.min(0.95, this.targetRot.y));
+    this.targetRot.x = Math.max(-0.3, Math.min(0.42, this.targetRot.x));
+  }
+
+  updateCamera() {
+    const aspect = this.size.w / this.size.h;
+    // keep the whole disc in frame on narrow stages
+    const fit = 335 / (Math.tan((this.camera.fov / 2) * Math.PI / 180) * aspect);
+    const distance = Math.max(600, fit) * this.zoom;
+    const elevation = 0.62 + this.rot.x + this.parallax.y;
+    const azimuth = this.rot.y + this.parallax.x;
+    this.cameraTarget.set(this.focus.x, 18, this.focus.z);
+    this.camera.position.set(
+      this.cameraTarget.x + distance * Math.cos(elevation) * Math.sin(azimuth),
+      this.cameraTarget.y + distance * Math.sin(elevation),
+      this.cameraTarget.z + distance * Math.cos(elevation) * Math.cos(azimuth)
+    );
+    this.camera.lookAt(this.cameraTarget);
+  }
+
+  resize() {
+    const w = Math.max(1, this.wrapper.clientWidth);
+    const h = Math.max(1, this.wrapper.clientHeight);
+    const sizeClassChanged = (w < 560) !== (this.size.w < 560);
+    this.size = { w, h };
+    this.renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, this.lowDetail ? 1 : 1.5));
+    this.renderer.setSize(w, h, false);
+    this.camera.aspect = w / h;
+    this.camera.updateProjectionMatrix();
+    if (sizeClassChanged) this.buildDots();
+    this.requestRender();
+  }
+
+  // ---- input -----------------------------------------------------------------
+  on(target, type, handler, options) {
+    target.addEventListener(type, handler, options);
+    this.listeners.push(() => target.removeEventListener(type, handler, options));
+  }
+
+  pickNode(clientX, clientY) {
+    const rect = this.canvas.getBoundingClientRect();
+    this.pointerNdc.set(((clientX - rect.left) / rect.width) * 2 - 1, -((clientY - rect.top) / rect.height) * 2 + 1);
+    this.raycaster.setFromCamera(this.pointerNdc, this.camera);
+    const hit = this.raycaster.intersectObjects(this.pickables, false)[0];
+    return hit ? this.nodes.find(n => n.mesh === hit.object) : null;
+  }
+
+  bindEvents() {
+    this.on(this.canvas, 'pointerdown', (e) => {
+      if (this.mode !== 'orbit') return;
+      this.dragging = true;
+      this.lastPointer = { x: e.clientX, y: e.clientY };
+      this.velocity.x = this.velocity.y = 0;
+      this.canvas.setPointerCapture(e.pointerId);
+    });
+    this.on(this.canvas, 'pointermove', (e) => {
+      if (this.dragging) {
+        const dx = (e.clientX - this.lastPointer.x) / this.size.w;
+        const dy = (e.clientY - this.lastPointer.y) / this.size.h;
+        this.lastPointer = { x: e.clientX, y: e.clientY };
+        this.velocity.x = -dx * 2.0;
+        this.velocity.y = dy * 1.4;
+        this.targetRot.y += this.velocity.x;
+        this.targetRot.x += this.velocity.y;
+        this.clampRotation();
+        this.hideTooltip();
+        this.requestRender();
+        return;
+      }
+      if (e.pointerType === 'mouse') {
+        const node = this.pickNode(e.clientX, e.clientY);
+        const id = node ? node.id : null;
+        if (id !== this.hoverId) {
+          this.hoverId = id;
+          this.canvas.style.cursor = node ? 'pointer' : '';
+        }
+        if (node) this.showTooltip(node, e.clientX, e.clientY);
+        else this.hideTooltip();
+        // a small parallax in Atlas mode only
+        if (this.mode === 'atlas' && !this.reducedMotion) {
+          const rect = this.canvas.getBoundingClientRect();
+          this.parallax.x = ((e.clientX - rect.left) / rect.width - 0.5) * -0.08;
+          this.parallax.y = ((e.clientY - rect.top) / rect.height - 0.5) * 0.04;
+        }
+        this.requestRender();
+      }
+    });
+    const endDrag = (e) => {
+      if (!this.dragging) return;
+      this.dragging = false;
+      if (this.canvas.hasPointerCapture && this.canvas.hasPointerCapture(e.pointerId)) this.canvas.releasePointerCapture(e.pointerId);
+      this.requestRender();
+    };
+    this.on(this.canvas, 'pointerup', endDrag);
+    this.on(this.canvas, 'pointercancel', endDrag);
+    this.on(this.canvas, 'pointerleave', () => {
+      this.hoverId = null;
+      this.parallax.x = this.parallax.y = 0;
+      this.canvas.style.cursor = '';
+      this.hideTooltip();
+      this.requestRender();
+    });
+    // Click or tap selects a cluster and syncs the Career Genome.
+    this.on(this.canvas, 'click', (e) => {
+      const node = this.pickNode(e.clientX, e.clientY);
+      if (!node) return;
+      selectArchetype(node.id);
+      this.showTooltip(node, e.clientX, e.clientY);
+    });
+    this.on(document, 'keydown', (e) => {
+      if (e.key === 'Escape') this.hideTooltip();
+    });
+
+    if ('ResizeObserver' in window) {
+      this.resizeObserver = new ResizeObserver(() => this.resize());
+      this.resizeObserver.observe(this.wrapper);
+    } else {
+      this.on(window, 'resize', () => this.resize());
+    }
+    if ('IntersectionObserver' in window) {
+      this.visibilityObserver = new IntersectionObserver((entries) => {
+        entries.forEach(entry => (entry.isIntersecting ? this.resume('offscreen') : this.pause('offscreen')));
+      });
+      this.visibilityObserver.observe(this.wrapper);
+    }
+    this.on(document, 'visibilitychange', () => (document.hidden ? this.pause('hidden') : this.resume('hidden')));
+
+    this.on(this.canvas, 'webglcontextlost', (e) => {
+      e.preventDefault();
+      this.pause('context');
+      showAtlasFallback('Interactive 3D paused while the graphics context recovers; the map is shown in 2D.');
+    });
+    this.on(this.canvas, 'webglcontextrestored', () => {
+      hideAtlasFallback();
+      this.disposeSceneObjects();
+      this.buildScene();
+      this.applyPalette();
+      this.resume('context');
+    });
+  }
+
+  showTooltip(node, clientX, clientY) {
+    const tip = document.getElementById('canvas-3d-tooltip');
+    const title = document.getElementById('tooltip-node-title');
+    const sub = tip ? tip.querySelector('.tooltip-sub') : null;
+    if (!tip || !title) return;
+    title.textContent = node.label;
+    if (sub) {
+      sub.textContent = typeof node.count === 'number'
+        ? `${node.count} resumes · ${node.pct}% of the corpus · cluster ${node.id}`
+        : `Cluster ${node.id} · corpus count loading`;
+    }
+    tip.style.setProperty('--arch', `var(--arch-${node.id}-color)`);
+    const rect = this.wrapper.getBoundingClientRect();
+    const x = Math.min(rect.width - 230, Math.max(8, clientX - rect.left + 14));
+    const y = Math.max(8, clientY - rect.top - 64);
+    tip.style.left = `${x}px`;
+    tip.style.top = `${y}px`;
+    tip.style.display = 'block';
+  }
+
+  hideTooltip() {
+    const tip = document.getElementById('canvas-3d-tooltip');
+    if (tip) tip.style.display = 'none';
+  }
+
+  // ---- teardown ------------------------------------------------------------------
+  disposeSceneObjects() {
+    if (!this.scene) return;
+    this.scene.traverse(obj => {
+      if (obj.geometry) obj.geometry.dispose();
+      if (obj.material) {
+        (Array.isArray(obj.material) ? obj.material : [obj.material]).forEach(m => {
+          if (m.map) m.map.dispose();
+          m.dispose();
+        });
+      }
+    });
+    while (this.scene.children.length) this.scene.remove(this.scene.children[0]);
+    if (this.dotTexture) this.dotTexture.dispose();
+  }
 
   dispose() {
-    this.pause('disposed');
-    if (this.resizeObserver) {
-      this.resizeObserver.disconnect();
-      this.resizeObserver = null;
+    this.disposed = true;
+    if (this.frame) cancelAnimationFrame(this.frame);
+    this.frame = null;
+    this.listeners.forEach(off => off());
+    this.listeners = [];
+    if (this.resizeObserver) this.resizeObserver.disconnect();
+    if (this.visibilityObserver) this.visibilityObserver.disconnect();
+    this.hideTooltip();
+    this.disposeSceneObjects();
+    if (this.renderer) this.renderer.dispose();
+    if (renderer === this.renderer) {
+      scene = null;
+      camera = null;
+      renderer = null;
     }
-    cleanup3DScene();
   }
-};
-window.sceneController = sceneController;
+}
 
+// ---- SVG fallback: the same five clusters, still selectable ------------------------
+function showAtlasFallback(note) {
+  const box = document.getElementById('atlas-fallback');
+  const canvas = document.getElementById('spatial-hero-canvas');
+  if (!box) return;
+  const data = getAtlasNodeData();
+  const counts = data.map(d => d.count).filter(c => typeof c === 'number');
+  const max = counts.length ? Math.max(...counts) : null;
+  const nodes = data.map((d, i) => {
+    const p = atlasNodePosition(i, data.length);
+    const r = max && typeof d.count === 'number' ? 14 + 22 * Math.sqrt(d.count / max) : 24;
+    return { ...d, x: 400 + p.x * 1.25, y: 200 + p.z * 1.05, r };
+  });
+  const links = nodes.map((a, i) => {
+    const b = nodes[(i + 1) % nodes.length];
+    return `<path d="M${a.x} ${a.y} Q${(a.x + b.x) / 2} ${(a.y + b.y) / 2 - 36} ${b.x} ${b.y}" />`;
+  }).join('');
+  box.innerHTML = `
+    <svg class="atlas-fallback-svg" viewBox="0 0 800 400" aria-hidden="true" focusable="false">
+      <ellipse class="fb-disc" cx="400" cy="205" rx="380" ry="170" />
+      <ellipse class="fb-ring" cx="400" cy="205" rx="190" ry="85" />
+      <ellipse class="fb-ring" cx="400" cy="205" rx="300" ry="134" />
+      <g class="fb-links">${links}</g>
+      ${nodes.map(n => `
+        <g class="fb-node${n.id === appState.genome.selectedArchetypeId ? ' is-selected' : ''}" data-arch="${n.id}" data-archetype-id="${n.id}">
+          <circle cx="${n.x}" cy="${n.y}" r="${n.r}" />
+          <text x="${n.x}" y="${n.y + n.r + 18}" text-anchor="middle">${escapeHTML(n.label)}</text>
+        </g>`).join('')}
+    </svg>
+    <p class="atlas-fallback-note">${escapeHTML(note)}</p>`;
+  box.hidden = false;
+  if (canvas) canvas.hidden = true;
+  const wrapper = document.getElementById('spatial-canvas-wrapper');
+  if (wrapper) wrapper.classList.add('is-fallback');
+  if (!box.dataset.bound) {
+    box.dataset.bound = 'true';
+    box.addEventListener('click', (e) => {
+      const g = e.target.closest('[data-archetype-id]');
+      if (g) selectArchetype(parseInt(g.getAttribute('data-archetype-id'), 10));
+    });
+  }
+}
+
+function hideAtlasFallback() {
+  const box = document.getElementById('atlas-fallback');
+  const canvas = document.getElementById('spatial-hero-canvas');
+  if (box) box.hidden = true;
+  if (canvas) canvas.hidden = false;
+  const wrapper = document.getElementById('spatial-canvas-wrapper');
+  if (wrapper) wrapper.classList.remove('is-fallback');
+}
+
+function syncAtlasFallbackSelection() {
+  document.querySelectorAll('#atlas-fallback .fb-node').forEach(g => {
+    g.classList.toggle('is-selected', parseInt(g.getAttribute('data-archetype-id'), 10) === appState.genome.selectedArchetypeId);
+  });
+}
+
+// ---- lifecycle hooks used by the rest of the app -------------------------------------
 function init3DScene() {
   const canvas = document.getElementById('spatial-hero-canvas');
   const wrapper = document.getElementById('spatial-canvas-wrapper');
   if (!canvas || !wrapper) return;
+  initAtlasControls();
+  if (careerAtlas) return;
 
-  if (!sceneController.isLifecycleBound) {
-    sceneController.bindLifecycle(canvas, wrapper);
-  }
-
-  // Handle Reduced Motion
-  if (appState.motionMode === 'reduced') {
-    canvas.style.display = 'none';
-    const badge = document.getElementById('canvas-engine-badge');
-    if (badge) badge.style.display = 'none';
+  if (typeof THREE === 'undefined' || !webglAvailable()) {
+    showAtlasFallback('Interactive 3D is unavailable in this browser; the career map remains available in 2D.');
     return;
   }
-  canvas.style.display = 'block';
-
-  // Initialize Three.js objects or Fallback
-  if (typeof THREE === 'undefined') {
-    init2DFallbackConstellation(canvas, wrapper);
+  const atlas = new CareerAtlas(canvas, wrapper);
+  if (!atlas.init()) {
+    atlas.dispose();
+    showAtlasFallback('Interactive 3D is unavailable in this browser; the career map remains available in 2D.');
     return;
   }
-
-  cleanup3DScene();
-
-  if (!raycaster) raycaster = new THREE.Raycaster();
-  if (!mouseVec) mouseVec = new THREE.Vector2(-999, -999);
-
-  const pal = getThemePalette();
-  const isLightTheme = !pal.isDark;
-  const isMinimalist = document.body.classList.contains('designhead-minimalist');
-  const width = wrapper.clientWidth || 600;
-  const height = wrapper.clientHeight || 520;
-
-  scene = new THREE.Scene();
-  const fogColor = pal.canvas;
-  scene.fog = new THREE.FogExp2(fogColor, 0.0011);
-
-  camera = new THREE.PerspectiveCamera(52, width / height, 1, 3000);
-  camera.position.z = cameraZ;
-
-  try {
-    renderer = new THREE.WebGLRenderer({
-      canvas: canvas,
-      antialias: true,
-      alpha: true,
-      powerPreference: 'high-performance'
-    });
-  } catch (err) {
-    console.warn('WebGL init failed, using 2D fallback:', err);
-    init2DFallbackConstellation(canvas, wrapper);
-    return;
-  }
-
-  renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 1.5));
-  renderer.setSize(width, height);
-  renderer.setClearColor(fogColor, 0.0);
-
-  // 1. Central Holographic Quantum Core (Dual Icosahedron + Octahedron + Gimbal Rings)
-  centralCoreGroup = new THREE.Group();
-
-  const coreWireGeo = new THREE.IcosahedronGeometry(42, 1);
-  const coreWireMat = new THREE.MeshBasicMaterial({
-    color: pal.forest,
-    wireframe: true,
-    transparent: true,
-    opacity: isLightTheme ? 0.45 : 0.65
+  careerAtlas = atlas;
+  hideAtlasFallback();
+  if (new URLSearchParams(window.location.search).has('debug3d')) window.careerAtlas = atlas; // developer inspection only
+  loadCorpusSummary().then(() => {
+    if (careerAtlas) careerAtlas.refreshCounts();
+    if (!document.getElementById('atlas-fallback').hidden) showAtlasFallback(document.querySelector('.atlas-fallback-note')?.textContent || '');
   });
-  const coreWireMesh = new THREE.Mesh(coreWireGeo, coreWireMat);
-  centralCoreGroup.add(coreWireMesh);
-
-  const coreInnerGeo = new THREE.OctahedronGeometry(22, 0);
-  const coreInnerMat = new THREE.MeshBasicMaterial({
-    color: pal.terracotta,
-    transparent: true,
-    opacity: 0.85
-  });
-  const coreInnerMesh = new THREE.Mesh(coreInnerGeo, coreInnerMat);
-  centralCoreGroup.add(coreInnerMesh);
-
-  // Gimbal Torus Ring 1 (Cyan)
-  const ring1Geo = new THREE.TorusGeometry(72, 1.4, 16, 64);
-  const ring1Mat = new THREE.MeshBasicMaterial({
-    color: pal.lagoon,
-    transparent: true,
-    opacity: 0.45
-  });
-  const ring1Mesh = new THREE.Mesh(ring1Geo, ring1Mat);
-  ring1Mesh.rotation.x = Math.PI / 3;
-  centralCoreGroup.add(ring1Mesh);
-
-  // Gimbal Torus Ring 2 (Magenta / Violet)
-  const ring2Geo = new THREE.TorusGeometry(84, 1.4, 16, 64);
-  const ring2Mat = new THREE.MeshBasicMaterial({
-    color: pal.orchid,
-    transparent: true,
-    opacity: 0.35
-  });
-  const ring2Mesh = new THREE.Mesh(ring2Geo, ring2Mat);
-  ring2Mesh.rotation.y = Math.PI / 4;
-  centralCoreGroup.add(ring2Mesh);
-
-  scene.add(centralCoreGroup);
-
-  // 2. Quantum Background Particles Cloud (350+ particles)
-  const particleCount = isMinimalist ? 100 : 350;
-  const positions = new Float32Array(particleCount * 3);
-  const colors = new Float32Array(particleCount * 3);
-
-  const activePalette = pal.archetypes.map(c => new THREE.Color(c));
-
-  for (let i = 0; i < particleCount; i++) {
-    positions[i * 3] = (Math.random() - 0.5) * 1250;
-    positions[i * 3 + 1] = (Math.random() - 0.5) * 900;
-    positions[i * 3 + 2] = (Math.random() - 0.5) * 950;
-
-    const c = activePalette[i % activePalette.length];
-    colors[i * 3] = c.r;
-    colors[i * 3 + 1] = c.g;
-    colors[i * 3 + 2] = c.b;
-  }
-
-  const particleGeo = new THREE.BufferGeometry();
-  particleGeo.setAttribute('position', new THREE.BufferAttribute(positions, 3));
-  particleGeo.setAttribute('color', new THREE.BufferAttribute(colors, 3));
-
-  const spriteCanvas = document.createElement('canvas');
-  spriteCanvas.width = 32;
-  spriteCanvas.height = 32;
-  const sCtx = spriteCanvas.getContext('2d');
-  const grad = sCtx.createRadialGradient(16, 16, 0, 16, 16, 16);
-  grad.addColorStop(0, 'rgba(255,255,255,1)');
-  grad.addColorStop(0.35, 'rgba(255,255,255,0.85)');
-  grad.addColorStop(0.7, 'rgba(255,255,255,0.35)');
-  grad.addColorStop(1, 'rgba(0,0,0,0)');
-  sCtx.fillStyle = grad;
-  sCtx.fillRect(0, 0, 32, 32);
-
-  const spriteTex = new THREE.CanvasTexture(spriteCanvas);
-  const particleMat = new THREE.PointsMaterial({
-    size: isMinimalist ? 12 : 18,
-    vertexColors: true,
-    map: spriteTex,
-    transparent: true,
-    blending: isLightTheme ? THREE.NormalBlending : THREE.AdditiveBlending,
-    depthWrite: false
-  });
-
-  particlesMesh = new THREE.Points(particleGeo, particleMat);
-  scene.add(particlesMesh);
-
-  // 3. Synaptic Neural Connecting Lines
-  const lineMat = new THREE.LineBasicMaterial({
-    color: pal.borderStrong,
-    transparent: true,
-    opacity: isMinimalist ? 0.15 : 0.32,
-    blending: isLightTheme ? THREE.NormalBlending : THREE.AdditiveBlending
-  });
-
-  const lineGeo = new THREE.BufferGeometry();
-  const linePos = [];
-  PLACEMENT_SKILLS_3D.forEach((n1, i) => {
-    PLACEMENT_SKILLS_3D.slice(i + 1).forEach(n2 => {
-      const dx = n1.pos[0] - n2.pos[0];
-      const dy = n1.pos[1] - n2.pos[1];
-      const dz = n1.pos[2] - n2.pos[2];
-      const dist = Math.sqrt(dx * dx + dy * dy + dz * dz);
-      if (dist < 210) {
-        linePos.push(n1.pos[0], n1.pos[1], n1.pos[2]);
-        linePos.push(n2.pos[0], n2.pos[1], n2.pos[2]);
-      }
-    });
-  });
-
-  lineGeo.setAttribute('position', new THREE.Float32BufferAttribute(linePos, 3));
-  linesMesh = new THREE.LineSegments(lineGeo, lineMat);
-  scene.add(linesMesh);
-
-  // 4. Placement Skill Nodes (Interactive Meshes)
-  spatialNodes = [];
-  PLACEMENT_SKILLS_3D.forEach((skill, idx) => {
-    const group = new THREE.Group();
-    group.position.set(skill.pos[0], skill.pos[1], skill.pos[2]);
-
-    const nodeColor = pal.archetypes[skill.archetypeId] || pal.forest;
-
-    const wireGeo = new THREE.IcosahedronGeometry(skill.radius * 0.9, 1);
-    const wireMat = new THREE.MeshBasicMaterial({
-      color: nodeColor,
-      wireframe: true,
-      transparent: true,
-      opacity: isMinimalist ? 0.35 : 0.72
-    });
-    const wireMesh = new THREE.Mesh(wireGeo, wireMat);
-    group.add(wireMesh);
-
-    const coreGeo = new THREE.SphereGeometry(skill.radius * 0.45, 16, 16);
-    const coreMat = new THREE.MeshBasicMaterial({
-      color: nodeColor,
-      transparent: true,
-      opacity: isMinimalist ? 0.8 : 0.95
-    });
-    const coreMesh = new THREE.Mesh(coreGeo, coreMat);
-    group.add(coreMesh);
-
-    const ringGeo = new THREE.RingGeometry(skill.radius * 1.25, skill.radius * 1.38, 28);
-    const ringMat = new THREE.MeshBasicMaterial({
-      color: nodeColor,
-      side: THREE.DoubleSide,
-      transparent: true,
-      opacity: isMinimalist ? 0.22 : 0.45
-    });
-    const ringMesh = new THREE.Mesh(ringGeo, ringMat);
-    ringMesh.rotation.x = Math.PI / 3 + idx * 0.25;
-    group.add(ringMesh);
-
-    const phi = Math.acos(-1 + (2 * idx) / PLACEMENT_SKILLS_3D.length);
-    const theta = Math.sqrt(PLACEMENT_SKILLS_3D.length * Math.PI) * phi;
-    const globeR = 210;
-    const globePos = [
-      globeR * Math.cos(theta) * Math.sin(phi),
-      globeR * Math.sin(theta) * Math.sin(phi),
-      globeR * Math.cos(phi)
-    ];
-
-    const tierRadii = [80, 130, 185, 230];
-    const ringRadius = tierRadii[idx % tierRadii.length];
-    const angle = (idx / PLACEMENT_SKILLS_3D.length) * Math.PI * 2;
-    const radarPos = [
-      Math.cos(angle) * ringRadius,
-      Math.sin(angle) * ringRadius * 0.45 - 20,
-      Math.sin(angle) * ringRadius * 0.8
-    ];
-
-    const warpPos = [
-      skill.pos[0] * 1.8,
-      skill.pos[1] * 1.8,
-      (idx * 35) - 300
-    ];
-
-    group.userData = {
-      skill: skill,
-      wireMesh: wireMesh,
-      coreMesh: coreMesh,
-      ringMesh: ringMesh,
-      constellationPos: [...skill.pos],
-      globePos: globePos,
-      radarPos: radarPos,
-      warpPos: warpPos,
-      targetPos: [...skill.pos],
-      baseRadius: skill.radius
-    };
-
-    spatialNodes.push(group);
-    scene.add(group);
-  });
-
-  // 5. Mode Overlays
-  create3DModeOverlays(scene, isMinimalist);
-
-  // Wire canvas interactive drag & wheel controls
-  canvas.addEventListener('mousedown', onCanvasPointerDown);
-  window.addEventListener('mousemove', onCanvasPointerMove);
-  window.addEventListener('mouseup', onCanvasPointerUp);
-
-  canvas.addEventListener('touchstart', onCanvasTouchStart, { passive: false });
-  window.addEventListener('touchmove', onCanvasTouchMove, { passive: false });
-  window.addEventListener('touchend', onCanvasTouchEnd);
-
-  canvas.addEventListener('wheel', onCanvasWheel, { passive: false });
-  canvas.addEventListener('click', onCanvasClick);
-  canvas.addEventListener('mouseleave', onCanvasMouseLeave);
-  window.addEventListener('resize', onCanvasResize);
-
-  // Wire 3D Mode Toolbar Buttons
-  init3DModeButtons();
-
-  // Update Diagnostics Badge
-  updateDiagnosticsBadge(width, height);
-
-  // Animation Loop
-  function animate() {
-    window._sceneAnimate = animate;
-    if (!isRenderingActive) return;
-    animFrameId = requestAnimationFrame(animate);
-
-    if (!isOrbitDragging) {
-      orbitVelocity.x *= 0.94;
-      orbitVelocity.y *= 0.94;
-      orbitRotation.y += orbitVelocity.y;
-      orbitRotation.x += orbitVelocity.x;
-    }
-
-    targetX += (mouseX - targetX) * 0.05;
-    targetY += (mouseY - targetY) * 0.05;
-    cameraZ += (targetCameraZ - cameraZ) * 0.08;
-
-    camera.position.x = targetX + Math.sin(orbitRotation.y) * 40;
-    camera.position.y = -targetY + Math.sin(orbitRotation.x) * 30;
-    camera.position.z = cameraZ;
-    camera.lookAt(0, 0, 0);
-
-    const speed = (isMinimalist ? 0.0004 : 0.001) * orbitSpeedMultiplier;
-
-    if (centralCoreGroup) {
-      centralCoreGroup.rotation.y += speed * 1.5;
-      centralCoreGroup.rotation.x += speed * 0.8;
-      const breathe = 1.0 + Math.sin(Date.now() * 0.002) * 0.06;
-      centralCoreGroup.scale.set(breathe, breathe, breathe);
-    }
-
-    particlesMesh.rotation.y += speed;
-    particlesMesh.rotation.x += speed * 0.4;
-    linesMesh.rotation.y += speed;
-    linesMesh.rotation.x += speed * 0.4;
-
-    if (radarMesh && radarMesh.visible) {
-      radarMesh.rotation.z += 0.028;
-    }
-
-    if (globeMesh && globeMesh.visible) {
-      globeMesh.rotation.y += 0.006;
-    }
-
-    const now = Date.now() * 0.0018;
-    spatialNodes.forEach((node, idx) => {
-      node.position.x += (node.userData.targetPos[0] - node.position.x) * 0.065;
-      node.position.y += (node.userData.targetPos[1] - node.position.y) * 0.065;
-      node.position.z += (node.userData.targetPos[2] - node.position.z) * 0.065;
-
-      node.userData.wireMesh.rotation.y += 0.014 * (idx % 2 === 0 ? 1 : -1);
-      node.userData.wireMesh.rotation.x += 0.009;
-      node.userData.ringMesh.rotation.z += 0.018;
-
-      if (current3DMode === 'constellation') {
-        node.position.y += Math.sin(now + idx) * 0.4;
-      } else if (current3DMode === 'warp') {
-        node.position.z += 3.5;
-        if (node.position.z > 350) node.position.z = -350;
-      }
-    });
-
-    if (shockwaveParticles.length > 0) {
-      for (let i = shockwaveParticles.length - 1; i >= 0; i--) {
-        const p = shockwaveParticles[i];
-        p.position.add(p.userData.velocity);
-        p.userData.life -= 0.025;
-        p.material.opacity = p.userData.life;
-        if (p.userData.life <= 0) {
-          scene.remove(p);
-          if (p.geometry) p.geometry.dispose();
-          if (p.material) p.material.dispose();
-          shockwaveParticles.splice(i, 1);
-        }
-      }
-    }
-
-    if (raycaster && mouseVec && mouseVec.x !== -999 && !isOrbitDragging) {
-      raycaster.setFromCamera(mouseVec, camera);
-      const interactiveTargets = spatialNodes.map(n => n.userData.wireMesh);
-      const intersects = raycaster.intersectObjects(interactiveTargets);
-
-      const tooltip = document.getElementById('canvas-3d-tooltip');
-
-      if (intersects.length > 0) {
-        const hitMesh = intersects[0].object;
-        const parentNode = spatialNodes.find(n => n.userData.wireMesh === hitMesh);
-        if (parentNode) {
-          parentNode.scale.lerp(new THREE.Vector3(1.4, 1.4, 1.4), 0.25);
-          show3DNodeTooltip(parentNode.userData.skill, intersects[0].point);
-        }
-      } else {
-        spatialNodes.forEach(node => {
-          node.scale.lerp(new THREE.Vector3(1.0, 1.0, 1.0), 0.12);
-        });
-        if (tooltip && tooltip.style.display !== 'none') {
-          tooltip.style.display = 'none';
-        }
-      }
-    }
-
-    renderer.render(scene, camera);
-  }
-
-  animate();
-}
-
-function onCanvasPointerDown(e) {
-  isOrbitDragging = true;
-  prevPointerPos = { x: e.clientX, y: e.clientY };
-}
-
-function onCanvasPointerMove(e) {
-  const canvas = document.getElementById('spatial-hero-canvas');
-  if (!canvas) return;
-  const rect = canvas.getBoundingClientRect();
-  const x = e.clientX - rect.left;
-  const y = e.clientY - rect.top;
-
-  mouseX = (x - rect.width / 2) * 0.4;
-  mouseY = (y - rect.height / 2) * 0.4;
-
-  if (mouseVec) {
-    mouseVec.x = (x / rect.width) * 2 - 1;
-    mouseVec.y = -(y / rect.height) * 2 + 1;
-  }
-
-  if (isOrbitDragging) {
-    const deltaX = e.clientX - prevPointerPos.x;
-    const deltaY = e.clientY - prevPointerPos.y;
-    prevPointerPos = { x: e.clientX, y: e.clientY };
-
-    orbitVelocity.y = deltaX * 0.005;
-    orbitVelocity.x = deltaY * 0.005;
-    orbitRotation.y += orbitVelocity.y;
-    orbitRotation.x += orbitVelocity.x;
-  }
-}
-
-function onCanvasPointerUp() {
-  isOrbitDragging = false;
-}
-
-function onCanvasTouchStart(e) {
-  if (e.touches.length === 1) {
-    isOrbitDragging = true;
-    prevPointerPos = { x: e.touches[0].clientX, y: e.touches[0].clientY };
-  }
-}
-
-function onCanvasTouchMove(e) {
-  if (e.touches.length === 1 && isOrbitDragging) {
-    const deltaX = e.touches[0].clientX - prevPointerPos.x;
-    const deltaY = e.touches[0].clientY - prevPointerPos.y;
-    prevPointerPos = { x: e.touches[0].clientX, y: e.touches[0].clientY };
-
-    orbitVelocity.y = deltaX * 0.006;
-    orbitVelocity.x = deltaY * 0.006;
-    orbitRotation.y += orbitVelocity.y;
-    orbitRotation.x += orbitVelocity.x;
-    e.preventDefault();
-  }
-}
-
-function onCanvasTouchEnd() {
-  isOrbitDragging = false;
-}
-
-function onCanvasWheel(e) {
-  e.preventDefault();
-  targetCameraZ = Math.max(260, Math.min(880, targetCameraZ + e.deltaY * 0.45));
-}
-
-function onCanvasClick(e) {
-  const canvas = e.currentTarget;
-  const rect = canvas.getBoundingClientRect();
-  const x = e.clientX - rect.left;
-  const y = e.clientY - rect.top;
-
-  const clickVec = new THREE.Vector2(
-    (x / rect.width) * 2 - 1,
-    -(y / rect.height) * 2 + 1
-  );
-
-  if (raycaster && camera) {
-    raycaster.setFromCamera(clickVec, camera);
-    const interactiveTargets = spatialNodes.map(n => n.userData.wireMesh);
-    const intersects = raycaster.intersectObjects(interactiveTargets);
-
-    if (intersects.length > 0) {
-      const hitMesh = intersects[0].object;
-      const parentNode = spatialNodes.find(n => n.userData.wireMesh === hitMesh);
-      if (parentNode) {
-        const skill = parentNode.userData.skill;
-        targetCameraZ = 340;
-        targetX = parentNode.position.x * 0.6;
-        targetY = -parentNode.position.y * 0.6;
-
-        trigger3DShockwave(parentNode.position.x, parentNode.position.y, parentNode.position.z, skill.color);
-        show3DNodeTooltip(skill, intersects[0].point);
-
-        if (typeof skill.archetypeId === 'number' && typeof selectArchetype === 'function') {
-          selectArchetype(skill.archetypeId);
-        }
-
-        if (window.spatialAudio) window.spatialAudio.nodeSelect();
-        showToast(`Skill node: ${skill.name} (illustrative)`);
-        return;
-      }
-    }
-  }
-
-  trigger3DShockwave();
-  if (window.spatialAudio) window.spatialAudio.burst();
-}
-
-function show3DNodeTooltip(skill, hitPoint) {
-  const tooltip = document.getElementById('canvas-3d-tooltip');
-  const wrapper = document.getElementById('spatial-canvas-wrapper');
-  if (!tooltip || !wrapper) return;
-
-  const titleEl = document.getElementById('tooltip-node-title');
-  if (titleEl) titleEl.textContent = skill.name;
-
-  tooltip.style.display = 'block';
-
-  const rect = wrapper.getBoundingClientRect();
-  const screenX = ((mouseVec.x + 1) / 2) * rect.width;
-  const screenY = ((-mouseVec.y + 1) / 2) * rect.height;
-
-  tooltip.style.left = `${Math.min(screenX + 15, rect.width - 230)}px`;
-  tooltip.style.top = `${Math.min(screenY + 15, rect.height - 120)}px`;
-}
-
-function onCanvasMouseLeave() {
-  if (mouseVec) {
-    mouseVec.x = -999;
-    mouseVec.y = -999;
-  }
-  const tooltip = document.getElementById('canvas-3d-tooltip');
-  if (tooltip) tooltip.style.display = 'none';
-}
-
-function onCanvasResize() {
-  const wrapper = document.getElementById('spatial-canvas-wrapper');
-  if (!wrapper || !camera || !renderer) return;
-  const w = wrapper.clientWidth;
-  const h = wrapper.clientHeight;
-  if (w <= 0 || h <= 0) return;
-  camera.aspect = w / h;
-  camera.updateProjectionMatrix();
-  renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 1.5));
-  renderer.setSize(w, h);
-  updateDiagnosticsBadge(w, h);
-}
-
-function updateDiagnosticsBadge(w, h) {
-  const badgeText = document.getElementById('canvas-engine-text');
-  if (badgeText) {
-    badgeText.textContent = `WebGL Engine • ${w}x${h} • ${PLACEMENT_SKILLS_3D.length} Nodes • ${current3DMode.toUpperCase()}`;
-  }
-}
-
-function set3DVisualizerMode(mode) {
-  current3DMode = mode;
-  const wrapper = document.getElementById('spatial-canvas-wrapper');
-
-  if (wrapper) {
-    wrapper.classList.toggle('warp-streak-active', mode === 'warp');
-  }
-
-  spatialNodes.forEach(node => {
-    if (mode === 'constellation') {
-      node.userData.targetPos = [...node.userData.constellationPos];
-    } else if (mode === 'globe') {
-      node.userData.targetPos = [...node.userData.globePos];
-    } else if (mode === 'radar') {
-      node.userData.targetPos = [...node.userData.radarPos];
-    } else if (mode === 'warp') {
-      node.userData.targetPos = [...node.userData.warpPos];
-    }
-  });
-
-  if (globeMesh) globeMesh.visible = (mode === 'globe');
-  if (radarMesh) radarMesh.visible = (mode === 'radar');
-  if (linesMesh) linesMesh.visible = (mode === 'constellation');
-
-  if (window.spatialAudio) window.spatialAudio.modeSwitch();
-
-  const modeNames = {
-    constellation: 'Quantum Constellation Web',
-    globe: '3D Spherical Hologram Globe',
-    radar: 'Placement Range Sonar Radar',
-    warp: 'Hyper-Warp Speed Starfield'
-  };
-  showToast(`Switched 3D Mode: ${modeNames[mode] || mode}`);
-
-  if (wrapper) {
-    updateDiagnosticsBadge(wrapper.clientWidth, wrapper.clientHeight);
-  }
-}
-
-function trigger3DShockwave(cx = 0, cy = 0, cz = 0, colorHex = getThemePalette().lagoon) {
-  if (appState.motionMode === 'reduced' || !scene) return;
-
-  const count = 42;
-  for (let i = 0; i < count; i++) {
-    const pGeo = new THREE.SphereGeometry(2.5, 8, 8);
-    const pMat = new THREE.MeshBasicMaterial({
-      color: colorHex,
-      transparent: true,
-      opacity: 1.0,
-      blending: THREE.AdditiveBlending
-    });
-    const mesh = new THREE.Mesh(pGeo, pMat);
-    mesh.position.set(cx, cy, cz);
-
-    const angle = Math.random() * Math.PI * 2;
-    const phi = Math.random() * Math.PI;
-    const speed = 4 + Math.random() * 8;
-
-    mesh.userData = {
-      velocity: new THREE.Vector3(
-        Math.sin(phi) * Math.cos(angle) * speed,
-        Math.sin(phi) * Math.sin(angle) * speed,
-        Math.cos(phi) * speed
-      ),
-      life: 1.0
-    };
-
-    shockwaveParticles.push(mesh);
-    scene.add(mesh);
-  }
-}
-
-function create3DModeOverlays(targetScene, isMinimalist) {
-  const globeGroup = new THREE.Group();
-  const sphereGeo = new THREE.SphereGeometry(210, 24, 24);
-  const sphereMat = new THREE.MeshBasicMaterial({
-    color: getThemePalette().lagoon,
-    wireframe: true,
-    transparent: true,
-    opacity: 0.16
-  });
-  globeGroup.add(new THREE.Mesh(sphereGeo, sphereMat));
-
-  const eqGeo = new THREE.RingGeometry(212, 214, 48);
-  const eqMat = new THREE.MeshBasicMaterial({ color: getThemePalette().orchid, side: THREE.DoubleSide, transparent: true, opacity: 0.35 });
-  const eqMesh = new THREE.Mesh(eqGeo, eqMat);
-  eqMesh.rotation.x = Math.PI / 2;
-  globeGroup.add(eqMesh);
-
-  globeMesh = globeGroup;
-  globeMesh.visible = false;
-  targetScene.add(globeMesh);
-
-  const radarGroup = new THREE.Group();
-  const ringGeo1 = new THREE.RingGeometry(78, 80, 48);
-  const ringGeo2 = new THREE.RingGeometry(128, 130, 48);
-  const ringGeo3 = new THREE.RingGeometry(183, 185, 48);
-  const ringGeo4 = new THREE.RingGeometry(228, 230, 48);
-  const rMat = new THREE.MeshBasicMaterial({
-    color: getThemePalette().forest,
-    side: THREE.DoubleSide,
-    transparent: true,
-    opacity: 0.26
-  });
-  radarGroup.add(new THREE.Mesh(ringGeo1, rMat));
-  radarGroup.add(new THREE.Mesh(ringGeo2, rMat));
-  radarGroup.add(new THREE.Mesh(ringGeo3, rMat));
-  radarGroup.add(new THREE.Mesh(ringGeo4, rMat));
-
-  const sweepGeo = new THREE.RingGeometry(0, 230, 36, 1, 0, Math.PI / 3.5);
-  const sweepMat = new THREE.MeshBasicMaterial({
-    color: getThemePalette().forest,
-    side: THREE.DoubleSide,
-    transparent: true,
-    opacity: 0.28
-  });
-  const sweepMesh = new THREE.Mesh(sweepGeo, sweepMat);
-  radarGroup.add(sweepMesh);
-  radarGroup.rotation.x = Math.PI / 2.7;
-  radarGroup.position.y = -30;
-  radarGroup.visible = false;
-
-  radarMesh = radarGroup;
-  targetScene.add(radarMesh);
-}
-
-function init3DModeButtons() {
-  const modeButtons = document.querySelectorAll('.btn-3d-mode');
-  modeButtons.forEach(btn => {
-    btn.onclick = () => {
-      modeButtons.forEach(b => b.classList.remove('active'));
-      btn.classList.add('active');
-      const mode = btn.getAttribute('data-mode');
-      set3DVisualizerMode(mode);
-    };
-  });
-
-  const burstBtn = document.getElementById('btn-3d-burst');
-  if (burstBtn) {
-    burstBtn.onclick = () => {
-      trigger3DShockwave();
-      if (window.spatialAudio) window.spatialAudio.burst();
-      showToast('Detonated Quantum 3D Shockwave!');
-    };
-  }
-
-  const zoomInBtn = document.getElementById('btn-3d-zoom-in');
-  const zoomOutBtn = document.getElementById('btn-3d-zoom-out');
-  const resetCamBtn = document.getElementById('btn-3d-reset-cam-stage');
-
-  if (zoomInBtn) {
-    zoomInBtn.onclick = () => {
-      targetCameraZ = Math.max(260, targetCameraZ - 90);
-      if (window.spatialAudio) window.spatialAudio.click();
-    };
-  }
-  if (zoomOutBtn) {
-    zoomOutBtn.onclick = () => {
-      targetCameraZ = Math.min(880, targetCameraZ + 90);
-      if (window.spatialAudio) window.spatialAudio.click();
-    };
-  }
-  if (resetCamBtn) {
-    resetCamBtn.onclick = () => {
-      reset3DCamera();
-    };
-  }
-}
-
-function reset3DCamera() {
-  targetX = 0;
-  targetY = 0;
-  mouseX = 0;
-  mouseY = 0;
-  targetCameraZ = 520;
-  orbitRotation = { x: 0, y: 0 };
-  orbitVelocity = { x: 0, y: 0 };
-  currentFocusNodeIdx = -1;
-  orbitSpeedMultiplier = 1.0;
-
-  if (camera) {
-    camera.position.set(0, 0, 520);
-    camera.lookAt(0, 0, 0);
-  }
-
-  spatialNodes.forEach(n => n.scale.set(1.0, 1.0, 1.0));
-  const tooltip = document.getElementById('canvas-3d-tooltip');
-  if (tooltip) tooltip.style.display = 'none';
-
-  if (window.spatialAudio) window.spatialAudio.click();
-  showToast('Reset 3D Constellation Camera to Origin');
-}
-
-function toggle3DAcceleration() {
-  if (appState.motionMode === 'reduced') {
-    showToast('Orbit acceleration disabled in reduced motion mode.');
-    return;
-  }
-  orbitSpeedMultiplier = orbitSpeedMultiplier === 1.0 ? 3.5 : 1.0;
-  const isAccelerated = orbitSpeedMultiplier > 1.0;
-  const btn = document.getElementById('btn-3d-accelerate');
-  if (btn) {
-    btn.classList.toggle('active', isAccelerated);
-    btn.setAttribute('aria-pressed', String(isAccelerated));
-  }
-  if (window.spatialAudio) window.spatialAudio.click();
-  showToast(isAccelerated ? '3D Orbit Warp Activated (3.5x Speed)' : '3D Orbit Normal Speed (1.0x)');
-}
-
-function focusNextArchetypeNode() {
-  if (!spatialNodes || spatialNodes.length === 0) return;
-  currentFocusNodeIdx = (currentFocusNodeIdx + 1) % spatialNodes.length;
-  const targetNode = spatialNodes[currentFocusNodeIdx];
-  if (!targetNode) return;
-
-  const pos = targetNode.userData.targetPos || [targetNode.position.x, targetNode.position.y, targetNode.position.z];
-  targetX = pos[0] * 0.6;
-  targetY = -pos[1] * 0.6;
-  targetCameraZ = 380;
-
-  spatialNodes.forEach((n, idx) => {
-    if (idx === currentFocusNodeIdx) {
-      n.scale.set(1.4, 1.4, 1.4);
-      show3DNodeTooltip(n.userData.skill, pos);
-    } else {
-      n.scale.set(1.0, 1.0, 1.0);
-    }
-  });
-
-  const skill = targetNode.userData.skill;
-  if (skill && typeof skill.archetypeId === 'number' && typeof selectArchetype === 'function') {
-    selectArchetype(skill.archetypeId);
-  }
-
-  if (window.spatialAudio) window.spatialAudio.nodeSelect();
-  showToast(`Focused Cluster Node: ${skill?.name || 'Skill Node'}`);
-}
-
-function update3DSceneAesthetic(designheadMode) {
-  cleanup3DScene();
-  init3DScene();
 }
 
 function cleanup3DScene() {
-  if (animFrameId) cancelAnimationFrame(animFrameId);
-  const canvas = document.getElementById('spatial-hero-canvas');
-  if (canvas) {
-    canvas.removeEventListener('mousedown', onCanvasPointerDown);
-    canvas.removeEventListener('wheel', onCanvasWheel);
-    canvas.removeEventListener('click', onCanvasClick);
-    canvas.removeEventListener('mouseleave', onCanvasMouseLeave);
-  }
-  window.removeEventListener('mousemove', onCanvasPointerMove);
-  window.removeEventListener('mouseup', onCanvasPointerUp);
-  window.removeEventListener('resize', onCanvasResize);
+  if (careerAtlas) careerAtlas.dispose();
+  careerAtlas = null;
+}
 
-  if (particlesMesh) {
-    if (particlesMesh.geometry) particlesMesh.geometry.dispose();
-    if (particlesMesh.material) particlesMesh.material.dispose();
-  }
-  if (linesMesh) {
-    if (linesMesh.geometry) linesMesh.geometry.dispose();
-    if (linesMesh.material) linesMesh.material.dispose();
-  }
-  if (centralCoreGroup) {
-    centralCoreGroup.traverse(child => {
-      if (child.geometry) child.geometry.dispose();
-      if (child.material) child.material.dispose();
-    });
-  }
-  if (spatialNodes) {
-    spatialNodes.forEach(node => {
-      node.traverse(child => {
-        if (child.geometry) child.geometry.dispose();
-        if (child.material) child.material.dispose();
+// Theme or 3D-detail change: recolour in place; rebuild dots for the detail level.
+function update3DSceneAesthetic() {
+  if (!careerAtlas) return;
+  careerAtlas.applyPalette();
+  careerAtlas.resize();
+  careerAtlas.buildDots();
+}
+
+function reset3DCamera() {
+  if (careerAtlas) careerAtlas.resetCamera();
+}
+
+let atlasControlsBound = false;
+
+function initAtlasControls() {
+  if (atlasControlsBound) return;
+  atlasControlsBound = true;
+
+  const modeButtons = document.querySelectorAll('.btn-3d-mode[data-mode]');
+  modeButtons.forEach(btn => {
+    btn.addEventListener('click', () => {
+      const mode = btn.getAttribute('data-mode');
+      modeButtons.forEach(b => {
+        b.classList.toggle('active', b === btn);
+        b.setAttribute('aria-pressed', String(b === btn));
       });
+      const hint = document.getElementById('spatial-drag-hint');
+      if (hint) hint.hidden = mode !== 'orbit';
+      if (careerAtlas) careerAtlas.setMode(mode);
+      renderAtlasEvidenceCard(mode === 'evidence');
     });
-    spatialNodes = [];
-  }
-  if (shockwaveParticles) {
-    shockwaveParticles.forEach(p => {
-      if (p.geometry) p.geometry.dispose();
-      if (p.material) p.material.dispose();
-    });
-    shockwaveParticles = [];
-  }
-  if (renderer) renderer.dispose();
+  });
+
+  const zoomIn = document.getElementById('btn-3d-zoom-in');
+  const zoomOut = document.getElementById('btn-3d-zoom-out');
+  const reset = document.getElementById('btn-3d-reset-cam-stage');
+  if (zoomIn) zoomIn.addEventListener('click', () => careerAtlas && careerAtlas.zoomBy(0.86));
+  if (zoomOut) zoomOut.addEventListener('click', () => careerAtlas && careerAtlas.zoomBy(1.16));
+  if (reset) reset.addEventListener('click', reset3DCamera);
+
+  // Legend items preview their node on hover and keyboard focus.
+  document.querySelectorAll('.atlas-legend-item').forEach(item => {
+    const id = parseInt(item.getAttribute('data-archetype-id'), 10);
+    const on = () => careerAtlas && careerAtlas.preview(id);
+    const off = () => careerAtlas && careerAtlas.preview(null);
+    item.addEventListener('mouseenter', on);
+    item.addEventListener('focus', on);
+    item.addEventListener('mouseleave', off);
+    item.addEventListener('blur', off);
+  });
 }
 
-function init2DFallbackConstellation(canvas, wrapper) {
-  const ctx = canvas.getContext('2d');
-  if (!ctx) return;
-
-  const w = (canvas.width = wrapper.clientWidth || 600);
-  const h = (canvas.height = wrapper.clientHeight || 500);
-
-  const dots = [];
-  for (let i = 0; i < 35; i++) {
-    dots.push({
-      x: Math.random() * w,
-      y: Math.random() * h,
-      vx: (Math.random() - 0.5) * 0.8,
-      vy: (Math.random() - 0.5) * 0.8,
-      r: 2 + Math.random() * 3,
-      name: PLACEMENT_SKILLS_3D[i % PLACEMENT_SKILLS_3D.length].name
-    });
-  }
-
-  function render2D() {
-    ctx.clearRect(0, 0, w, h);
-    const pal = getThemePalette();
-    ctx.strokeStyle = pal.borderStrong;
-    ctx.fillStyle = pal.forest;
-
-    for (let i = 0; i < dots.length; i++) {
-      for (let j = i + 1; j < dots.length; j++) {
-        const dx = dots[i].x - dots[j].x;
-        const dy = dots[i].y - dots[j].y;
-        const dist = Math.sqrt(dx * dx + dy * dy);
-        if (dist < 85) {
-          ctx.beginPath();
-          ctx.moveTo(dots[i].x, dots[i].y);
-          ctx.lineTo(dots[j].x, dots[j].y);
-          ctx.stroke();
-        }
-      }
-    }
-
-    dots.forEach(d => {
-      d.x += d.vx;
-      d.y += d.vy;
-      if (d.x < 0 || d.x > w) d.vx *= -1;
-      if (d.y < 0 || d.y > h) d.vy *= -1;
-
-      ctx.beginPath();
-      ctx.arc(d.x, d.y, d.r, 0, Math.PI * 2);
-      ctx.fill();
-    });
-
-    requestAnimationFrame(render2D);
-  }
-  render2D();
+// Evidence map: the selected archetype's curated skills beside the scene.
+function renderAtlasEvidenceCard(visible) {
+  const card = document.getElementById('atlas-evidence-card');
+  if (!card) return;
+  const isVisible = typeof visible === 'boolean'
+    ? visible
+    : !!document.querySelector('.btn-3d-mode[data-mode="evidence"].active');
+  card.hidden = !isVisible;
+  if (!isVisible) return;
+  const arch = archetypesDatabase.find(a => a.id === appState.genome.selectedArchetypeId);
+  if (!arch) return;
+  const c = getArchetypeCorpusCount(arch);
+  card.innerHTML = `
+    <p class="evidence-card-kicker"><span class="archetype-node" data-arch="${arch.id}" aria-hidden="true"></span> Cluster ${arch.id}</p>
+    <h4 class="evidence-card-title">${escapeHTML(getArchetypeLabel(arch))}</h4>
+    <p class="evidence-card-count">${c ? `${c.count} resumes · ${c.pct}% of the corpus` : 'Corpus count loading'}</p>
+    <p class="evidence-card-label">Representative skills <span>curated</span></p>
+    <ul class="skill-chips">${arch.keySkills.slice(0, 6).map(s => `<li>${escapeHTML(s)}</li>`).join('')}</ul>
+    <a class="btn-text-action" href="#genome">Open in Career Genome →</a>`;
 }
 
-// ==============================================================================
-// 7. DEEP 3D CARD PARALLAX TILT & SPECULAR GLARE PHYSICS (ACROSS ALL CARDS)
-// ==============================================================================
 function init3DCardTilt() {
   if (appState.motionMode === 'reduced') return;
   const canHover = window.matchMedia('(hover: hover) and (pointer: fine)').matches;
@@ -2867,6 +2554,9 @@ function renderGenomeFieldStrip() {
 function selectArchetype(id) {
   appState.genome.selectedArchetypeId = id;
   if (typeof renderAtlasLegend === 'function') renderAtlasLegend();
+  if (careerAtlas) careerAtlas.setSelected(id);
+  syncAtlasFallbackSelection();
+  renderAtlasEvidenceCard();
   document.querySelectorAll('.archetype-tab').forEach(tab => {
     const isSelected = parseInt(tab.getAttribute('data-arch-id'), 10) === id;
     tab.classList.toggle('active', isSelected);
@@ -3876,11 +3566,6 @@ function initNeumorphicWorkbench() {
     });
   }
 
-  // Explicit listeners for 3D constellation controls
-  document.getElementById('btn-3d-accelerate')?.addEventListener('click', toggle3DAcceleration);
-  document.getElementById('btn-3d-cluster-focus')?.addEventListener('click', focusNextArchetypeNode);
-  document.getElementById('btn-3d-reset-cam')?.addEventListener('click', reset3DCamera);
-
   // Explicit listeners for Neumorphic shape previews
   document.getElementById('btn-neu-shape-raised')?.addEventListener('click', () => setNeuPreviewShape('raised'));
   document.getElementById('btn-neu-shape-inset')?.addEventListener('click', () => setNeuPreviewShape('inset'));
@@ -3923,14 +3608,13 @@ function initAccessibilityAndMotion() {
       motionLabel.textContent = appState.motionMode === 'full' ? 'Full' : 'Reduced';
       motionBtn.setAttribute('aria-pressed', String(appState.motionMode === 'reduced'));
 
+      if (careerAtlas) careerAtlas.setReducedMotion(appState.motionMode === 'reduced');
       if (appState.motionMode === 'reduced') {
-        cleanup3DScene();
-        showToast('Reduced Motion Enabled.');
+        showToast('Reduced motion: the atlas stays still and transitions are instant.');
       } else {
-        init3DScene();
         init3DCardTilt();
         initHoverButtons();
-        showToast('Full 3D Motion Enabled.');
+        showToast('Full motion enabled.');
       }
     });
   }
@@ -5884,8 +5568,6 @@ document.addEventListener('DOMContentLoaded', () => {
 // Explicit Global Window Exports for Inline & External Triggers
 window.setTheme = setTheme;
 window.setDesignheadMode = setDesignheadMode;
-window.toggle3DAcceleration = toggle3DAcceleration;
-window.focusNextArchetypeNode = focusNextArchetypeNode;
 window.reset3DCamera = reset3DCamera;
 window.setNeuPreviewShape = setNeuPreviewShape;
 window.switchResultsTab = switchResultsTab;
