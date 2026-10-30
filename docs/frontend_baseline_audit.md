@@ -136,3 +136,49 @@ Full analyzer run with a real PDF (streaming, all result tabs); voice input (Spe
 6. Replace the blocklist sanitizer with an allowlist (S2), in its own commit — required by build rule 10.
 
 **Deferred:** R1/R2 to Milestone 3/8; S3, S4, F3 to Milestone 9; S5 to Milestone 9. **S1 cannot be fixed by a code change** — it requires the owner to purge history and rebuild a redacted corpus, and is reported separately.
+
+---
+
+## 8. Milestone 1 results — correctness and truthfulness
+
+**Gate: passed.** Verified in-browser after rendering every conditional template: 0 of 171 buttons lack `type`; 21 of 21 inline handlers resolve; 0 duplicate IDs among 220; none of 19 listed overclaim phrases appears in page text; no console errors. Backend: **78 / 78** tests pass with a live server.
+
+### 8.1 Baseline findings resolved
+
+| Finding | Resolution | Commit |
+|---|---|---|
+| F1 dead Copy / Download report buttons | Implemented with the existing clipboard and download patterns; exports strip the internal JSON block and label demo output | `40553c6` |
+| F2 67 buttons without `type` | All set to `type="button"` (no `<form>` exists); each changed line differs only by that attribute | `61d979f` |
+| T1 deterministic fallback branded "Neural Engine" | Display name "Local Deterministic Engine (no LLM)", model `deterministic-fallback`; `/health` and `/api/llm/providers` now agree. Provider id `neural_local` kept (API contract) | `8791d42` |
+| T2 fake HUD telemetry | FAISS readiness and corpus size read from `GET /health`; engine from `/api/llm/providers`; synth bars relabelled decorative | `c951634` |
+| T3 `PLACEMENT_SKILLS_3D` fabricated match %, tier, recruiters | Tooltip labelled illustrative; fabricated fields removed after a reference search | `c951634` |
+| T4 / T5 overclaiming hero, meta, trust strip, provenance copy | Rewritten with the master prompt's §1.7 / §2.5 wording | `c951634` |
+| S2 bypassable Markdown sanitizer | DOMPurify 3.4.17, pinned with a cross-verified SRI hash; Markdown-only allowlist; escaped-text fallback if it fails to load. 9 / 9 payloads neutralized | `b7a686f` |
+| — "needs live verification": WebGL readout | **Confirmed genuine**: built from the real canvas size and `PLACEMENT_SKILLS_3D.length` | — |
+
+### 8.2 New findings discovered during M1
+
+| # | Finding | Status |
+|---|---|---|
+| N1 | Headline score wrong: the fallback regex captured the denominator in "Overall Score (out of 100): 86/100", so the ring showed **100 for an 86 report** (always in demo mode). Unparseable reports defaulted to an invented **84**. | Fixed `40553c6` — ring now matches the report; unparseable shows a dash |
+| N2 | Company directory "N Placed" counts contradicted the project's own 2026 report (Google **42** vs **1** offer; Amazon 114 vs 38) and labelled offers as "placed alumni". Highest-CTC values were also wrong. | Fixed `c951634` — real offers / profiles / highest CTC from `placement_snapshot_2026.json`; "Not in the 2026 report excerpt" otherwise |
+| N3 | Company modal printed "Provenance: … unverified" above a heading "**Verified** Interview Rounds". | Fixed `c951634` |
+| N4 | Career Genome showed a per-archetype **"Placement Conversion" of 84–96%** and a median CTC under "Verified Placement Benchmarks". The corpus holds resumes only; no source exists. | Fixed `c951634` — real cluster sizes from `data_manifest.json` (sum 226), mapped by cluster id |
+| N5 | The 3D constellation uses an invented taxonomy ("Cloud & DevOps", "Cyber & Security", …), not the five K-Means archetypes. | Labelled illustrative. **Re-mapping deferred to M3 / M6** |
+| N6 | `GET /data_manifest.json` is public and lists two real student names under `degraded_documents`. The PII exposure is served by the live application, not only stored in git. | **Open — owner decision** (with S1) |
+| N7 | `appState.backendBaseUrl` is hard-coded to `http://127.0.0.1:8000`; `/health` is fetched through it while other calls are relative, so the status badge and HUD would read "offline" on any deployed origin. | **Open — M9** |
+
+### 8.3 Deferred by plan
+
+| Item | Milestone |
+|---|---|
+| R1 mobile overflow (`.nav-actions` 965 px; menu button off-screen) and R2 desktop nav clipping | M3 / M8 |
+| S3 CORS wildcard with credentials; S4 unauthenticated `/api/llm/configure` and `/api/llm/test` | M9 |
+| S5 unpinned CDN scripts without SRI (`lucide@latest`, `marked`) — only DOMPurify is pinned so far | M9 |
+| F3 duplicate `@app.get("/")`; N7 hard-coded base URL | M9 |
+
+### 8.4 Owner decisions requested
+
+1. **S1 + N6 — alumni PII.** Purge `vector_store/` from history, remove names from `data_manifest.json`, rebuild a redacted corpus, and correct `docs/privacy_and_data_handling.md`. This cannot be done by a code change and involves rewriting public history.
+2. **Brand.** The UI is consistently "Resume Checker" (SRM references were deliberately removed in `24ebc22`); the master prompt calls the product "SRM Career Catalyst". Not changed.
+3. **"Placed alumni" wording.** Three descriptive passages still call the corpus "placed alumni" (`index.html` analyzer title, results subtitle, Genome intro). The artifacts carry no placement-status field and the master prompt's suggested copy avoids the word. Verification claims built on it were removed in M1; these descriptive uses were left for you.
