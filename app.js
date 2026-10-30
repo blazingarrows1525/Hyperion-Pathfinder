@@ -181,6 +181,7 @@ const appState = {
     streamBuffer: '',
     extractedScore: null,
     demoMode: false,
+    reportIsDemo: false, // provenance of the report currently in streamBuffer
     errorMessage: ''
   },
 
@@ -2705,6 +2706,7 @@ function resetAnalyzerState() {
 function renderSafeMarkdown(rawText, isDemo) {
   const markdownArea = document.getElementById('markdown-stream-output');
   const provenanceTag = document.getElementById('provenance-tag');
+  appState.analyzer.reportIsDemo = !!isDemo;
 
   if (provenanceTag) {
     if (isDemo) {
@@ -2764,9 +2766,30 @@ function updateScoreRing(text) {
   if (appState.reportData && typeof appState.reportData.deterministic_score === 'number') {
     return updateScoreRingFromNumber(appState.reportData.deterministic_score);
   }
-  const match = text.match(/Score[^\d]*(\d{1,3})/i) || text.match(/(\d{1,2}|100)\s*\/\s*100/);
-  const score = match && match[1] ? parseInt(match[1], 10) : 84;
-  updateScoreRingFromNumber(score);
+  // Fallback when the structured report has no deterministic_score. Match the
+  // "N/100" form: a bare "Score…N" pattern captures the denominator in
+  // "Overall Score (out of 100): 86/100" and reports 100.
+  const match = text.match(/Overall Score[^\n]*?(\d{1,3})\s*\/\s*100/i) ||
+                text.match(/\b(\d{1,3})\s*\/\s*100\b/);
+  const score = match ? parseInt(match[1], 10) : NaN;
+  if (Number.isFinite(score) && score >= 0 && score <= 100) {
+    updateScoreRingFromNumber(score);
+  } else {
+    clearScoreRing(); // never display an invented score
+  }
+}
+
+function clearScoreRing() {
+  appState.analyzer.extractedScore = null;
+  const scoreElem = document.getElementById('mini-score-val');
+  const ring = document.getElementById('mini-progress-ring');
+  if (scoreElem) scoreElem.textContent = '—';
+  if (ring) {
+    const circumference = 2 * Math.PI * 38;
+    ring.style.strokeDasharray = `${circumference} ${circumference}`;
+    ring.style.strokeDashoffset = circumference;
+    ring.style.stroke = 'var(--text-muted)';
+  }
 }
 
 function updateScoreRingFromNumber(score) {
@@ -3366,14 +3389,76 @@ function copyPromptToClipboard() {
   }
 }
 
-function fallbackCopy(text) {
+function fallbackCopy(text, successMessage = 'Prompt copied to clipboard!') {
   const ta = document.createElement('textarea');
   ta.value = text;
   document.body.appendChild(ta);
   ta.select();
   document.execCommand('copy');
   document.body.removeChild(ta);
-  showToast('Prompt copied to clipboard!');
+  showToast(successMessage);
+}
+
+// Human-readable report: the same transform renderSafeMarkdown applies before
+// display, so copied/exported text never contains the internal JSON block.
+function getAnalysisReportMarkdown() {
+  return (appState.analyzer.streamBuffer || '')
+    .replace(/<!-- STRUCTURED_REPORT_START -->[\s\S]*?<!-- STRUCTURED_REPORT_END -->/g, '')
+    .trim();
+}
+
+function copyAnalysisToClipboard() {
+  const text = getAnalysisReportMarkdown();
+  if (!text) {
+    showToast('No report yet — run an analysis first.');
+    return;
+  }
+
+  if (navigator.clipboard && navigator.clipboard.writeText) {
+    navigator.clipboard.writeText(text).then(() => {
+      showToast('Report copied to clipboard.');
+    }).catch(() => {
+      fallbackCopy(text, 'Report copied to clipboard.');
+    });
+  } else {
+    fallbackCopy(text, 'Report copied to clipboard.');
+  }
+}
+
+function exportAnalysisReport() {
+  const text = getAnalysisReportMarkdown();
+  if (!text) {
+    showToast('No report yet — run an analysis first.');
+    return;
+  }
+
+  const score = appState.analyzer.extractedScore;
+  const source = appState.analyzer.reportIsDemo
+    ? 'Illustrative demo output — not generated from a live resume'
+    : 'Live analysis of the uploaded resume';
+  const scoreLine = typeof score === 'number'
+    ? `Resume–JD alignment score: ${score}/100 (textual alignment, not a hiring probability)\n`
+    : '';
+  const mdContent = `# Resume Checker — Analysis Report
+Export Date: ${new Date().toLocaleString()}
+Source: ${source}
+${scoreLine}
+================================================================================
+${text}
+================================================================================
+`;
+
+  const filename = `resume_analysis_report${appState.analyzer.reportIsDemo ? '_demo' : ''}.md`;
+  const blob = new Blob([mdContent], { type: 'text/markdown;charset=utf-8' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = filename;
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
+  URL.revokeObjectURL(url);
+  showToast(`Downloaded ${filename}`);
 }
 
 function copyPromptAndOpenAnalyzer() {
