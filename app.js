@@ -2620,7 +2620,7 @@ async function executeAnalysis() {
       <div style="padding:16px;background:rgba(251,113,133,0.1);border-radius:8px;border:1px solid rgba(251,113,133,0.3);">
         <strong style="color:var(--accent-coral);">Connection to Backend Failed</strong>
         <p style="margin-top:6px;font-size:0.88rem;">Ensure the backend is running at <code>http://127.0.0.1:8000</code> or toggle <strong>Demo Mode</strong> to preview the report layout.</p>
-        <button class="btn-preset-chip" style="margin-top:10px;" onclick="enableDemoAndRun()">Run Illustrative Demo Analysis</button>
+        <button type="button" class="btn-preset-chip" style="margin-top:10px;" onclick="enableDemoAndRun()">Run Illustrative Demo Analysis</button>
       </div>
     `;
   } finally {
@@ -2866,10 +2866,10 @@ function renderArchetypeDetail(id) {
         </div>
 
         <div style="display:flex;gap:12px;margin-top:24px;">
-          <button class="btn-magnetic-glow" onclick="populateSampleJdFromArchetype(${arch.id})">
+          <button type="button" class="btn-magnetic-glow" onclick="populateSampleJdFromArchetype(${arch.id})">
             Use This Path in Resume Matcher
           </button>
-          <button class="btn-glass-shimmer" onclick="openArchetypeComparisonModal(${arch.id})">
+          <button type="button" class="btn-glass-shimmer" onclick="openArchetypeComparisonModal(${arch.id})">
             Compare with Another Path
           </button>
         </div>
@@ -3076,7 +3076,7 @@ function renderCompanyDirectory() {
         <i data-lucide="search-x" style="width: 42px; height: 42px; color: var(--text-muted); margin-bottom: 12px;"></i>
         <h4 style="font-family: var(--font-display); font-size: 1.2rem; color: #fff; margin-bottom: 6px;">No Matching Companies Found</h4>
         <p style="font-size: 0.88rem; color: var(--text-muted); margin-bottom: 16px;">Try adjusting your search query or tier filters.</p>
-        <button class="btn-preset-chip" onclick="resetCompanyFilters()">Reset Filters</button>
+        <button type="button" class="btn-preset-chip" onclick="resetCompanyFilters()">Reset Filters</button>
       </div>
     `;
     if (window.lucide) window.lucide.createIcons();
@@ -3112,10 +3112,10 @@ function renderCompanyDirectory() {
       </div>
 
       <div class="company-footer-actions">
-        <button class="btn-preset-chip" style="flex:1;padding:9px;" onclick="loadCompanyJd('${c.id}')">
+        <button type="button" class="btn-preset-chip" style="flex:1;padding:9px;" onclick="loadCompanyJd('${c.id}')">
           Match My Resume
         </button>
-        <button class="btn-icon-circle" onclick="openCompanyModal('${c.id}')" title="View Interview Intel">
+        <button type="button" class="btn-icon-circle" onclick="openCompanyModal('${c.id}')" title="View Interview Intel">
           <i data-lucide="info" style="width:16px;height:16px;"></i>
         </button>
       </div>
@@ -3204,7 +3204,7 @@ function openCompanyModal(companyId) {
     </div>
 
     <div style="display:flex;gap:12px;">
-      <button class="btn-magnetic-glow" style="flex:1;" onclick="loadCompanyJd('${company.id}'); closeCompanyModal();">
+      <button type="button" class="btn-magnetic-glow" style="flex:1;" onclick="loadCompanyJd('${company.id}'); closeCompanyModal();">
         Match My Resume with ${company.name}
       </button>
       <a href="${company.officialUrl}" target="_blank" rel="noopener noreferrer" class="btn-glass-shimmer" style="text-decoration:none;">
@@ -3283,7 +3283,7 @@ function renderFrameworksList() {
   }
 
   listContainer.innerHTML = filtered.map(fw => `
-    <button class="framework-item-btn ${fw.id === selectedFrameworkId ? 'active' : ''}" 
+    <button type="button" class="framework-item-btn ${fw.id === selectedFrameworkId ? 'active' : ''}" 
             onclick="selectFramework('${fw.id}')">
       <div style="display:flex;justify-content:space-between;align-items:center;">
         <span class="fw-acronym">${fw.acronym}</span>
@@ -3479,8 +3479,8 @@ function triggerFrameworkRecommendation(scenarioKey) {
     </div>
     <p style="color:var(--text-secondary);font-size:0.85rem;line-height:1.6;">${rec.reason}</p>
     <div style="margin-top:8px;">
-      <button class="btn-preset-chip" onclick="selectFramework('${rec.primaryId}')">Load ${rec.primaryId} Framework</button>
-      <button class="btn-preset-chip" onclick="selectFramework('${rec.altId}')">Load Alternate: ${rec.altId}</button>
+      <button type="button" class="btn-preset-chip" onclick="selectFramework('${rec.primaryId}')">Load ${rec.primaryId} Framework</button>
+      <button type="button" class="btn-preset-chip" onclick="selectFramework('${rec.altId}')">Load Alternate: ${rec.altId}</button>
     </div>
   `;
   box.classList.add('visible');

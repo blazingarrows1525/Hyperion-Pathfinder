@@ -86,7 +86,7 @@
         </button>
 
         <!-- Neumorphic Theme Toggle: Cyber Dark <-> Soft Ceramic -->
-        <button id="btn-theme-toggle" class="btn-theme-toggle" title="Toggle Dark Neumorphic / Soft Ceramic Mode" aria-label="Toggle visual theme">
+        <button type="button" id="btn-theme-toggle" class="btn-theme-toggle" title="Toggle Dark Neumorphic / Soft Ceramic Mode" aria-label="Toggle visual theme">
           <i data-lucide="palette" style="width:14px;height:14px;"></i>
           <span id="theme-mode-label">Theme: Dark Soft</span>
         </button>
@@ -98,7 +98,7 @@
           <span id="sound-toggle-label">Sound: Off</span>
         </button>
 
-        <button id="btn-motion-toggle" class="btn-motion-toggle" title="Toggle Full / Reduced Motion" aria-label="Toggle motion mode">
+        <button type="button" id="btn-motion-toggle" class="btn-motion-toggle" title="Toggle Full / Reduced Motion" aria-label="Toggle motion mode">
           <i data-lucide="orbit" style="width:14px;height:14px;"></i>
           <span id="motion-mode-label">Motion: Full</span>
         </button>
@@ -109,7 +109,7 @@
         </a>
 
         <!-- Mobile Menu Toggle -->
-        <button id="btn-mobile-menu" class="btn-mobile-menu" aria-label="Open mobile menu" aria-expanded="false">
+        <button type="button" id="btn-mobile-menu" class="btn-mobile-menu" aria-label="Open mobile menu" aria-expanded="false">
           <i data-lucide="menu" style="width:20px;height:20px;"></i>
         </button>
       </div>
@@ -988,10 +988,10 @@
                 </button>
 
                 <div class="results-actions-row" style="margin-left:auto;">
-                  <button class="btn-icon-circle" onclick="copyAnalysisToClipboard()" title="Copy Markdown Report to Clipboard" aria-label="Copy report">
+                  <button type="button" class="btn-icon-circle" onclick="copyAnalysisToClipboard()" title="Copy Markdown Report to Clipboard" aria-label="Copy report">
                     <i data-lucide="copy" style="width:15px;height:15px;"></i>
                   </button>
-                  <button class="btn-icon-circle" onclick="exportAnalysisReport()" title="Download Report as .md file" aria-label="Download markdown report">
+                  <button type="button" class="btn-icon-circle" onclick="exportAnalysisReport()" title="Download Report as .md file" aria-label="Download markdown report">
                     <i data-lucide="download" style="width:15px;height:15px;"></i>
                   </button>
                 </div>
@@ -1361,12 +1361,12 @@
             </div>
 
             <div class="filter-chips-row">
-              <button class="btn-filter-pill btn-company-filter active" data-filter="all">All Top Recruiters</button>
-              <button class="btn-filter-pill btn-company-filter" data-filter="super-dream">Super Dream (₹20+ LPA)</button>
-              <button class="btn-filter-pill btn-company-filter" data-filter="dream">Dream (₹10–20 LPA)</button>
-              <button class="btn-filter-pill btn-company-filter" data-filter="Product & Tech">Product & Tech</button>
-              <button class="btn-filter-pill btn-company-filter" data-filter="FinTech">FinTech</button>
-              <button class="btn-filter-pill btn-company-filter" data-filter="Automotive & Core">Automotive & Core</button>
+              <button type="button" class="btn-filter-pill btn-company-filter active" data-filter="all">All Top Recruiters</button>
+              <button type="button" class="btn-filter-pill btn-company-filter" data-filter="super-dream">Super Dream (₹20+ LPA)</button>
+              <button type="button" class="btn-filter-pill btn-company-filter" data-filter="dream">Dream (₹10–20 LPA)</button>
+              <button type="button" class="btn-filter-pill btn-company-filter" data-filter="Product & Tech">Product & Tech</button>
+              <button type="button" class="btn-filter-pill btn-company-filter" data-filter="FinTech">FinTech</button>
+              <button type="button" class="btn-filter-pill btn-company-filter" data-filter="Automotive & Core">Automotive & Core</button>
             </div>
 
             <div style="display:flex;align-items:center;gap:8px;">
@@ -1434,11 +1434,11 @@
               </div>
 
               <div style="display:flex;flex-wrap:wrap;gap:4px;margin-bottom:10px;">
-                <button class="btn-filter-pill btn-framework-cat active" data-cat="all" style="padding:4px 10px;font-size:0.72rem;">All (18)</button>
-                <button class="btn-filter-pill btn-framework-cat" data-cat="research" style="padding:4px 10px;font-size:0.72rem;">Research</button>
-                <button class="btn-filter-pill btn-framework-cat" data-cat="goal" style="padding:4px 10px;font-size:0.72rem;">Goals</button>
-                <button class="btn-filter-pill btn-framework-cat" data-cat="task" style="padding:4px 10px;font-size:0.72rem;">Tasks</button>
-                <button class="btn-filter-pill btn-framework-cat" data-cat="story" style="padding:4px 10px;font-size:0.72rem;">Stories</button>
+                <button type="button" class="btn-filter-pill btn-framework-cat active" data-cat="all" style="padding:4px 10px;font-size:0.72rem;">All (18)</button>
+                <button type="button" class="btn-filter-pill btn-framework-cat" data-cat="research" style="padding:4px 10px;font-size:0.72rem;">Research</button>
+                <button type="button" class="btn-filter-pill btn-framework-cat" data-cat="goal" style="padding:4px 10px;font-size:0.72rem;">Goals</button>
+                <button type="button" class="btn-filter-pill btn-framework-cat" data-cat="task" style="padding:4px 10px;font-size:0.72rem;">Tasks</button>
+                <button type="button" class="btn-filter-pill btn-framework-cat" data-cat="story" style="padding:4px 10px;font-size:0.72rem;">Stories</button>
               </div>
 
               <div id="frameworks-list-scroll" class="frameworks-list-scroll">
@@ -1514,7 +1514,7 @@
             <!-- 1. Magnetic Glow Primary -->
             <div class="btn-lab-item">
               <span class="btn-lab-label">1. Magnetic Glow</span>
-              <button class="btn-magnetic-glow" onclick="showToast('Magnetic Glow Button clicked!')">
+              <button type="button" class="btn-magnetic-glow" onclick="showToast('Magnetic Glow Button clicked!')">
                 <i data-lucide="sparkles" style="width:16px;height:16px;"></i> Magnetic Glow
               </button>
             </div>
@@ -1522,7 +1522,7 @@
             <!-- 2. Glass Shimmer Pill -->
             <div class="btn-lab-item">
               <span class="btn-lab-label">2. Glass Shimmer</span>
-              <button class="btn-glass-shimmer" onclick="showToast('Glass Shimmer Pill clicked!')">
+              <button type="button" class="btn-glass-shimmer" onclick="showToast('Glass Shimmer Pill clicked!')">
                 <i data-lucide="sun" style="width:16px;height:16px;"></i> Glass Shimmer
               </button>
             </div>
@@ -1530,7 +1530,7 @@
             <!-- 3. Cyber Border Trace -->
             <div class="btn-lab-item">
               <span class="btn-lab-label">3. Cyber Trace</span>
-              <button class="btn-cyber-border" onclick="showToast('Cyber Border clicked!')">
+              <button type="button" class="btn-cyber-border" onclick="showToast('Cyber Border clicked!')">
                 <i data-lucide="terminal" style="width:16px;height:16px;"></i> [CYBER_TRACE]
               </button>
             </div>
@@ -1538,7 +1538,7 @@
             <!-- 4. 3D Isometric Physical Push -->
             <div class="btn-lab-item">
               <span class="btn-lab-label">4. 3D Physical Push</span>
-              <button class="btn-3d-push" onclick="showToast('Physical 3D Button pressed!')">
+              <button type="button" class="btn-3d-push" onclick="showToast('Physical 3D Button pressed!')">
                 <i data-lucide="disc" style="width:16px;height:16px;"></i> 3D Push Depth
               </button>
             </div>
@@ -1546,7 +1546,7 @@
             <!-- 5. Liquid Emerald -->
             <div class="btn-lab-item">
               <span class="btn-lab-label">5. Liquid Emerald</span>
-              <button class="btn-emerald-liquid" onclick="showToast('Liquid Emerald Button clicked!')">
+              <button type="button" class="btn-emerald-liquid" onclick="showToast('Liquid Emerald Button clicked!')">
                 <i data-lucide="check" style="width:16px;height:16px;"></i> Liquid Pulse
               </button>
             </div>
@@ -1555,10 +1555,10 @@
             <div class="btn-lab-item">
               <span class="btn-lab-label">6. Icon Actions</span>
               <div style="display:flex;gap:10px;">
-                <button class="btn-icon-circle" onclick="showToast('Added to bookmarks!')" title="Bookmark">
+                <button type="button" class="btn-icon-circle" onclick="showToast('Bookmark icon button clicked — style demo, nothing is saved.')" title="Bookmark (style demo)">
                   <i data-lucide="bookmark" style="width:16px;height:16px;"></i>
                 </button>
-                <button class="btn-icon-circle" onclick="triggerConfetti()" title="Trigger Celebration">
+                <button type="button" class="btn-icon-circle" onclick="triggerConfetti()" title="Trigger Celebration">
                   <i data-lucide="party-popper" style="width:16px;height:16px;"></i>
                 </button>
               </div>
@@ -1567,7 +1567,7 @@
             <!-- 7. Filter Pill Chip -->
             <div class="btn-lab-item">
               <span class="btn-lab-label">7. Interactive Filter</span>
-              <button id="lab-filter-pill" class="btn-filter-pill active">
+              <button type="button" id="lab-filter-pill" class="btn-filter-pill active">
                 Super Dream (₹20+ LPA)
               </button>
             </div>
@@ -1575,7 +1575,7 @@
             <!-- 8. Preset Auto-Fill -->
             <div class="btn-lab-item">
               <span class="btn-lab-label">8. Preset Template</span>
-              <button id="lab-preset-chip" class="btn-preset-chip" style="padding:10px 16px;">
+              <button type="button" id="lab-preset-chip" class="btn-preset-chip" style="padding:10px 16px;">
                 <i data-lucide="file-plus" style="width:14px;height:14px;"></i> Inject Sample JD
               </button>
             </div>
@@ -1806,7 +1806,7 @@
         <div id="company-modal-title" style="font-size:0.8rem;text-transform:uppercase;letter-spacing:0.1em;color:var(--accent-cyan);font-weight:700;">
           Company Recruitment Intelligence
         </div>
-        <button class="modal-close-btn" onclick="closeCompanyModal()" aria-label="Close dialog">
+        <button type="button" class="modal-close-btn" onclick="closeCompanyModal()" aria-label="Close dialog">
           <i data-lucide="x" style="width:18px;height:18px;"></i>
         </button>
       </div>
@@ -1821,7 +1821,7 @@
         <div id="compare-modal-title" style="font-size:0.8rem;text-transform:uppercase;letter-spacing:0.1em;color:var(--accent-blue-light);font-weight:700;">
           Archetype Head-to-Head Comparison
         </div>
-        <button class="modal-close-btn" onclick="closeCompareModal()" aria-label="Close dialog">
+        <button type="button" class="modal-close-btn" onclick="closeCompareModal()" aria-label="Close dialog">
           <i data-lucide="x" style="width:18px;height:18px;"></i>
         </button>
       </div>
