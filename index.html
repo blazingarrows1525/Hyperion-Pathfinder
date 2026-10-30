@@ -1020,104 +1020,84 @@
       <!-- =======================================================================
            SECTION 6: PROMPT STUDIO (ALL 18 FRAMEWORKS WORKBENCH)
            ======================================================================= -->
-      <section id="prompt-studio" class="prompt-studio-section" aria-labelledby="prompt-studio-heading">
+      <section id="prompt-studio" class="prompt-studio-section band-lilac" aria-labelledby="prompt-studio-heading">
         <div class="container">
-          
-          <div style="text-align:center;max-width:760px;margin:0 auto 48px;">
-            <span style="font-size:0.78rem;font-weight:700;text-transform:uppercase;letter-spacing:0.12em;color:var(--accent-cyan);margin-bottom:12px;display:inline-block;">
-              Interactive Prompt Engineering Workbench
-            </span>
-            <h2 id="prompt-studio-heading" style="font-family:var(--font-display);font-size:clamp(2rem, 3.5vw, 2.6rem);font-weight:800;color:var(--text-primary);margin-bottom:12px;">
-              Prompt Studio: All 18 Frameworks
-            </h2>
-            <p style="color:var(--text-secondary);font-size:1rem;line-height:1.6;">
-              A fully client-side engineering workbench to compose, test, and copy structured prompts across all 18 research and task frameworks. Zero external LLM calls required.
-            </p>
-          </div>
-
-          <!-- Deterministic Recommender Banner -->
-          <div class="studio-recommender-banner">
+          <header class="section-head section-head-split">
             <div>
-              <strong style="color:var(--text-primary);font-size:1.05rem;display:block;">Task Scenario Recommender</strong>
-              <span style="font-size:0.82rem;color:var(--text-secondary);">Select what you are trying to achieve for a transparent, rule-grounded framework match:</span>
-              
-              <div class="scenario-buttons-row">
-                <button type="button" class="btn-scenario-chip" data-scenario="research">Technical Research</button>
-                <button type="button" class="btn-scenario-chip" data-scenario="resume">Resume Bullet Point</button>
-                <button type="button" class="btn-scenario-chip" data-scenario="planning">Placement Plan</button>
-                <button type="button" class="btn-scenario-chip" data-scenario="interview">Behavioral Interview</button>
-                <button type="button" class="btn-scenario-chip" data-scenario="email">Alumni Outreach Email</button>
-                <button type="button" class="btn-scenario-chip" data-scenario="experiment">AI / ML Experiment</button>
-              </div>
+              <p class="section-kicker"><span class="section-index">06</span> Prompt Studio</p>
+              <h2 id="prompt-studio-heading" class="section-title">Compose a structured prompt</h2>
             </div>
+            <p class="section-lede">Eighteen prompt frameworks from the project registry, each with a guided form and a live preview. Prompts are composed in your browser; nothing is sent to a model from here.</p>
+          </header>
 
-            <div id="recommendation-explanation-box" class="recommendation-explanation-box"></div>
+          <div class="studio-recommender">
+            <p id="recommender-title" class="recommender-title">Not sure which framework to use? Pick what you are doing:</p>
+            <div class="scenario-buttons-row" role="group" aria-labelledby="recommender-title">
+              <button type="button" class="btn-scenario-chip" data-scenario="research">Technical Research</button>
+              <button type="button" class="btn-scenario-chip" data-scenario="resume">Resume Bullet Point</button>
+              <button type="button" class="btn-scenario-chip" data-scenario="planning">Placement Plan</button>
+              <button type="button" class="btn-scenario-chip" data-scenario="interview">Behavioral Interview</button>
+              <button type="button" class="btn-scenario-chip" data-scenario="email">Alumni Outreach Email</button>
+              <button type="button" class="btn-scenario-chip" data-scenario="experiment">AI / ML Experiment</button>
+            </div>
+            <div id="recommendation-explanation-box" class="recommendation-explanation-box" role="status" aria-live="polite"></div>
           </div>
 
-          <!-- 3-Column Workbench -->
           <div class="studio-main-workbench">
-            
-            <!-- Column 1: Framework Directory -->
-            <div class="frameworks-nav-card">
-              <div style="margin-bottom:12px;">
-                <input type="text" id="framework-search-input" class="search-input-box" style="width:100%;font-size:0.85rem;padding:8px 12px;" placeholder="Search 18 frameworks (e.g. SMART, STAR, CLEAR)..." aria-label="Search frameworks">
+            <!-- Directory: searchable, grouped by the registry's own groups -->
+            <nav class="frameworks-nav-card" aria-label="Framework directory">
+              <label class="table-filter studio-search">
+                <i data-lucide="search" style="width:15px;height:15px;"></i>
+                <span class="sr-only">Search frameworks</span>
+                <input type="search" id="framework-search-input" class="search-input-box" placeholder="Search frameworks" autocomplete="off">
+              </label>
+              <div class="segmented-filter studio-groups" role="group" aria-label="Framework group">
+                <button type="button" class="btn-filter-pill btn-framework-cat active" data-cat="all" aria-pressed="true">All</button>
+                <button type="button" class="btn-filter-pill btn-framework-cat" data-cat="Research &amp; Structured Work" aria-pressed="false">Research</button>
+                <button type="button" class="btn-filter-pill btn-framework-cat" data-cat="Task &amp; Response Structuring" aria-pressed="false">Tasks</button>
               </div>
+              <p id="framework-registry-note" class="studio-registry-note" role="status"></p>
+              <div id="frameworks-list-scroll" class="frameworks-list-scroll"></div>
+            </nav>
 
-              <div style="display:flex;flex-wrap:wrap;gap:4px;margin-bottom:10px;">
-                <button type="button" class="btn-filter-pill btn-framework-cat active" data-cat="all" style="padding:4px 10px;font-size:0.72rem;">All (18)</button>
-                <button type="button" class="btn-filter-pill btn-framework-cat" data-cat="research" style="padding:4px 10px;font-size:0.72rem;">Research</button>
-                <button type="button" class="btn-filter-pill btn-framework-cat" data-cat="goal" style="padding:4px 10px;font-size:0.72rem;">Goals</button>
-                <button type="button" class="btn-filter-pill btn-framework-cat" data-cat="task" style="padding:4px 10px;font-size:0.72rem;">Tasks</button>
-                <button type="button" class="btn-filter-pill btn-framework-cat" data-cat="story" style="padding:4px 10px;font-size:0.72rem;">Stories</button>
-              </div>
-
-              <div id="frameworks-list-scroll" class="frameworks-list-scroll">
-                <!-- Dynamically populated with all 18 frameworks -->
-              </div>
-            </div>
-
-            <!-- Column 2: Acronym Form Builder -->
+            <!-- Builder: fields generated from the registry entry -->
             <div class="framework-builder-card">
               <div class="builder-header">
-                <h4 id="builder-fw-title" style="font-family:var(--font-display);font-size:1.25rem;color:var(--text-primary);">CLEAR Framework</h4>
-                <p id="builder-fw-desc" style="font-size:0.82rem;color:var(--text-muted);margin-top:4px;">Context, Logic, Expectations, Action, Restriction</p>
+                <h3 id="builder-fw-title" class="builder-title">Loading frameworks…</h3>
+                <p id="builder-fw-desc" class="builder-desc"></p>
+                <ul id="builder-fw-scenarios" class="scenario-tags" aria-label="Recommended scenarios"></ul>
               </div>
-
-              <div id="builder-fields-container" class="builder-fields-container">
-                <!-- Dynamically populated based on chosen framework acronym fields -->
-              </div>
-
-              <div style="display:flex;gap:10px;margin-top:20px;">
-                <button type="button" class="btn-preset-chip" onclick="resetFrameworkFields()">
-                  <i data-lucide="rotate-ccw" style="width:14px;height:14px;"></i> Reset Fields
+              <div id="builder-fields-container" class="builder-fields-container"></div>
+              <div class="builder-actions">
+                <button type="button" id="btn-fw-example" class="btn-secondary btn-sm">
+                  <i data-lucide="wand-sparkles" style="width:14px;height:14px;"></i> Fill with an example
                 </button>
+                <button type="button" id="btn-fw-reset" class="btn-text-action">
+                  <i data-lucide="rotate-ccw" style="width:14px;height:14px;"></i> Reset this framework
+                </button>
+                <span id="builder-progress" class="builder-progress"></span>
               </div>
+              <p class="builder-note">Each framework keeps its own draft while this page is open. Drafts are never written to browser storage.</p>
             </div>
 
-            <!-- Column 3: Monospace Live Preview -->
+            <!-- Preview -->
             <div class="prompt-preview-card">
-              <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px;">
-                <div style="display:flex;align-items:center;gap:8px;">
-                  <i data-lucide="code" style="color:var(--accent-cyan);width:16px;height:16px;"></i>
-                  <strong style="color:var(--text-primary);font-size:0.95rem;">Live Formatted Preview</strong>
-                </div>
-                <span id="prompt-char-count" style="font-size:0.75rem;color:var(--text-muted);">0 characters</span>
+              <div class="preview-head">
+                <h3 class="preview-title">Preview</h3>
+                <span id="prompt-char-count" class="preview-count">0 characters</span>
               </div>
-
-              <div id="prompt-preview-code" class="preview-code-box" role="textbox" aria-readonly="true"></div>
-
-              <div style="display:flex;flex-direction:column;gap:10px;margin-top:16px;">
-                <button type="button" class="btn-magnetic-glow" onclick="copyPromptToClipboard()">
-                  <i data-lucide="copy" style="width:16px;height:16px;"></i> Copy Formatted Prompt
+              <pre id="prompt-preview-code" class="preview-code-box" tabindex="0" aria-label="Formatted prompt preview"></pre>
+              <div class="preview-actions">
+                <button type="button" id="btn-copy-prompt" class="btn-primary">
+                  <i data-lucide="copy" style="width:16px;height:16px;"></i> Copy prompt
                 </button>
-                <button type="button" class="btn-glass-shimmer" onclick="copyPromptAndOpenAnalyzer()">
-                  <i data-lucide="arrow-up-right" style="width:16px;height:16px;"></i> Copy & Jump to Resume Matcher
+                <button type="button" id="btn-prompt-to-coach" class="btn-secondary">
+                  <i data-lucide="messages-square" style="width:16px;height:16px;"></i> Use as Career Coach lens
                 </button>
               </div>
+              <p class="preview-note">Copy puts the text on your clipboard only. "Use as Career Coach lens" switches the coach in the analyzer to this framework.</p>
             </div>
-
           </div>
-
         </div>
       </section>
 

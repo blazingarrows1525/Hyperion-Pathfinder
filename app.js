@@ -173,6 +173,9 @@ const appState = {
     categoryFilter: 'all',
     searchQuery: '',
     formData: {},
+    drafts: {},          // per-framework drafts, memory only
+    frameworks: [],      // from GET /api/frameworks (prompt_frameworks.json)
+    registrySource: null,
     recommendation: null
   },
 
@@ -226,7 +229,12 @@ const appState = {
 };
 
 // ==============================================================================
-// 2. THE 18 PROMPT FRAMEWORKS REGISTRY (POSTER A & POSTER B)
+// 2. PROMPT FRAMEWORK WRITING GUIDES
+// prompt_frameworks.json (served at GET /api/frameworks) is the source of truth
+// for names, groups, expansions, "best for", fields and scenarios. These
+// entries only add per-field help (placeholder, hint, example), matched to the
+// registry by normalised field name; their other fields are a fallback used
+// only if the registry cannot be loaded.
 // ==============================================================================
 const promptFrameworksRegistry = [
   // --- POSTER A: RESEARCH & STRUCTURED WORK ---
@@ -3326,11 +3334,13 @@ function initPromptStudio() {
     });
   }
 
-  // Category filter buttons
+  // Group filter: the registry's own two groups
   document.querySelectorAll('.btn-framework-cat').forEach(btn => {
     btn.addEventListener('click', () => {
-      document.querySelectorAll('.btn-framework-cat').forEach(b => b.classList.remove('active'));
-      btn.classList.add('active');
+      document.querySelectorAll('.btn-framework-cat').forEach(b => {
+        b.classList.toggle('active', b === btn);
+        b.setAttribute('aria-pressed', String(b === btn));
+      });
       appState.promptStudio.categoryFilter = btn.getAttribute('data-cat');
       renderFrameworksList();
     });
@@ -3338,67 +3348,140 @@ function initPromptStudio() {
 
   // Task scenario chips for transparent recommendation
   document.querySelectorAll('.btn-scenario-chip').forEach(chip => {
-    chip.addEventListener('click', () => {
-      const scenarioKey = chip.getAttribute('data-scenario');
-      triggerFrameworkRecommendation(scenarioKey);
-    });
+    chip.addEventListener('click', () => triggerFrameworkRecommendation(chip.getAttribute('data-scenario')));
   });
 
-  renderFrameworksList();
-  selectFramework(appState.promptStudio.selectedFrameworkId);
+  const list = document.getElementById('frameworks-list-scroll');
+  if (list) {
+    list.addEventListener('click', (e) => {
+      const item = e.target.closest('[data-framework-id]');
+      if (item) selectFramework(item.getAttribute('data-framework-id'));
+    });
+  }
+  const recBox = document.getElementById('recommendation-explanation-box');
+  if (recBox) {
+    recBox.addEventListener('click', (e) => {
+      const btn = e.target.closest('[data-load-framework]');
+      if (btn) selectFramework(btn.getAttribute('data-load-framework'));
+    });
+  }
+  const exampleBtn = document.getElementById('btn-fw-example');
+  if (exampleBtn) exampleBtn.addEventListener('click', fillFrameworkExample);
+  const resetBtn = document.getElementById('btn-fw-reset');
+  if (resetBtn) resetBtn.addEventListener('click', resetFrameworkFields);
+  const copyBtn = document.getElementById('btn-copy-prompt');
+  if (copyBtn) copyBtn.addEventListener('click', copyPromptToClipboard);
+  const coachBtn = document.getElementById('btn-prompt-to-coach');
+  if (coachBtn) coachBtn.addEventListener('click', usePromptFrameworkInCoach);
+
+  loadFrameworkRegistry().then(() => {
+    renderFrameworksList();
+    selectFramework(appState.promptStudio.selectedFrameworkId);
+  });
 }
+
+const normalizeFieldKey = (name) => String(name).toLowerCase().replace(/[^a-z]/g, '');
+
+// Registry entry + writing guide -> the shape the studio renders.
+function buildStudioFramework(entry) {
+  const guide = promptFrameworksRegistry.find(g => g.id === entry.id);
+  const guideFields = guide ? guide.fields : [];
+  return {
+    id: entry.id,
+    name: entry.name,
+    group: entry.group,
+    expansion: entry.acronym,
+    bestUse: entry.best_use,
+    scenarios: Array.isArray(entry.recommended_scenarios) ? entry.recommended_scenarios : [],
+    fields: (entry.fields || []).map(name => {
+      const g = guideFields.find(f => normalizeFieldKey(f.key) === normalizeFieldKey(name)) || {};
+      return {
+        key: name,
+        label: name,
+        letter: name.charAt(0).toUpperCase(),
+        placeholder: g.placeholder || `Write the ${name.toLowerCase()} for this prompt…`,
+        hint: g.hint || '',
+        example: guide && guide.sample && g.key ? (guide.sample[g.key] || '') : ''
+      };
+    })
+  };
+}
+
+function loadFrameworkRegistry() {
+  const note = document.getElementById('framework-registry-note');
+  return fetch('/api/frameworks')
+    .then(res => {
+      if (!res.ok) throw new Error('Framework registry returned ' + res.status);
+      return res.json();
+    })
+    .then(data => {
+      const entries = Array.isArray(data.frameworks) ? data.frameworks : [];
+      if (!entries.length) throw new Error('Empty framework registry');
+      appState.promptStudio.frameworks = entries.map(buildStudioFramework);
+      appState.promptStudio.registrySource = 'api';
+      if (note) note.textContent = `${entries.length} frameworks · registry v${data.version || '?'}`;
+    })
+    .catch(err => {
+      console.warn('Framework registry unavailable, using the bundled guide list:', err);
+      appState.promptStudio.frameworks = promptFrameworksRegistry.map(g => buildStudioFramework({
+        id: g.id, name: g.name, group: 'Bundled list', acronym: g.expansion, best_use: g.bestFor,
+        fields: g.fields.map(f => f.key), recommended_scenarios: []
+      }));
+      appState.promptStudio.registrySource = 'bundled';
+      if (note) note.textContent = 'The framework registry could not be loaded; showing the bundled list.';
+    });
+}
+
+function getStudioFramework(id) {
+  return appState.promptStudio.frameworks.find(f => f.id === id);
+}
+
+const humanizeScenario = (s) => s.replace(/_/g, ' ').replace(/^\w/, c => c.toUpperCase());
 
 function renderFrameworksList() {
   const listContainer = document.getElementById('frameworks-list-scroll');
   if (!listContainer) return;
 
-  const { searchQuery, categoryFilter, selectedFrameworkId } = appState.promptStudio;
-
-  const filtered = promptFrameworksRegistry.filter(fw => {
-    const matchesSearch = !searchQuery || 
-      fw.id.toLowerCase().includes(searchQuery) ||
-      fw.name.toLowerCase().includes(searchQuery) ||
-      fw.expansion.toLowerCase().includes(searchQuery) ||
-      fw.bestFor.toLowerCase().includes(searchQuery);
-
-    const matchesCat = categoryFilter === 'all' || fw.category === categoryFilter;
-    return matchesSearch && matchesCat;
+  const { searchQuery, categoryFilter, selectedFrameworkId, frameworks } = appState.promptStudio;
+  const filtered = frameworks.filter(fw => {
+    const haystack = [fw.id, fw.name, fw.expansion, fw.bestUse, ...fw.scenarios].join(' ').toLowerCase().replace(/_/g, ' ');
+    const matchesSearch = !searchQuery || haystack.includes(searchQuery);
+    const matchesGroup = categoryFilter === 'all' || fw.group === categoryFilter;
+    return matchesSearch && matchesGroup;
   });
 
   if (filtered.length === 0) {
-    listContainer.innerHTML = `
-      <div style="padding:16px;text-align:center;color:var(--text-muted);font-size:0.85rem;">
-        No frameworks match your filter.
-      </div>
-    `;
+    listContainer.innerHTML = '<p class="frameworks-empty">No frameworks match. Try another word or show all groups.</p>';
     return;
   }
 
-  listContainer.innerHTML = filtered.map(fw => `
-    <button type="button" class="framework-item-btn ${fw.id === selectedFrameworkId ? 'active' : ''}" 
-            onclick="selectFramework('${fw.id}')">
-      <div style="display:flex;justify-content:space-between;align-items:center;">
-        <span class="fw-acronym">${fw.acronym}</span>
-        <span style="font-size:0.68rem;padding:2px 6px;border-radius:4px;background:rgba(var(--tint-rgb),0.06);color:var(--text-muted);text-transform:uppercase;">
-          ${fw.category}
-        </span>
-      </div>
-      <div class="fw-expansion">${fw.expansion}</div>
-    </button>
+  const groups = [...new Set(filtered.map(fw => fw.group))];
+  listContainer.innerHTML = groups.map(group => `
+    <p class="framework-group-label">${escapeHTML(group)}</p>
+    ${filtered.filter(fw => fw.group === group).map(fw => `
+      <button type="button" class="framework-item-btn${fw.id === selectedFrameworkId ? ' active' : ''}"
+              data-framework-id="${escapeHTML(fw.id)}" aria-pressed="${fw.id === selectedFrameworkId}">
+        <span class="fw-acronym">${escapeHTML(fw.id)}</span>
+        <span class="fw-expansion">${escapeHTML(fw.expansion)}</span>
+      </button>`).join('')}
   `).join('');
 }
 
+// Switching keeps a draft per framework (in memory only), so nothing typed is lost.
 function selectFramework(id) {
-  const fw = promptFrameworksRegistry.find(f => f.id === id);
+  const fw = getStudioFramework(id);
   if (!fw) return;
+  const state = appState.promptStudio;
+  if (state.selectedFrameworkId && state.selectedFrameworkId !== id) {
+    state.drafts[state.selectedFrameworkId] = { ...state.formData };
+  }
+  state.selectedFrameworkId = id;
+  state.formData = { ...(state.drafts[id] || {}) };
 
-  appState.promptStudio.selectedFrameworkId = id;
-  appState.promptStudio.formData = { ...fw.sample };
-
-  // Update list active states
   document.querySelectorAll('.framework-item-btn').forEach(btn => {
-    const acronym = btn.querySelector('.fw-acronym');
-    btn.classList.toggle('active', acronym && acronym.textContent.trim() === id);
+    const isActive = btn.getAttribute('data-framework-id') === id;
+    btn.classList.toggle('active', isActive);
+    btn.setAttribute('aria-pressed', String(isActive));
   });
 
   renderFrameworkBuilder(fw);
@@ -3408,28 +3491,30 @@ function selectFramework(id) {
 function renderFrameworkBuilder(fw) {
   const titleElem = document.getElementById('builder-fw-title');
   const descElem = document.getElementById('builder-fw-desc');
+  const scenariosElem = document.getElementById('builder-fw-scenarios');
   const container = document.getElementById('builder-fields-container');
+  const exampleBtn = document.getElementById('btn-fw-example');
 
-  if (titleElem) titleElem.textContent = `${fw.name} (${fw.acronym})`;
-  if (descElem) descElem.textContent = `${fw.expansion} — ${fw.bestFor}`;
+  if (titleElem) titleElem.textContent = `${fw.name}`;
+  if (descElem) descElem.innerHTML = `<strong>${escapeHTML(fw.expansion)}</strong><span>Best for: ${escapeHTML(fw.bestUse)}</span>`;
+  if (scenariosElem) scenariosElem.innerHTML = fw.scenarios.map(s => `<li>${escapeHTML(humanizeScenario(s))}</li>`).join('');
+  if (exampleBtn) exampleBtn.hidden = !fw.fields.some(f => f.example);
   if (!container) return;
 
-  container.innerHTML = fw.fields.map(field => `
-    <div>
-      <label class="fw-field-label">
-        <span>${field.label}</span>
-      </label>
-      <input type="text" class="fw-field-input" data-field-key="${field.key}" 
-             value="${appState.promptStudio.formData[field.key] || ''}" 
-             placeholder="${field.placeholder || ''}">
-    </div>
-  `).join('');
+  container.innerHTML = fw.fields.map((field, i) => {
+    const id = `fw-field-${i}`;
+    return `
+    <div class="fw-field">
+      <label class="fw-field-label" for="${id}"><span class="fw-letter" aria-hidden="true">${escapeHTML(field.letter)}</span>${escapeHTML(field.label)}</label>
+      <textarea id="${id}" class="fw-field-input" rows="2" data-field-key="${escapeHTML(field.key)}"
+                placeholder="${escapeHTML(field.placeholder)}"${field.hint ? ` aria-describedby="${id}-hint"` : ''}>${escapeHTML(appState.promptStudio.formData[field.key] || '')}</textarea>
+      ${field.hint ? `<p class="fw-field-hint" id="${id}-hint">${escapeHTML(field.hint)}</p>` : ''}
+    </div>`;
+  }).join('');
 
-  // Attach live input listeners
   container.querySelectorAll('.fw-field-input').forEach(input => {
     input.addEventListener('input', (e) => {
-      const key = e.target.getAttribute('data-field-key');
-      appState.promptStudio.formData[key] = e.target.value;
+      appState.promptStudio.formData[e.target.getAttribute('data-field-key')] = e.target.value;
       updatePromptPreview(fw);
     });
   });
@@ -3438,57 +3523,76 @@ function renderFrameworkBuilder(fw) {
 function updatePromptPreview(fw) {
   const previewBox = document.getElementById('prompt-preview-code');
   const charCountElem = document.getElementById('prompt-char-count');
+  const progress = document.getElementById('builder-progress');
   if (!previewBox) return;
 
-  let generatedText = `# [${fw.acronym}] ${fw.name}\n# Purpose: ${fw.bestFor}\n\n`;
-
+  let generatedText = `# [${fw.id}] ${fw.name}\n# Purpose: ${fw.bestUse}\n\n`;
+  let filled = 0;
   fw.fields.forEach(field => {
     const val = (appState.promptStudio.formData[field.key] || '').trim();
+    if (val) filled++;
     generatedText += `[${field.key.toUpperCase()}]: ${val || '[Fill in ' + field.label + ']'}\n`;
   });
 
   previewBox.textContent = generatedText;
-  if (charCountElem) {
-    charCountElem.textContent = `${generatedText.length.toLocaleString()} characters`;
-  }
+  if (charCountElem) charCountElem.textContent = `${generatedText.length.toLocaleString()} characters`;
+  if (progress) progress.textContent = `${filled} of ${fw.fields.length} fields filled`;
 }
 
-function resetFrameworkFields() {
-  const fw = promptFrameworksRegistry.find(f => f.id === appState.promptStudio.selectedFrameworkId);
+function fillFrameworkExample() {
+  const fw = getStudioFramework(appState.promptStudio.selectedFrameworkId);
   if (!fw) return;
-
-  appState.promptStudio.formData = {};
-  document.querySelectorAll('.fw-field-input').forEach(input => {
-    input.value = '';
-  });
+  const hasText = Object.values(appState.promptStudio.formData).some(v => (v || '').trim());
+  if (hasText && !confirm(`Replace what you have written for ${fw.id} with the example?`)) return;
+  fw.fields.forEach(field => { appState.promptStudio.formData[field.key] = field.example; });
+  renderFrameworkBuilder(fw);
   updatePromptPreview(fw);
-  showToast('Framework fields reset.');
+  showToast(`Example loaded for ${fw.id}. Edit it to fit your situation.`);
+}
+
+// Resets only the selected framework's form and draft.
+function resetFrameworkFields() {
+  const fw = getStudioFramework(appState.promptStudio.selectedFrameworkId);
+  if (!fw) return;
+  appState.promptStudio.formData = {};
+  delete appState.promptStudio.drafts[fw.id];
+  document.querySelectorAll('.fw-field-input').forEach(input => { input.value = ''; });
+  updatePromptPreview(fw);
+  showToast(`${fw.id} fields cleared.`);
+}
+
+// Resolves true only when the text really reached the clipboard.
+function copyText(text) {
+  if (navigator.clipboard && navigator.clipboard.writeText) {
+    return navigator.clipboard.writeText(text).then(() => true).catch(() => legacyCopy(text));
+  }
+  return Promise.resolve(legacyCopy(text));
+}
+
+function legacyCopy(text) {
+  const ta = document.createElement('textarea');
+  ta.value = text;
+  ta.setAttribute('readonly', '');
+  ta.style.position = 'fixed';
+  ta.style.opacity = '0';
+  document.body.appendChild(ta);
+  ta.select();
+  let ok = false;
+  try { ok = document.execCommand('copy'); } catch (err) { ok = false; }
+  document.body.removeChild(ta);
+  return ok;
 }
 
 function copyPromptToClipboard() {
   const previewBox = document.getElementById('prompt-preview-code');
   if (!previewBox) return;
-
-  const text = previewBox.textContent;
-  if (navigator.clipboard && navigator.clipboard.writeText) {
-    navigator.clipboard.writeText(text).then(() => {
-      showToast('Prompt copied to clipboard!');
-    }).catch(() => {
-      fallbackCopy(text);
-    });
-  } else {
-    fallbackCopy(text);
-  }
+  copyText(previewBox.textContent).then(ok => {
+    showToast(ok ? 'Prompt copied to clipboard.' : 'Copy failed. Select the preview text and copy it manually.');
+  });
 }
 
-function fallbackCopy(text, successMessage = 'Prompt copied to clipboard!') {
-  const ta = document.createElement('textarea');
-  ta.value = text;
-  document.body.appendChild(ta);
-  ta.select();
-  document.execCommand('copy');
-  document.body.removeChild(ta);
-  showToast(successMessage);
+function fallbackCopy(text, successMessage = 'Copied to clipboard.') {
+  copyText(text).then(ok => showToast(ok ? successMessage : 'Copy failed. Select the text and copy it manually.'));
 }
 
 // Human-readable report: the same transform renderSafeMarkdown applies before
@@ -3553,31 +3657,42 @@ ${text}
   showToast(`Downloaded ${filename}`);
 }
 
-function copyPromptAndOpenAnalyzer() {
-  copyPromptToClipboard();
-  const analyzer = document.getElementById('analyzer');
-  if (analyzer) analyzer.scrollIntoView({ behavior: 'smooth' });
+// Defined handoff: the Career Coach answers through the chosen framework.
+function usePromptFrameworkInCoach() {
+  const fw = getStudioFramework(appState.promptStudio.selectedFrameworkId);
+  const select = document.getElementById('coach-framework-select');
+  if (!fw || !select) return;
+  if (![...select.options].some(o => o.value === fw.id)) {
+    showToast(`The Career Coach has no ${fw.id} lens.`);
+    return;
+  }
+  select.value = fw.id;
+  select.dispatchEvent(new Event('change', { bubbles: true }));
+  switchResultsTab('pane-career-coach');
+  const results = document.querySelector('.analyzer-results-card');
+  if (results) results.scrollIntoView({ behavior: appState.motionMode === 'reduced' ? 'auto' : 'smooth', block: 'start' });
+  showToast(`Career Coach will answer through the ${fw.id} framework.`);
 }
 
 function triggerFrameworkRecommendation(scenarioKey) {
   const rec = scenarioRecommendations[scenarioKey];
   const box = document.getElementById('recommendation-explanation-box');
   if (!rec || !box) return;
+  document.querySelectorAll('.btn-scenario-chip').forEach(chip => {
+    chip.classList.toggle('active', chip.getAttribute('data-scenario') === scenarioKey);
+  });
+  const primary = getStudioFramework(rec.primaryId);
+  const alt = getStudioFramework(rec.altId);
 
   box.innerHTML = `
-    <div style="display:flex;align-items:center;gap:10px;margin-bottom:6px;">
-      <i data-lucide="check-circle" style="width:16px;height:16px;color:var(--accent-emerald);"></i>
-      <strong style="color:var(--text-primary);">Recommended: ${rec.primaryId} (Alternative: ${rec.altId})</strong>
-    </div>
-    <p style="color:var(--text-secondary);font-size:0.85rem;line-height:1.6;">${rec.reason}</p>
-    <div style="margin-top:8px;">
-      <button type="button" class="btn-preset-chip" onclick="selectFramework('${rec.primaryId}')">Load ${rec.primaryId} Framework</button>
-      <button type="button" class="btn-preset-chip" onclick="selectFramework('${rec.altId}')">Load Alternate: ${rec.altId}</button>
+    <p class="rec-line"><strong>Use ${escapeHTML(rec.primaryId)}</strong>${primary ? ` (${escapeHTML(primary.expansion)})` : ''}. ${escapeHTML(rec.reason)}</p>
+    <p class="rec-alt">Alternative: <strong>${escapeHTML(rec.altId)}</strong>${alt ? `, best for ${escapeHTML(alt.bestUse.replace(/\.$/, '').toLowerCase())}` : ''}.</p>
+    <div class="rec-actions">
+      <button type="button" class="btn-secondary btn-sm" data-load-framework="${escapeHTML(rec.primaryId)}">Open ${escapeHTML(rec.primaryId)}</button>
+      <button type="button" class="btn-text-action" data-load-framework="${escapeHTML(rec.altId)}">Open ${escapeHTML(rec.altId)} instead</button>
     </div>
   `;
   box.classList.add('visible');
-  if (window.lucide) window.lucide.createIcons();
-
   selectFramework(rec.primaryId);
 }
 

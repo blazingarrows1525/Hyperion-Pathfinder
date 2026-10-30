@@ -73,3 +73,18 @@ All analyzer IDs used by `app.js` are kept; the changes are structural.
 | Company modal | restructured | "From the 2026 placement snapshot" (facts, or "Not in this snapshot excerpt" with the excerpt's real list sizes) kept apart from "Practice material — unverified" (skills, sample rounds) |
 | Modal titles (styled `div`s) | replaced | `h2.modal-title` "Company details" / "Compare two archetypes" |
 | — | added | `openModal()` / `closeModal()`: focus moves to the close button, Tab is trapped inside, focus returns to the trigger. Phones get a bottom sheet. |
+
+## Prompt Studio
+
+| Removed / changed | Status | Replacement |
+|---|---|---|
+| `promptFrameworksRegistry` as the data source | demoted | `GET /api/frameworks` (`prompt_frameworks.json`) supplies names, groups, expansions, "best for", fields and scenarios. The JS entries had drifted (15 of 18 "best for" texts differed; SMART and FOCUS used different field keys). They now only supply per-field placeholders, hints and examples, matched by normalised field name, plus a labelled fallback if the registry fails. |
+| Filters "Research / Goals / Tasks / Stories" (JS-only categories) | replaced | The registry's two groups (`data-cat` = group name) with `aria-pressed`; the list is grouped under sticky group labels |
+| `button.framework-item-btn[onclick]` | replaced | `data-framework-id` + one delegated listener; `aria-pressed` marks the open framework |
+| Switching framework reset fields to the sample (silently discarding input) | fixed | Per-framework drafts in `appState.promptStudio.drafts` (memory only, never browser storage). Fields start empty with placeholders; "Fill with an example" asks before replacing text. |
+| `input.fw-field-input` | replaced | Labelled `textarea.fw-field-input` with `aria-describedby` hints, a field-letter badge, and an "n of m fields filled" counter |
+| `onclick="resetFrameworkFields()"` | replaced | `#btn-fw-reset`: clears only the selected framework and its draft |
+| `onclick="copyPromptToClipboard()"` and `fallbackCopy()` (reported success even when the copy failed) | fixed | `#btn-copy-prompt` → `copyText()` resolves true only when the clipboard write succeeded; failure tells the user to copy manually |
+| `onclick="copyPromptAndOpenAnalyzer()"` "Copy & Jump to Resume Matcher" | replaced | `#btn-prompt-to-coach` "Use as Career Coach lens": sets `#coach-framework-select`, opens the Career Coach tab and scrolls to it, a defined destination for a framework (pasting a prompt into the JD field was not) |
+| Recommendation box inline `onclick` buttons | replaced | `data-load-framework` delegation; the text names the expansion and the alternative's "best for" from the registry |
+| `div#prompt-preview-code[role=textbox]` | replaced | `pre#prompt-preview-code` (focusable, labelled) |
