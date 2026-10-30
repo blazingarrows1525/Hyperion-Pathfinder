@@ -222,13 +222,16 @@ class IntelligentLocalProvider(LLMProvider):
     def is_configured(self) -> bool:
         return True
 
+    # This provider is deterministic template synthesis with no language model;
+    # its display name must not imply otherwise. model_name matches the value
+    # /health has always reported for it.
     @property
     def provider_name(self) -> str:
-        return "Intelligent Neural Engine (Local Grounded)"
+        return "Local Deterministic Engine (no LLM)"
 
     @property
     def model_name(self) -> str:
-        return "resume-checker-neural-v2"
+        return "deterministic-fallback"
 
     def complete(self, messages: List[Dict[str, str]], model: Optional[str] = None) -> str:
         return self._synthesize(messages)
@@ -376,12 +379,12 @@ def get_available_providers() -> List[Dict[str, Any]]:
 
     return [
         {
-            "id": "neural_local",
-            "name": "Intelligent Neural Engine (Local Grounded)",
-            "description": "Zero-latency, zero-cost deterministic synthesis with all 18 prompt frameworks.",
+            "id": "neural_local",  # stable API identifier; display name below
+            "name": "Local Deterministic Engine (no LLM)",
+            "description": "No external API calls: deterministic, template-based responses built from the 18 prompt frameworks.",
             "is_ready": True,
             "requires_key": False,
-            "default_model": "resume-checker-neural-v2"
+            "default_model": "deterministic-fallback"
         },
         {
             "id": "gemini",
