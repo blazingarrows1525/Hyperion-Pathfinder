@@ -2768,6 +2768,15 @@ function formatCorpusCount(arch, long) {
   return long ? `${c.count} of ${c.total} records (${c.pct}%)` : `${c.count} corpus records`;
 }
 
+// Official label from GET /api/corpus-summary when loaded, else the local name.
+function getArchetypeLabel(arch) {
+  const summary = appState.corpusSummary;
+  const entry = summary && Array.isArray(summary.archetypes)
+    ? summary.archetypes.find(a => a.cluster_id === arch.id)
+    : null;
+  return (entry && entry.label) || arch.name;
+}
+
 function initCareerGenome() {
   const selectorContainer = document.getElementById('archetypes-selector-grid');
   if (!selectorContainer) return;
@@ -2779,26 +2788,85 @@ function initCareerGenome() {
     });
   }
 
-  selectorContainer.innerHTML = archetypesDatabase.map(arch => `
-    <div class="archetype-chip-card ${arch.id === appState.genome.selectedArchetypeId ? 'active' : ''}"
-         data-arch-id="${arch.id}" onclick="selectArchetype(${arch.id})">
-      <div class="archetype-chip-header">
-        <span class="arch-id-pill" style="color:${arch.accentColor};">${arch.clusterLabel}</span>
-      </div>
-      <h4 class="arch-title">${arch.name}</h4>
-      <div class="arch-stats-row">${formatCorpusCount(arch)}</div>
-    </div>
-  `).join('');
+  const selected = appState.genome.selectedArchetypeId;
+  selectorContainer.innerHTML = archetypesDatabase.map(arch => {
+    const c = getArchetypeCorpusCount(arch);
+    const isSelected = arch.id === selected;
+    return `
+    <button type="button" role="tab" id="archetype-tab-${arch.id}" class="archetype-tab${isSelected ? ' active' : ''}"
+            data-arch-id="${arch.id}" aria-selected="${isSelected}" aria-controls="archetype-detail-panel" tabindex="${isSelected ? 0 : -1}">
+      <span class="archetype-node" data-arch="${arch.id}" aria-hidden="true"></span>
+      <span class="archetype-tab-cluster">Cluster ${arch.id}</span>
+      <span class="archetype-tab-name">${escapeHTML(getArchetypeLabel(arch))}</span>
+      <span class="archetype-tab-count">${c ? `${c.count} records · ${c.pct}%` : 'Corpus count loading'}</span>
+    </button>`;
+  }).join('');
 
-  renderArchetypeDetail(appState.genome.selectedArchetypeId);
+  if (!selectorContainer.dataset.bound) {
+    selectorContainer.dataset.bound = 'true';
+    selectorContainer.addEventListener('click', (e) => {
+      const tab = e.target.closest('.archetype-tab');
+      if (tab) selectArchetype(parseInt(tab.getAttribute('data-arch-id'), 10));
+    });
+    // Tabs pattern: arrow keys, Home and End move the selection.
+    selectorContainer.addEventListener('keydown', (e) => {
+      const keys = { ArrowRight: 1, ArrowDown: 1, ArrowLeft: -1, ArrowUp: -1 };
+      const ids = archetypesDatabase.map(a => a.id);
+      const index = ids.indexOf(appState.genome.selectedArchetypeId);
+      let next = null;
+      if (e.key in keys) next = ids[(index + keys[e.key] + ids.length) % ids.length];
+      if (e.key === 'Home') next = ids[0];
+      if (e.key === 'End') next = ids[ids.length - 1];
+      if (next === null) return;
+      e.preventDefault();
+      selectArchetype(next);
+      const tab = document.getElementById(`archetype-tab-${next}`);
+      if (tab) tab.focus();
+    });
+    const panel = document.getElementById('archetype-detail-panel');
+    if (panel) {
+      panel.addEventListener('click', (e) => {
+        const btn = e.target.closest('[data-genome-action]');
+        if (!btn) return;
+        const id = parseInt(btn.getAttribute('data-arch-id'), 10);
+        if (btn.getAttribute('data-genome-action') === 'use-jd') populateSampleJdFromArchetype(id);
+        else openArchetypeComparisonModal(id);
+      });
+    }
+  }
+
+  renderGenomeFieldStrip();
+  renderArchetypeDetail(selected);
+}
+
+// One strip whose segments are each archetype's share of the corpus. Valid as a
+// share-of-whole because K-Means places every record in exactly one cluster.
+function renderGenomeFieldStrip() {
+  const strip = document.getElementById('genome-field-strip');
+  if (!strip) return;
+  const counts = archetypesDatabase.map(arch => ({ arch, c: getArchetypeCorpusCount(arch) }));
+  if (counts.some(x => !x.c)) {
+    strip.hidden = true;
+    return;
+  }
+  strip.hidden = false;
+  strip.innerHTML = counts.map(({ arch, c }) => `
+    <span class="genome-field-seg${arch.id === appState.genome.selectedArchetypeId ? ' active' : ''}" data-arch="${arch.id}" style="flex-grow:${c.count}">
+      <b>${c.pct}%</b>
+    </span>`).join('');
 }
 
 function selectArchetype(id) {
   appState.genome.selectedArchetypeId = id;
   if (typeof renderAtlasLegend === 'function') renderAtlasLegend();
-  document.querySelectorAll('.archetype-chip-card').forEach(card => {
-    const cardId = parseInt(card.getAttribute('data-arch-id'), 10);
-    card.classList.toggle('active', cardId === id);
+  document.querySelectorAll('.archetype-tab').forEach(tab => {
+    const isSelected = parseInt(tab.getAttribute('data-arch-id'), 10) === id;
+    tab.classList.toggle('active', isSelected);
+    tab.setAttribute('aria-selected', String(isSelected));
+    tab.setAttribute('tabindex', isSelected ? '0' : '-1');
+  });
+  document.querySelectorAll('.genome-field-seg').forEach(seg => {
+    seg.classList.toggle('active', parseInt(seg.getAttribute('data-arch'), 10) === id);
   });
   renderArchetypeDetail(id);
 }
@@ -2807,55 +2875,45 @@ function renderArchetypeDetail(id) {
   const arch = archetypesDatabase.find(a => a.id === id);
   const container = document.getElementById('archetype-detail-panel');
   if (!arch || !container) return;
+  const c = getArchetypeCorpusCount(arch);
+  container.setAttribute('aria-labelledby', `archetype-tab-${arch.id}`);
 
   container.innerHTML = `
     <div class="detail-panel-grid">
-      <div>
-        <div style="font-family:var(--font-mono);font-size:0.75rem;color:${arch.accentColor};margin-bottom:6px;font-weight:700;">
-          ${arch.clusterLabel} ARCHETYPE PROFILE
-        </div>
-        <h3 style="font-family:var(--font-display);font-size:1.8rem;color:var(--text-primary);margin-bottom:12px;">${arch.name}</h3>
-        <p style="color:var(--text-secondary);font-size:0.95rem;line-height:1.7;margin-bottom:20px;">${arch.summary}</p>
-        
-        <strong style="font-size:0.85rem;color:var(--text-primary);display:block;margin-bottom:8px;">Distinguishing Technical Competencies (TF-IDF Grounded):</strong>
-        <div class="archetype-keywords-cluster">
-          ${arch.keySkills.map(s => `<span class="arch-keyword-pill">${s}</span>`).join('')}
-        </div>
+      <div class="detail-main">
+        <p class="detail-kicker"><span class="archetype-node" data-arch="${arch.id}" aria-hidden="true"></span> Cluster ${arch.id} · archetype profile</p>
+        <h3 class="detail-title">${escapeHTML(getArchetypeLabel(arch))}</h3>
+        <p class="detail-summary">${escapeHTML(arch.summary)}</p>
 
-        <div style="display:flex;gap:12px;margin-top:24px;">
-          <button type="button" class="btn-magnetic-glow" onclick="populateSampleJdFromArchetype(${arch.id})">
-            Use This Path in Resume Matcher
+        <p class="detail-label">Representative skills <span>curated</span></p>
+        <ul class="skill-chips">
+          ${arch.keySkills.map(s => `<li>${escapeHTML(s)}</li>`).join('')}
+        </ul>
+
+        <div class="detail-actions">
+          <button type="button" class="btn-primary" data-genome-action="use-jd" data-arch-id="${arch.id}">
+            <i data-lucide="file-input" style="width:16px;height:16px;"></i> Use this archetype's sample JD
           </button>
-          <button type="button" class="btn-glass-shimmer" onclick="openArchetypeComparisonModal(${arch.id})">
-            Compare with Another Path
+          <button type="button" class="btn-secondary" data-genome-action="compare" data-arch-id="${arch.id}">
+            <i data-lucide="columns-2" style="width:16px;height:16px;"></i> Compare with another archetype
           </button>
         </div>
       </div>
 
-      <div style="background:rgba(var(--tint-rgb),0.03);border:var(--border-subtle);border-radius:var(--radius-lg);padding:24px;">
-        <h4 style="font-family:var(--font-display);font-size:1.15rem;color:var(--text-primary);margin-bottom:16px;">Reference Corpus</h4>
+      <aside class="detail-side" aria-label="Corpus facts for this archetype">
+        <p class="detail-label">In the alumni corpus</p>
+        <p class="detail-count">${c ? `<strong>${c.count}</strong> of ${c.total} records <span>(${c.pct}%)</span>` : '<strong>—</strong> records'}</p>
+        ${c ? `<div class="share-bar" aria-hidden="true"><span data-arch="${arch.id}" style="width:${c.pct}%"></span></div>` : ''}
+        <p class="detail-note">The corpus holds resumes only, so no salary or placement rate exists per archetype. For batch-level offers and CTC, see the 2026 snapshot.</p>
 
-        <div style="margin-bottom:14px;">
-          <span style="font-size:0.75rem;color:var(--text-muted);display:block;">Records in this archetype</span>
-          <strong style="font-size:1.3rem;color:var(--accent-emerald);">${formatCorpusCount(arch, true)}</strong>
-        </div>
+        <p class="detail-label">Typical roles <span>illustrative</span></p>
+        <p class="detail-roles">${arch.typicalRoles.map(escapeHTML).join(' · ')}</p>
 
-        <p style="font-size:0.78rem;color:var(--text-muted);margin:0 0 14px;line-height:1.5;">
-          The corpus contains resumes only, so there is no salary or placement-rate figure for an archetype. For batch-level offers and CTC, see Placement 2026.
-        </p>
-
-        <div style="margin-bottom:16px;">
-          <span style="font-size:0.75rem;color:var(--text-muted);display:block;">Typical roles (illustrative)</span>
-          <p style="font-size:0.86rem;color:var(--text-secondary);margin-top:4px;">${arch.typicalRoles.join(' • ')}</p>
-        </div>
-
-        <div>
-          <span style="font-size:0.75rem;color:var(--text-muted);display:block;">Suggested capstone themes</span>
-          <ul style="font-size:0.82rem;color:var(--text-secondary);margin-top:6px;padding-left:18px;">
-            ${arch.projectThemes.map(t => `<li>${t}</li>`).join('')}
-          </ul>
-        </div>
-      </div>
+        <p class="detail-label">Project themes <span>suggested</span></p>
+        <ul class="detail-themes">
+          ${arch.projectThemes.map(t => `<li>${escapeHTML(t)}</li>`).join('')}
+        </ul>
+      </aside>
     </div>
   `;
 
@@ -2884,12 +2942,9 @@ function populateSampleJdFromArchetype(id) {
 
 function openArchetypeComparisonModal(primaryId) {
   appState.genome.compareArchetypeA = primaryId;
-  const compareWithId = (primaryId + 1) % archetypesDatabase.length;
-  appState.genome.compareArchetypeB = compareWithId;
-
-  const modalBackdrop = document.getElementById('compare-modal-backdrop');
+  appState.genome.compareArchetypeB = (primaryId + 1) % archetypesDatabase.length;
   renderComparisonModalContent();
-  if (modalBackdrop) modalBackdrop.classList.add('open');
+  openModal('compare-modal-backdrop');
 }
 
 function renderComparisonModalContent() {
@@ -2900,66 +2955,116 @@ function renderComparisonModalContent() {
   const archB = archetypesDatabase.find(a => a.id === appState.genome.compareArchetypeB);
   if (!archA || !archB) return;
 
-  body.innerHTML = `
-    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:20px;">
-      <h3 style="font-family:var(--font-display);font-size:1.4rem;color:var(--text-primary);">Archetype Head-to-Head Comparison</h3>
-      <div style="font-size:0.8rem;color:var(--text-muted);">TF-IDF Grounded Analysis</div>
-    </div>
+  const options = (selectedId) => archetypesDatabase
+    .map(a => `<option value="${a.id}" ${a.id === selectedId ? 'selected' : ''}>${escapeHTML(getArchetypeLabel(a))}</option>`)
+    .join('');
+  const head = (arch) => `<span class="archetype-node" data-arch="${arch.id}" aria-hidden="true"></span>${escapeHTML(getArchetypeLabel(arch))}`;
 
-    <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:20px;">
-      <div>
-        <label style="font-size:0.75rem;color:var(--text-muted);display:block;margin-bottom:4px;">Primary Path:</label>
-        <select class="sort-select" style="width:100%;" onchange="updateComparisonSelection(0, this.value)">
-          ${archetypesDatabase.map(a => `<option value="${a.id}" ${a.id === archA.id ? 'selected' : ''}>${a.name}</option>`).join('')}
-        </select>
-      </div>
-      <div>
-        <label style="font-size:0.75rem;color:var(--text-muted);display:block;margin-bottom:4px;">Comparison Path:</label>
-        <select class="sort-select" style="width:100%;" onchange="updateComparisonSelection(1, this.value)">
-          ${archetypesDatabase.map(a => `<option value="${a.id}" ${a.id === archB.id ? 'selected' : ''}>${a.name}</option>`).join('')}
-        </select>
-      </div>
+  body.innerHTML = `
+    <div class="compare-pickers">
+      <label>First archetype
+        <select class="sort-select" data-compare-index="0">${options(archA.id)}</select>
+      </label>
+      <label>Second archetype
+        <select class="sort-select" data-compare-index="1">${options(archB.id)}</select>
+      </label>
     </div>
 
     <table class="comparison-table">
+      <caption class="sr-only">Comparison of two career archetypes</caption>
       <thead>
         <tr>
-          <th>Attribute</th>
-          <th style="color:${archA.accentColor};">${archA.name}</th>
-          <th style="color:${archB.accentColor};">${archB.name}</th>
+          <th scope="col"><span class="sr-only">Attribute</span></th>
+          <th scope="col">${head(archA)}</th>
+          <th scope="col">${head(archB)}</th>
         </tr>
       </thead>
       <tbody>
         <tr>
-          <td><strong>Records in corpus</strong></td>
+          <th scope="row">Records in corpus</th>
           <td>${formatCorpusCount(archA, true)}</td>
           <td>${formatCorpusCount(archB, true)}</td>
         </tr>
         <tr>
-          <td><strong>Core Tech Stack</strong></td>
-          <td>${archA.keySkills.slice(0, 4).join(', ')}</td>
-          <td>${archB.keySkills.slice(0, 4).join(', ')}</td>
+          <th scope="row">Representative skills <span>curated</span></th>
+          <td>${archA.keySkills.slice(0, 5).map(escapeHTML).join(', ')}</td>
+          <td>${archB.keySkills.slice(0, 5).map(escapeHTML).join(', ')}</td>
         </tr>
         <tr>
-          <td><strong>Key Differentiator</strong></td>
-          <td>${archA.typicalRoles[0]}</td>
-          <td>${archB.typicalRoles[0]}</td>
+          <th scope="row">Typical roles <span>illustrative</span></th>
+          <td>${archA.typicalRoles.slice(0, 3).map(escapeHTML).join(', ')}</td>
+          <td>${archB.typicalRoles.slice(0, 3).map(escapeHTML).join(', ')}</td>
         </tr>
       </tbody>
     </table>
   `;
+
+  if (!body.dataset.bound) {
+    body.dataset.bound = 'true';
+    body.addEventListener('change', (e) => {
+      const select = e.target.closest('[data-compare-index]');
+      if (select) updateComparisonSelection(parseInt(select.getAttribute('data-compare-index'), 10), select.value);
+    });
+  }
 }
 
 function updateComparisonSelection(index, val) {
   if (index === 0) appState.genome.compareArchetypeA = parseInt(val, 10);
   else appState.genome.compareArchetypeB = parseInt(val, 10);
   renderComparisonModalContent();
+  const select = document.querySelector(`#compare-modal-body [data-compare-index="${index}"]`);
+  if (select) select.focus();
 }
 
 function closeCompareModal() {
-  const modal = document.getElementById('compare-modal-backdrop');
-  if (modal) modal.classList.remove('open');
+  closeModal('compare-modal-backdrop');
 }
+
+// Dialogs: focus moves in on open, Tab stays inside, focus returns on close.
+const modalReturnFocus = new Map();
+
+function getFocusable(root) {
+  return Array.from(root.querySelectorAll('a[href], button:not([disabled]), input:not([disabled]), select:not([disabled]), textarea:not([disabled]), [tabindex]:not([tabindex="-1"])'))
+    .filter(el => el.offsetParent !== null);
+}
+
+function openModal(backdropId) {
+  const backdrop = document.getElementById(backdropId);
+  if (!backdrop) return;
+  modalReturnFocus.set(backdropId, document.activeElement);
+  backdrop.classList.add('open');
+  const target = backdrop.querySelector('.modal-close-btn') || getFocusable(backdrop)[0];
+  if (target) target.focus();
+}
+
+function closeModal(backdropId) {
+  const backdrop = document.getElementById(backdropId);
+  if (!backdrop || !backdrop.classList.contains('open')) return;
+  backdrop.classList.remove('open');
+  const previous = modalReturnFocus.get(backdropId);
+  modalReturnFocus.delete(backdropId);
+  if (previous && document.contains(previous) && typeof previous.focus === 'function') previous.focus();
+}
+
+document.addEventListener('keydown', (e) => {
+  if (e.key !== 'Tab') return;
+  const open = document.querySelector('.modal-backdrop.open');
+  if (!open) return;
+  const items = getFocusable(open);
+  if (!items.length) return;
+  const first = items[0];
+  const last = items[items.length - 1];
+  if (e.shiftKey && document.activeElement === first) {
+    e.preventDefault();
+    last.focus();
+  } else if (!e.shiftKey && document.activeElement === last) {
+    e.preventDefault();
+    first.focus();
+  } else if (!open.contains(document.activeElement)) {
+    e.preventDefault();
+    first.focus();
+  }
+});
 
 // ==============================================================================
 // 11. COMPANY INTELLIGENCE DIRECTORY CONTROLLER
@@ -2976,6 +3081,7 @@ function initCompanyIntelligence() {
   }
 
   if (sortSelect) {
+    sortSelect.value = appState.companies.sortBy;
     sortSelect.addEventListener('change', (e) => {
       appState.companies.sortBy = e.target.value;
       renderCompanyDirectory();
@@ -2983,14 +3089,42 @@ function initCompanyIntelligence() {
   }
 
   document.querySelectorAll('.btn-company-filter').forEach(btn => {
-    btn.addEventListener('click', () => {
-      document.querySelectorAll('.btn-company-filter').forEach(b => b.classList.remove('active'));
-      btn.classList.add('active');
-      appState.companies.activeFilter = btn.getAttribute('data-filter');
-      renderCompanyDirectory();
-    });
+    btn.addEventListener('click', () => setCompanyFilter(btn.getAttribute('data-filter')));
   });
 
+  const container = document.getElementById('companies-grid-container');
+  if (container) {
+    container.addEventListener('click', (e) => {
+      const btn = e.target.closest('[data-company-action]');
+      if (!btn) return;
+      const id = btn.getAttribute('data-company-id');
+      if (btn.getAttribute('data-company-action') === 'details') openCompanyModal(id);
+      else if (btn.getAttribute('data-company-action') === 'use-jd') loadCompanyJd(id);
+      else resetCompanyFilters();
+    });
+  }
+
+  const modalBody = document.getElementById('company-modal-body');
+  if (modalBody) {
+    modalBody.addEventListener('click', (e) => {
+      const btn = e.target.closest('[data-company-jd]');
+      if (!btn) return;
+      closeCompanyModal();
+      loadCompanyJd(btn.getAttribute('data-company-jd'));
+    });
+  }
+
+  renderCompanyDirectory();
+}
+
+// Filters use only attributes the 2026 snapshot actually reports.
+function setCompanyFilter(filter) {
+  appState.companies.activeFilter = filter;
+  document.querySelectorAll('.btn-company-filter').forEach(b => {
+    const active = b.getAttribute('data-filter') === filter;
+    b.classList.toggle('active', active);
+    b.setAttribute('aria-pressed', String(active));
+  });
   renderCompanyDirectory();
 }
 
@@ -3012,102 +3146,85 @@ function renderCompanyDirectory() {
   if (!container) return;
 
   const { searchQuery, activeFilter, sortBy } = appState.companies;
+  const snap = appState.placementSnapshot;
+  const rows = companyDatabase.map(company => ({ company, fig: getReportFiguresFor(company) }));
 
-  let filtered = companyDatabase.filter(company => {
-    const matchesSearch = !searchQuery || 
-      company.name.toLowerCase().includes(searchQuery) ||
-      company.skills.some(s => s.toLowerCase().includes(searchQuery)) ||
-      company.role.toLowerCase().includes(searchQuery);
-
-    const matchesFilter = activeFilter === 'all' || 
-      company.tier === activeFilter || 
-      company.category.toLowerCase().includes(activeFilter.toLowerCase());
-
+  const filtered = rows.filter(({ company, fig }) => {
+    const matchesSearch = !searchQuery || company.name.toLowerCase().includes(searchQuery);
+    const matchesFilter = activeFilter === 'all'
+      || (activeFilter === 'in-snapshot' && fig)
+      || (activeFilter === 'ctc-20' && fig && fig.highestCtcLpa >= 20);
     return matchesSearch && matchesFilter;
   });
 
-  // Sorting
+  const metric = { alumni: f => f.offers, ctc: f => f.highestCtcLpa, profiles: f => f.profiles || 0 };
   filtered.sort((a, b) => {
-    if (sortBy === 'name') return a.name.localeCompare(b.name);
-    if (sortBy === 'alumni') {
-      const offers = c => { const f = getReportFiguresFor(c); return f ? f.offers : -1; };
-      return offers(b) - offers(a); // companies absent from the report sort last
-    }
-    if (sortBy === 'tier') return a.tier.localeCompare(b.tier);
-    return 0;
+    if (sortBy === 'name') return a.company.name.localeCompare(b.company.name);
+    const pick = metric[sortBy] || metric.alumni;
+    return (b.fig ? pick(b.fig) : -1) - (a.fig ? pick(a.fig) : -1); // absent from the snapshot: last
   });
+
+  const countEl = document.getElementById('company-results-count');
+  if (countEl) {
+    countEl.textContent = `${filtered.length} of ${companyDatabase.length} curated companies`
+      + (snap ? '' : ' · snapshot figures loading');
+  }
 
   if (filtered.length === 0) {
     container.innerHTML = `
-      <div style="grid-column: 1 / -1; padding: 48px; text-align: center; background: var(--bg-card); border-radius: var(--radius-lg); border: var(--border-subtle);">
-        <i data-lucide="search-x" style="width: 42px; height: 42px; color: var(--text-muted); margin-bottom: 12px;"></i>
-        <h4 style="font-family: var(--font-display); font-size: 1.2rem; color:var(--text-primary); margin-bottom: 6px;">No Matching Companies Found</h4>
-        <p style="font-size: 0.88rem; color: var(--text-muted); margin-bottom: 16px;">Try adjusting your search query or tier filters.</p>
-        <button type="button" class="btn-preset-chip" onclick="resetCompanyFilters()">Reset Filters</button>
-      </div>
-    `;
-    if (window.lucide) window.lucide.createIcons();
+      <div class="directory-empty">
+        <p><strong>No companies match.</strong> Try another name or clear the filters.</p>
+        <button type="button" class="btn-secondary" data-company-action="reset">Clear filters</button>
+      </div>`;
     return;
   }
 
-  container.innerHTML = filtered.map(c => {
-    const fig = getReportFiguresFor(c);
-    return `
-    <div class="company-card" data-company-id="${c.id}">
-      <div class="company-header">
-        <div class="company-identity">
-          <div class="company-avatar-logo" aria-hidden="true">${c.logoChar}</div>
-          <div>
-            <h4 style="font-family:var(--font-display);font-size:1.15rem;font-weight:700;color:var(--text-primary);">${c.name}</h4>
-            <span style="font-size:0.75rem;color:var(--text-muted);">${c.category}</span>
-          </div>
-        </div>
-        <span class="tier-tag tier-${c.tier}">${c.tierLabel}</span>
-      </div>
-
-      <div class="company-stats-box">
-        <div>
-          <div class="c-stat-val">${fig ? `₹${fig.highestCtcLpa} LPA` : '—'}</div>
-          <div class="c-stat-label">Highest CTC</div>
-        </div>
-        <div>
-          <div class="c-stat-val">${fig ? fig.offers : '—'}</div>
-          <div class="c-stat-label">Offers</div>
-        </div>
-      </div>
-      <div style="font-size:0.7rem;color:var(--text-muted);margin:-4px 0 10px;">
-        ${fig ? '2026 placement report · offers, not students' : 'Not in the 2026 report excerpt'}
-      </div>
-
-      <div class="company-skills-tags">
-        ${c.skills.slice(0, 4).map(s => `<span class="c-skill-pill">${s}</span>`).join('')}
-      </div>
-
-      <div class="company-footer-actions">
-        <button type="button" class="btn-preset-chip" style="flex:1;padding:9px;" onclick="loadCompanyJd('${c.id}')">
-          Match My Resume
-        </button>
-        <button type="button" class="btn-icon-circle" onclick="openCompanyModal('${c.id}')" title="View Interview Intel">
-          <i data-lucide="info" style="width:16px;height:16px;"></i>
-        </button>
-      </div>
-    </div>
-  `;
-  }).join('');
-
-  if (window.lucide) window.lucide.createIcons();
-  init3DCardTilt();
+  const sourceDate = snap && snap.source_snapshot_date ? formatSnapshotDate(snap.source_snapshot_date) : '';
+  container.innerHTML = `
+    <table class="company-table">
+      <caption class="sr-only">Curated companies, with figures from the 2026 placement snapshot where the company appears in it</caption>
+      <thead>
+        <tr>
+          <th scope="col">Company</th>
+          <th scope="col" class="num">Offers</th>
+          <th scope="col" class="num">Profiles</th>
+          <th scope="col" class="num">Highest CTC</th>
+          <th scope="col">Source</th>
+          <th scope="col"><span class="sr-only">Actions</span></th>
+        </tr>
+      </thead>
+      <tbody>
+        ${filtered.map(({ company: c, fig }) => {
+          const name = escapeHTML(c.name);
+          return `
+        <tr data-company-id="${escapeHTML(c.id)}">
+          <th scope="row">
+            <div class="company-cell">
+              <span class="company-avatar-logo" aria-hidden="true">${escapeHTML(c.logoChar)}</span>
+              <span><strong>${name}</strong><small>${escapeHTML(c.role)} · practice role</small></span>
+            </div>
+          </th>
+          <td class="num" data-label="Offers">${fig ? Number(fig.offers).toLocaleString('en-IN') : '—'}</td>
+          <td class="num" data-label="Profiles">${fig && fig.profiles ? fig.profiles : '—'}</td>
+          <td class="num" data-label="Highest CTC">${fig ? `₹${escapeHTML(String(fig.highestCtcLpa))} LPA` : '—'}</td>
+          <td data-label="Source">${fig
+            ? `<span class="source-chip is-in">Snapshot${sourceDate ? ` · ${sourceDate}` : ''}</span>`
+            : `<span class="source-chip is-out">${snap ? 'Not in this snapshot excerpt' : 'Loading snapshot…'}</span>`}</td>
+          <td class="row-actions">
+            <button type="button" class="btn-text-action" data-company-action="details" data-company-id="${escapeHTML(c.id)}" aria-label="Details for ${name}">Details</button>
+            <button type="button" class="btn-secondary btn-sm" data-company-action="use-jd" data-company-id="${escapeHTML(c.id)}" aria-label="Use the sample job description for ${name}">Use sample JD</button>
+          </td>
+        </tr>`;
+        }).join('')}
+      </tbody>
+    </table>`;
 }
 
 function resetCompanyFilters() {
   appState.companies.searchQuery = '';
-  appState.companies.activeFilter = 'all';
   const searchInput = document.getElementById('company-search-input');
   if (searchInput) searchInput.value = '';
-  document.querySelectorAll('.btn-company-filter').forEach(b => {
-    b.classList.toggle('active', b.getAttribute('data-filter') === 'all');
-  });
-  renderCompanyDirectory();
+  setCompanyFilter('all');
 }
 
 function loadCompanyJd(companyId) {
@@ -3120,85 +3237,81 @@ function loadCompanyJd(companyId) {
       }
     }
     jdTextarea.value = company.sampleJd;
-    appState.analyzer.jobDescription = company.sampleJd;
-    const charCounter = document.getElementById('jd-char-count');
-    if (charCounter) charCounter.textContent = `${company.sampleJd.length.toLocaleString()} characters`;
+    jdTextarea.dispatchEvent(new Event('input', { bubbles: true }));
     showToast(`Loaded the sample job description for ${company.name}.`);
 
     const analyzerSection = document.getElementById('analyzer');
-    if (analyzerSection) analyzerSection.scrollIntoView({ behavior: 'smooth' });
+    if (analyzerSection) analyzerSection.scrollIntoView({ behavior: appState.motionMode === 'reduced' ? 'auto' : 'smooth' });
   }
 }
 
+// The dialog keeps two kinds of content apart: figures from the snapshot, and
+// curated practice material that has not been verified with the employer.
 function openCompanyModal(companyId) {
   const company = companyDatabase.find(c => c.id === companyId);
-  const modal = document.getElementById('company-modal-backdrop');
   const body = document.getElementById('company-modal-body');
-  if (!company || !modal || !body) return;
+  if (!company || !body) return;
 
   const fig = getReportFiguresFor(company);
   const snap = appState.placementSnapshot;
-  const figureSource = fig && snap
-    ? `Figures: ${snap.source_name}, ${snap.batch} batch, snapshot ${snap.source_snapshot_date} — offers, not distinct students.`
-    : 'This company is not in the 2026 placement report excerpt, so no figures are shown.';
+  const name = escapeHTML(company.name);
+
+  let facts;
+  if (fig && snap) {
+    facts = `
+      <dl class="fact-grid">
+        <div><dt>Offers</dt><dd>${Number(fig.offers).toLocaleString('en-IN')}</dd></div>
+        <div><dt>Job profiles</dt><dd>${fig.profiles || '—'}</dd></div>
+        <div><dt>Highest CTC</dt><dd>₹${escapeHTML(String(fig.highestCtcLpa))} LPA</dd></div>
+      </dl>
+      <p class="fact-source">${escapeHTML(snap.source_name)} · batch ${escapeHTML(String(snap.batch))} · snapshot of ${formatSnapshotDate(snap.source_snapshot_date)}. Offers are not distinct students.</p>`;
+  } else if (snap) {
+    const listed = (snap.top_recruiters || []).length;
+    const notable = (snap.notable_high_ctc || []).length;
+    facts = `<p class="fact-missing">Not in this snapshot excerpt. The excerpt lists the top ${listed} recruiters by offers and ${notable} notable high-CTC offers, so no figures are shown for ${name}.</p>`;
+  } else {
+    facts = '<p class="fact-missing">The 2026 snapshot has not loaded, so no figures are shown.</p>';
+  }
 
   body.innerHTML = `
-    <div style="display:flex;align-items:center;gap:16px;margin-bottom:20px;">
-      <div class="company-avatar-logo" aria-hidden="true" style="width:54px;height:54px;font-size:1.3rem;">
-        ${company.logoChar}
-      </div>
+    <div class="modal-company-head">
+      <span class="company-avatar-logo" aria-hidden="true">${escapeHTML(company.logoChar)}</span>
       <div>
-        <h3 style="font-family:var(--font-display);font-size:1.6rem;color:var(--text-primary);">${company.name}</h3>
-        <p style="font-size:0.86rem;color:var(--text-muted);">${company.role} • ${company.tierLabel} Tier</p>
+        <h3 class="modal-company-name">${name}</h3>
+        <p class="modal-company-role">${escapeHTML(company.role)} <span class="unverified-tag">practice role</span></p>
       </div>
     </div>
 
-    <div style="display:grid;grid-template-columns:repeat(3, 1fr);gap:12px;margin-bottom:20px;background:rgba(var(--tint-rgb),0.03);padding:14px;border-radius:var(--radius-md);">
-      <div>
-        <span style="font-size:0.75rem;color:var(--text-muted);display:block;">Highest CTC</span>
-        <strong style="color:var(--accent-cyan);font-size:1.15rem;">${fig ? `₹${fig.highestCtcLpa} LPA` : '—'}</strong>
-      </div>
-      <div>
-        <span style="font-size:0.75rem;color:var(--text-muted);display:block;">Offers</span>
-        <strong style="color:var(--accent-emerald);font-size:1.15rem;">${fig ? fig.offers : '—'}</strong>
-      </div>
-      <div>
-        <span style="font-size:0.75rem;color:var(--text-muted);display:block;">Job profiles</span>
-        <strong style="color:var(--accent-amber);font-size:1.15rem;">${fig && fig.profiles ? fig.profiles : '—'}</strong>
-      </div>
-    </div>
+    <section class="fact-block" aria-labelledby="company-facts-title">
+      <h4 id="company-facts-title" class="block-title"><i data-lucide="badge-check" style="width:16px;height:16px;"></i> From the 2026 placement snapshot</h4>
+      ${facts}
+    </section>
 
-    <div style="font-size:0.78rem;color:var(--text-dim);margin-bottom:18px;font-style:italic;">
-      ${figureSource} Role, skills, sample JD and interview rounds are ${company.provenance.toLowerCase()}.
-    </div>
+    <section class="practice-block" aria-labelledby="company-practice-title">
+      <h4 id="company-practice-title" class="block-title"><i data-lucide="notebook-pen" style="width:16px;height:16px;"></i> Practice material <span class="unverified-tag">unverified</span></h4>
+      <p class="practice-note">${escapeHTML(company.provenance)}. Use it to rehearse, not as a description of the employer's real process.</p>
+      <p class="detail-label">Skills to prepare</p>
+      <ul class="skill-chips">${company.skills.map(s => `<li>${escapeHTML(s)}</li>`).join('')}</ul>
+      <p class="detail-label">Sample interview rounds</p>
+      <ol class="practice-rounds">
+        ${company.interviewRounds.map(r => `<li><strong>${escapeHTML(r.name)}</strong><span>${escapeHTML(r.detail)}</span></li>`).join('')}
+      </ol>
+    </section>
 
-    <h4 style="font-family:var(--font-display);font-size:1.15rem;color:var(--text-primary);margin-bottom:12px;">Sample Interview Rounds (unverified)</h4>
-    <div style="display:flex;flex-direction:column;gap:10px;margin-bottom:24px;">
-      ${company.interviewRounds.map((r, i) => `
-        <div style="background:rgba(var(--tint-rgb),0.04);border:var(--border-subtle);border-radius:var(--radius-sm);padding:12px 14px;">
-          <strong style="color:var(--accent-blue-light);font-size:0.88rem;">Round ${i + 1}: ${r.name}</strong>
-          <p style="font-size:0.82rem;color:var(--text-secondary);margin-top:4px;">${r.detail}</p>
-        </div>
-      `).join('')}
-    </div>
-
-    <div style="display:flex;gap:12px;">
-      <button type="button" class="btn-magnetic-glow" style="flex:1;" onclick="loadCompanyJd('${company.id}'); closeCompanyModal();">
-        Match My Resume with ${company.name}
-      </button>
-      <a href="${company.officialUrl}" target="_blank" rel="noopener noreferrer" class="btn-glass-shimmer" style="text-decoration:none;">
-        Official Portal
+    <div class="modal-actions">
+      <button type="button" class="btn-primary" data-company-jd="${escapeHTML(company.id)}">Use the sample JD in the analyzer</button>
+      <a class="btn-secondary" href="${escapeHTML(company.officialUrl)}" target="_blank" rel="noopener noreferrer">
+        Official careers site <i data-lucide="external-link" style="width:14px;height:14px;"></i>
       </a>
     </div>
   `;
 
-  modal.classList.add('open');
   if (window.lucide) window.lucide.createIcons();
+  openModal('company-modal-backdrop');
 }
 
 function closeCompanyModal() {
-  const modal = document.getElementById('company-modal-backdrop');
-  if (modal) modal.classList.remove('open');
+  closeModal('company-modal-backdrop');
 }
 
 // ==============================================================================

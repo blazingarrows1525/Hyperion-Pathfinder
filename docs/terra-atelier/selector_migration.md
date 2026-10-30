@@ -56,3 +56,20 @@ All analyzer IDs used by `app.js` are kept; the changes are structural.
 | Empty state "Ready for Placement Benchmarking" + `.btn-glass-shimmer` | replaced | "Your report will appear here" + `.btn-secondary`. `enableDemoAndRun()` now loads a sample JD when the field is empty; before, the one-click demo failed validation. |
 | Score banner "Placement Alignment Score — evaluated against successfully placed alumni patterns" and the decorative award tile | replaced | "Alignment score — how closely the resume's evidence matches this job description. Not a hiring probability." |
 | Confetti on analysis completion | removed | A diagnostic report is not a celebration. `triggerConfetti()` remains for the interaction showcase button. |
+
+## Career Genome and Company directory
+
+| Removed / changed | Status | Replacement |
+|---|---|---|
+| `div.archetype-chip-card[onclick]` ×5 (not keyboard reachable) | replaced | `#archetypes-selector-grid` is a `role="tablist"` of `button.archetype-tab[role="tab"]` with roving `tabindex`; arrow keys, Home and End move the selection; `#archetype-detail-panel` is the `tabpanel` |
+| — | added | `#genome-field-strip`: each archetype's share of the corpus. A share-of-whole chart is valid here because K-Means puts each record in exactly one cluster. |
+| "Distinguishing Technical Competencies (TF-IDF Grounded)" | relabelled | "Representative skills (curated)". Nothing in the repo links these lists to TF-IDF output; `label_clusters.py` only prints keywords for a person to read. |
+| Archetype names in `archetypesDatabase` | sourced | `getArchetypeLabel()` prefers the official label from `/api/corpus-summary` (for example "General CS & Software Development") |
+| Comparison modal inline `onchange` and a "Key differentiator" row that showed one illustrative role | replaced | Delegated `change` listener; rows: records in corpus, representative skills (curated), typical roles (illustrative) |
+| `.company-card` grid with tier pills ("Super Dream") and category labels | replaced | `table.company-table` (stacked cards below 760 px): company, offers, profiles, highest CTC, source chip, actions. Tier and category labels are no longer shown as facts. |
+| Filters "Super Dream (₹20+ LPA)", "Dream (₹10–20 LPA)", "Product & Tech", "FinTech", "Automotive & Core" | replaced | Filters on sourced attributes only: All, In the 2026 snapshot, Highest CTC ≥ ₹20 LPA (reported). Each button carries `aria-pressed`. |
+| Sort "Placement Tier" | replaced | Sorts on offers, highest reported CTC, job profiles, or name; companies absent from the snapshot sort last |
+| — | added | `#company-results-count` (live region) |
+| Company modal | restructured | "From the 2026 placement snapshot" (facts, or "Not in this snapshot excerpt" with the excerpt's real list sizes) kept apart from "Practice material — unverified" (skills, sample rounds) |
+| Modal titles (styled `div`s) | replaced | `h2.modal-title` "Company details" / "Compare two archetypes" |
+| — | added | `openModal()` / `closeModal()`: focus moves to the close button, Tab is trapped inside, focus returns to the trigger. Phones get a bottom sheet. |

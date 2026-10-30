@@ -949,83 +949,71 @@
       <!-- =======================================================================
            SECTION 4: CAREER GENOME (5 ARCHETYPES)
            ======================================================================= -->
-      <section id="genome" class="genome-section" aria-labelledby="genome-heading">
+      <section id="genome" class="genome-section band-alt" aria-labelledby="genome-heading">
         <div class="container">
-          
-          <div style="text-align:center;max-width:760px;margin:0 auto 48px;">
-            <span style="font-size:0.78rem;font-weight:700;text-transform:uppercase;letter-spacing:0.12em;color:var(--accent-cyan);margin-bottom:12px;display:inline-block;">
-              Unsupervised Knowledge Discovery
-            </span>
-            <h2 id="genome-heading" style="font-family:var(--font-display);font-size:clamp(2rem, 3.5vw, 2.6rem);font-weight:800;color:var(--text-primary);margin-bottom:12px;">
-              The 5 Alumni Career Archetypes
-            </h2>
-            <p style="color:var(--text-secondary);font-size:1rem;line-height:1.6;">
-              Discovered from 226 benchmark placed alumni resumes (224 valid, 2 degraded) through K-Means clustering and TF-IDF feature analysis. Select any archetype to inspect its grounded skill profile or compare two paths.
-            </p>
+          <header class="section-head section-head-split">
+            <div>
+              <p class="section-kicker"><span class="section-index">04</span> Career Genome</p>
+              <h2 id="genome-heading" class="section-title">Five career archetypes</h2>
+            </div>
+            <p class="section-lede">K-Means clustering grouped the alumni corpus into five archetypes by the language of the resumes. They describe patterns in text, not hiring outcomes, and one resume can share traits with several groups.</p>
+          </header>
+
+          <!-- Field map: share of the corpus per archetype (each record sits in exactly one cluster) -->
+          <div class="genome-field" id="genome-field-strip" aria-hidden="true"></div>
+
+          <div id="archetypes-selector-grid" class="archetypes-selector-grid field-map" role="tablist" aria-label="Career archetypes">
+            <!-- Rendered by initCareerGenome() -->
           </div>
 
-          <!-- Archetypes Horizontal Selector Grid -->
-          <div id="archetypes-selector-grid" class="archetypes-selector-grid">
-            <!-- Dynamically populated by app.js -->
+          <div id="archetype-detail-panel" class="archetype-detail-panel" role="tabpanel" tabindex="0">
+            <!-- Rendered by renderArchetypeDetail() -->
           </div>
-
-          <!-- Archetype Detailed Panel -->
-          <div id="archetype-detail-panel" class="archetype-detail-panel">
-            <!-- Dynamically populated by app.js -->
-          </div>
-
         </div>
       </section>
 
       <!-- =======================================================================
            SECTION 5: COMPANY INTELLIGENCE & GLASSDOOR DIRECTORY
            ======================================================================= -->
-      <section id="company-intel" class="company-section" aria-labelledby="company-heading">
+      <section id="company-intel" class="company-section band-paper" aria-labelledby="company-heading">
         <div class="container">
-          
-          <div style="text-align:center;max-width:760px;margin:0 auto 48px;">
-            <span style="font-size:0.78rem;font-weight:700;text-transform:uppercase;letter-spacing:0.12em;color:var(--accent-amber);margin-bottom:12px;display:inline-block;">
-              Glassdoor-Style Placement Intelligence
-            </span>
-            <h2 id="company-heading" style="font-family:var(--font-display);font-size:clamp(2rem, 3.5vw, 2.6rem);font-weight:800;color:var(--text-primary);margin-bottom:12px;">
-              Company Recruitment Benchmarks
-            </h2>
-            <p style="color:var(--text-secondary);font-size:1rem;line-height:1.6;">
-              Offer counts and highest CTC come from the 2026 placement report; role notes, sample job descriptions and interview rounds are unverified practice material. Click <strong>"Match My Resume"</strong> to test your resume against a company's sample job description.
-            </p>
-          </div>
+          <header class="section-head section-head-split">
+            <div>
+              <p class="section-kicker"><span class="section-index">05</span> Companies</p>
+              <h2 id="company-heading" class="section-title">Company directory</h2>
+            </div>
+            <p class="section-lede">Offers, job profiles and highest CTC come from the 2026 placement snapshot. Roles, skills, sample job descriptions and interview rounds are curated practice material and are marked as unverified.</p>
+          </header>
 
-          <!-- Search & Filter Controls Bar -->
-          <div class="company-controls-bar">
-            <div class="search-input-box">
-              <i data-lucide="search" style="width:16px;height:16px;"></i>
-              <input type="text" id="company-search-input" placeholder="Search company or skill (e.g. Google, Kafka, Java)..." aria-label="Search companies">
+          <div class="directory-toolbar">
+            <label class="table-filter directory-search">
+              <i data-lucide="search" style="width:15px;height:15px;"></i>
+              <span class="sr-only">Search companies</span>
+              <input type="search" id="company-search-input" placeholder="Search by company" autocomplete="off">
+            </label>
+
+            <div class="segmented-filter" role="group" aria-label="Filter companies">
+              <button type="button" class="btn-filter-pill btn-company-filter active" data-filter="all" aria-pressed="true">All</button>
+              <button type="button" class="btn-filter-pill btn-company-filter" data-filter="in-snapshot" aria-pressed="false">In the 2026 snapshot</button>
+              <button type="button" class="btn-filter-pill btn-company-filter" data-filter="ctc-20" aria-pressed="false">Highest CTC ≥ ₹20 LPA</button>
             </div>
 
-            <div class="filter-chips-row">
-              <button type="button" class="btn-filter-pill btn-company-filter active" data-filter="all">All Top Recruiters</button>
-              <button type="button" class="btn-filter-pill btn-company-filter" data-filter="super-dream">Super Dream (₹20+ LPA)</button>
-              <button type="button" class="btn-filter-pill btn-company-filter" data-filter="dream">Dream (₹10–20 LPA)</button>
-              <button type="button" class="btn-filter-pill btn-company-filter" data-filter="Product & Tech">Product & Tech</button>
-              <button type="button" class="btn-filter-pill btn-company-filter" data-filter="FinTech">FinTech</button>
-              <button type="button" class="btn-filter-pill btn-company-filter" data-filter="Automotive & Core">Automotive & Core</button>
-            </div>
-
-            <div style="display:flex;align-items:center;gap:8px;">
-              <label for="company-sort-select" style="font-size:0.75rem;color:var(--text-muted);">Sort By:</label>
-              <select id="company-sort-select" class="sort-select" aria-label="Sort companies">
-                <option value="alumni">Offers (2026 report)</option>
-                <option value="name">Company Name (A–Z)</option>
-                <option value="tier">Placement Tier</option>
+            <label class="sort-control" for="company-sort-select">
+              <span>Sort</span>
+              <select id="company-sort-select" class="sort-select">
+                <option value="alumni">Offers (2026 snapshot)</option>
+                <option value="ctc">Highest reported CTC</option>
+                <option value="profiles">Job profiles</option>
+                <option value="name">Company name (A–Z)</option>
               </select>
-            </div>
+            </label>
           </div>
 
-          <!-- Companies Grid -->
-          <div id="companies-grid-container" class="companies-grid">
-            <!-- Dynamically populated by app.js -->
-          </div>
+          <p class="directory-count" id="company-results-count" role="status" aria-live="polite"></p>
 
+          <div id="companies-grid-container" class="company-directory">
+            <!-- Rendered by renderCompanyDirectory(): a table on wide screens, stacked cards on phones -->
+          </div>
         </div>
       </section>
 
@@ -1445,9 +1433,7 @@
   <div id="company-modal-backdrop" class="modal-backdrop" role="dialog" aria-modal="true" aria-labelledby="company-modal-title">
     <div class="modal-dialog">
       <div class="modal-header">
-        <div id="company-modal-title" style="font-size:0.8rem;text-transform:uppercase;letter-spacing:0.1em;color:var(--accent-cyan);font-weight:700;">
-          Company Recruitment Intelligence
-        </div>
+        <h2 id="company-modal-title" class="modal-title">Company details</h2>
         <button type="button" class="modal-close-btn" onclick="closeCompanyModal()" aria-label="Close dialog">
           <i data-lucide="x" style="width:18px;height:18px;"></i>
         </button>
@@ -1460,9 +1446,7 @@
   <div id="compare-modal-backdrop" class="modal-backdrop" role="dialog" aria-modal="true" aria-labelledby="compare-modal-title">
     <div class="modal-dialog">
       <div class="modal-header">
-        <div id="compare-modal-title" style="font-size:0.8rem;text-transform:uppercase;letter-spacing:0.1em;color:var(--accent-blue-light);font-weight:700;">
-          Archetype Head-to-Head Comparison
-        </div>
+        <h2 id="compare-modal-title" class="modal-title">Compare two archetypes</h2>
         <button type="button" class="modal-close-btn" onclick="closeCompareModal()" aria-label="Close dialog">
           <i data-lucide="x" style="width:18px;height:18px;"></i>
         </button>
