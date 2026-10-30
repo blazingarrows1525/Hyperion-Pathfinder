@@ -26,3 +26,16 @@ which also fails if `app.js` reads an ID that no longer exists.
 |---|---|
 | `fetch('/data_manifest.json')`: the full manifest, which names two degraded documents | `GET /api/corpus-summary`: counts, embedding facts and per-archetype totals keyed by cluster id; no file or student names (`loadCorpusSummary()`) |
 | `appState.dataManifest` | `appState.corpusSummary` |
+
+## Process rail and placement snapshot
+
+| Removed / changed | Status | Replacement |
+|---|---|---|
+| `ol.steps-grid > li.step-card` (how it works) | replaced | `ol.process-rail > li.process-step`: horizontal rail with connectors, a 2×2 grid on tablets, a vertical timeline on phones. Step copy no longer calls the corpus "placed alumni". |
+| `.snapshot-source-ribbon` | replaced | `.source-line` with `[data-snapshot]` slots (source, date, batch) filled from the JSON file |
+| `.snapshot-kpi-card ×6` | replaced | `dl.kpi-band > .kpi`. The IDs `kpi-total-offers`, `kpi-unique-employers`, `kpi-job-profiles`, `kpi-avg-ctc`, `kpi-median-ctc` and `kpi-highest-ctc` are kept; `kpi-note-highest` is new. |
+| Hard-coded offer bands, category pills and 10 static table rows | removed | Rendered by `renderPlacementSnapshot()` from `placement_snapshot_2026.json` into `#offer-bands-list`, `#category-rank-list` and `#snapshot-table-body` (all 20 recruiters). `#bands-summary` is the chart's text equivalent. |
+| `.editorial-caveat-banner` and the "339 offers" footnote | replaced | `aside.snapshot-caveats` with `#caveat-students`, `#caveat-categories` and `#caveat-no-ctc-count`, each read from the file's own caveat fields |
+| — | added | `#snapshot-status`: a truthful notice if the snapshot file cannot be loaded (no hard-coded fallback copy of the data) |
+| `.btn-use-context` "Target" | kept | Same class and data attributes, plus an `aria-label`; handled by one delegated listener → `useCompanyAsAnalyzerTarget()`, which fires the JD textarea's own `input` event |
+| `#snapshot-company-search` | kept | `filterSnapshotTable()` hides non-matching rows with the `hidden` attribute |

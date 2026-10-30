@@ -326,58 +326,40 @@
       <!-- =======================================================================
            SECTION 2: HOW IT WORKS (SEMANTIC 4-STEP PROCESS)
            ======================================================================= -->
-      <section id="how-it-works" class="how-it-works-section" aria-labelledby="how-it-works-heading">
+      <section id="how-it-works" class="process-section band-paper" aria-labelledby="how-it-works-heading">
         <div class="container">
-          
-          <div style="text-align:center;max-width:720px;margin:0 auto 48px;">
-            <span style="font-size:0.78rem;font-weight:700;text-transform:uppercase;letter-spacing:0.12em;color:var(--accent-cyan);margin-bottom:12px;display:inline-block;">
-              Grounded Methodology
-            </span>
-            <h2 id="how-it-works-heading" style="font-family:var(--font-display);font-size:clamp(2rem, 3.5vw, 2.6rem);font-weight:800;color:var(--text-primary);margin-bottom:12px;">
-              How Resume Checker Works
-            </h2>
-            <p style="color:var(--text-secondary);font-size:1rem;line-height:1.6;">
-              A four-stage pipeline moving from raw resume extraction to high-precision placement pattern synthesis.
-            </p>
-          </div>
+          <header class="section-head">
+            <p class="section-kicker"><span class="section-index">01</span> Method</p>
+            <h2 id="how-it-works-heading" class="section-title">How a resume is read</h2>
+            <p class="section-lede">Four steps, from the PDF you upload to the changes worth making. Nothing is stored after the request finishes.</p>
+          </header>
 
-          <!-- Semantic Ordered List with Rich Visual Presentation -->
-          <ol class="steps-grid">
-            
-            <li class="step-card">
-              <div class="step-number-badge step-1-badge">1</div>
-              <h3 class="step-title">Upload & Parse</h3>
-              <p class="step-desc">
-                Your resume PDF is read entirely in-memory using <code>pypdf</code>. Text, technical entities, and project descriptions are cleanly extracted without saving any personal documents to persistent storage.
-              </p>
+          <ol class="process-rail">
+            <li class="process-step">
+              <span class="process-marker" aria-hidden="true"><i data-lucide="file-up" style="width:20px;height:20px;"></i></span>
+              <p class="process-num">Step 1</p>
+              <h3 class="process-title">Upload and parse</h3>
+              <p class="process-desc">The PDF is read in memory with <code>pypdf</code>. Text and section structure are extracted; the file is not written to disk.</p>
             </li>
-
-            <li class="step-card">
-              <div class="step-number-badge step-2-badge">2</div>
-              <h3 class="step-title">Semantic Match</h3>
-              <p class="step-desc">
-                The target Job Description is embedded into a dense 384-dimensional vector via <code>all-MiniLM-L6-v2</code> and compared against our FAISS index of 226 verified benchmark alumni profiles.
-              </p>
+            <li class="process-step">
+              <span class="process-marker" aria-hidden="true"><i data-lucide="list-checks" style="width:20px;height:20px;"></i></span>
+              <p class="process-num">Step 2</p>
+              <h3 class="process-title">Extract evidence and skills</h3>
+              <p class="process-desc">Skills, tools and quantified achievements are pulled from the text and normalised against the skill taxonomy.</p>
             </li>
-
-            <li class="step-card">
-              <div class="step-number-badge step-3-badge">3</div>
-              <h3 class="step-title">Archetype Benchmark</h3>
-              <p class="step-desc">
-                The system isolates the candidate's primary Career Archetype (e.g. Data Science, SDE, or Full-Stack) and pulls the top nearest-neighbor alumni resumes that successfully landed offers.
-              </p>
+            <li class="process-step">
+              <span class="process-marker" aria-hidden="true"><i data-lucide="git-compare" style="width:20px;height:20px;"></i></span>
+              <p class="process-num">Step 3</p>
+              <h3 class="process-title">Compare with the JD and the corpus</h3>
+              <p class="process-desc">Resume and job description are embedded with <code>all-MiniLM-L6-v2</code> (384 dimensions). The most similar resumes in the alumni corpus are retrieved for reference.</p>
             </li>
-
-            <li class="step-card">
-              <div class="step-number-badge step-4-badge">4</div>
-              <h3 class="step-title">Improve & Optimize</h3>
-              <p class="step-desc">
-                Our LangGraph agent analyzes achievement deltas, missing high-impact metrics, and missing technical skills, generating an actionable roadmap to elevate your placement readiness.
-              </p>
+            <li class="process-step">
+              <span class="process-marker" aria-hidden="true"><i data-lucide="clipboard-check" style="width:20px;height:20px;"></i></span>
+              <p class="process-num">Step 4</p>
+              <h3 class="process-title">Review components and actions</h3>
+              <p class="process-desc">The report splits the alignment score into components and lists missing evidence and the rewrites most likely to close it.</p>
             </li>
-
           </ol>
-
         </div>
       </section>
 
@@ -385,203 +367,106 @@
       <!-- =======================================================================
            SECTION: SRMIST 2026 PLACEMENT SNAPSHOT (PROVENANCE-VERIFIED)
            ======================================================================= -->
-      <section id="placement-snapshot" class="placement-snapshot-section reveal-spatial" aria-labelledby="placement-snapshot-heading">
+      <section id="placement-snapshot" class="snapshot-section band-sage" aria-labelledby="placement-snapshot-heading">
         <div class="container">
-          
-          <div style="text-align:center;max-width:820px;margin:0 auto 36px;">
-            <div class="snapshot-source-ribbon">
-              <i data-lucide="calendar-check" style="width:14px;height:14px;"></i>
-              <span>SRMIST On-Campus • Batch 2026 • Snapshot 17 Sep 2026 • Haveloc Portal</span>
+          <header class="section-head section-head-split">
+            <div>
+              <p class="section-kicker"><span class="section-index">02</span> Placement data</p>
+              <h2 id="placement-snapshot-heading" class="section-title">2026 placement snapshot</h2>
             </div>
-            
-            <h2 id="placement-snapshot-heading" style="font-family:var(--font-display);font-size:clamp(1.9rem, 3.2vw, 2.5rem);font-weight:800;color:var(--text-primary);margin-bottom:12px;">
-              SRMIST 2026 Placement Snapshot
-            </h2>
-            <p style="color:var(--text-secondary);font-size:0.95rem;line-height:1.6;">
-              Official campus cycle data recorded for the graduated Batch of 2026 from the placement portal insights API. These historical metrics describe aggregate offers and recruiter CTC tiers, not an individual candidate's predicted placement probability.
-            </p>
-          </div>
-
-          <!-- KPI Cards Grid -->
-          <div class="snapshot-kpi-grid">
-            
-            <div class="snapshot-kpi-card kpi-offers">
-              <div class="kpi-label">
-                <span>Total Offers</span>
-                <i data-lucide="award" style="width:15px;height:15px;color:var(--accent-blue);"></i>
-              </div>
-              <div class="kpi-value" id="kpi-total-offers">8,214</div>
-              <div class="kpi-subtext">Offers rolled out across graduated batch (not distinct placed students)</div>
+            <div>
+              <p class="section-lede">Aggregate offers recorded for the 2026 batch on the campus placement portal. These are historical totals, not a prediction for any individual candidate.</p>
+              <p class="source-line">
+                <i data-lucide="calendar-check" style="width:15px;height:15px;"></i>
+                <span>Source: <span data-snapshot="source_name">placement portal</span> · snapshot of <span data-snapshot="source_snapshot_date">—</span> · batch <span data-snapshot="batch">—</span></span>
+              </p>
             </div>
+          </header>
 
-            <div class="snapshot-kpi-card kpi-employers">
-              <div class="kpi-label">
-                <span>Unique Employers</span>
-                <i data-lucide="building" style="width:15px;height:15px;color:var(--accent-cyan);"></i>
-              </div>
-              <div class="kpi-value" id="kpi-unique-employers">421</div>
-              <div class="kpi-subtext">Participating companies with verified profiles in cycle</div>
+          <p class="snapshot-status" id="snapshot-status" role="status" hidden></p>
+
+          <dl class="kpi-band" aria-label="Snapshot totals">
+            <div class="kpi">
+              <dt>Total offers</dt>
+              <dd id="kpi-total-offers">—</dd>
+              <p class="kpi-note" id="kpi-note-offers">Offers, not distinct students</p>
             </div>
-
-            <div class="snapshot-kpi-card">
-              <div class="kpi-label">
-                <span>Job Profiles</span>
-                <i data-lucide="layers" style="width:15px;height:15px;color:var(--accent-emerald);"></i>
-              </div>
-              <div class="kpi-value" id="kpi-job-profiles">562</div>
-              <div class="kpi-subtext">Distinct CTC tier roles and job specifications</div>
+            <div class="kpi">
+              <dt>Unique employers</dt>
+              <dd id="kpi-unique-employers">—</dd>
+              <p class="kpi-note">Companies that made at least one offer</p>
             </div>
-
-            <div class="snapshot-kpi-card">
-              <div class="kpi-label">
-                <span>Average CTC</span>
-                <i data-lucide="trending-up" style="width:15px;height:15px;color:var(--accent-blue);"></i>
-              </div>
-              <div class="kpi-value" id="kpi-avg-ctc">₹7.33 <span style="font-size:1rem;font-weight:600;">LPA</span></div>
-              <div class="kpi-subtext">Overall cycle mean package across reported offers</div>
+            <div class="kpi">
+              <dt>Job profiles</dt>
+              <dd id="kpi-job-profiles">—</dd>
+              <p class="kpi-note">Distinct roles and CTC tiers</p>
             </div>
-
-            <div class="snapshot-kpi-card kpi-median">
-              <div class="kpi-label">
-                <span>Median CTC</span>
-                <i data-lucide="bar-chart-2" style="width:15px;height:15px;color:var(--accent-violet);"></i>
-              </div>
-              <div class="kpi-value" id="kpi-median-ctc">₹6.15 <span style="font-size:1rem;font-weight:600;">LPA</span></div>
-              <div class="kpi-subtext">50th percentile benchmark across all profiles</div>
+            <div class="kpi">
+              <dt>Average CTC</dt>
+              <dd id="kpi-avg-ctc">—</dd>
+              <p class="kpi-note">Mean of offers with a reported CTC</p>
             </div>
-
-            <div class="snapshot-kpi-card kpi-highest">
-              <div class="kpi-label">
-                <span>Highest CTC</span>
-                <i data-lucide="sparkles" style="width:15px;height:15px;color:var(--color-ochre);"></i>
-              </div>
-              <div class="kpi-value" id="kpi-highest-ctc">₹60.0 <span style="font-size:1rem;font-weight:600;">LPA</span></div>
-              <div class="kpi-subtext">Google (Highest package recorded across all listed profiles)</div>
+            <div class="kpi">
+              <dt>Median CTC</dt>
+              <dd id="kpi-median-ctc">—</dd>
+              <p class="kpi-note">Middle offer with a reported CTC</p>
             </div>
-
-          </div>
-
-          <!-- Content Grid: Left (Bands & Categories) / Right (Top Recruiters Table) -->
-          <div class="snapshot-content-grid">
-            
-            <!-- Left Column: Top-Offer Bands & Category Breakdown -->
-            <div class="snapshot-panel">
-              <div class="snapshot-panel-header">
-                <div class="snapshot-panel-title">
-                  <i data-lucide="line-chart" style="width:18px;height:18px;color:var(--accent-blue);"></i>
-                  <span>Top-Offer Bands (Avg CTC)</span>
-                </div>
-                <span style="font-size:0.75rem;color:var(--text-muted);font-weight:600;">Report Mean</span>
-              </div>
-              
-              <div class="offer-bands-list">
-                <div class="offer-band-row">
-                  <span class="band-label">Top 50</span>
-                  <div class="band-bar-track"><div class="band-bar-fill" style="width:100%;"></div></div>
-                  <span class="band-value">₹35.43 LPA</span>
-                </div>
-                <div class="offer-band-row">
-                  <span class="band-label">Top 100</span>
-                  <div class="band-bar-track"><div class="band-bar-fill" style="width:80.6%;"></div></div>
-                  <span class="band-value">₹28.56 LPA</span>
-                </div>
-                <div class="offer-band-row">
-                  <span class="band-label">Top 250</span>
-                  <div class="band-bar-track"><div class="band-bar-fill" style="width:64.6%;"></div></div>
-                  <span class="band-value">₹22.88 LPA</span>
-                </div>
-                <div class="offer-band-row">
-                  <span class="band-label">Top 500</span>
-                  <div class="band-bar-track"><div class="band-bar-fill" style="width:51.2%;"></div></div>
-                  <span class="band-value">₹18.15 LPA</span>
-                </div>
-                <div class="offer-band-row">
-                  <span class="band-label">Top 1000</span>
-                  <div class="band-bar-track"><div class="band-bar-fill" style="width:41.0%;"></div></div>
-                  <span class="band-value">₹14.54 LPA</span>
-                </div>
-              </div>
-
-              <!-- Recruiters by Category -->
-              <div class="snapshot-panel-header" style="margin-top:28px;">
-                <div class="snapshot-panel-title">
-                  <i data-lucide="tag" style="width:18px;height:18px;color:var(--accent-violet);"></i>
-                  <span>Recruiters by Category</span>
-                </div>
-                <span style="font-size:0.75rem;color:var(--text-muted);font-weight:600;">504 Total Slots</span>
-              </div>
-
-              <div class="categories-pill-cloud">
-                <div class="category-stat-pill"><span>Dream</span> <span class="cat-count">154</span></div>
-                <div class="category-stat-pill"><span>Core</span> <span class="cat-count">100</span></div>
-                <div class="category-stat-pill"><span>Super Dream</span> <span class="cat-count">87</span></div>
-                <div class="category-stat-pill"><span>Regular Intern</span> <span class="cat-count">50</span></div>
-                <div class="category-stat-pill"><span>Non-IT Services</span> <span class="cat-count">42</span></div>
-                <div class="category-stat-pill"><span>Marquee</span> <span class="cat-count">30</span></div>
-                <div class="category-stat-pill"><span>IT Services</span> <span class="cat-count">28</span></div>
-                <div class="category-stat-pill"><span>Mass Recruiter</span> <span class="cat-count">7</span></div>
-                <div class="category-stat-pill"><span>International</span> <span class="cat-count">6</span></div>
-              </div>
-
-              <!-- Data Integrity Caveat -->
-              <div class="editorial-caveat-banner">
-                <i data-lucide="alert-triangle" style="width:16px;height:16px;"></i>
-                <div>
-                  <strong>Data Integrity Note:</strong> Category counts total 504 across participating profiles, exceeding 421 unique employers. Recruiters with multiple CTC tiers are counted in multiple categories; therefore, categories are non-exclusive and must not be charted as a 100% donut.
-                </div>
-              </div>
+            <div class="kpi">
+              <dt>Highest CTC</dt>
+              <dd id="kpi-highest-ctc">—</dd>
+              <p class="kpi-note" id="kpi-note-highest">—</p>
             </div>
+          </dl>
 
-            <!-- Right Column: Top 20 Recruiters by Offer Volume Table -->
-            <div class="snapshot-panel">
-              <div class="snapshot-panel-header">
-                <div class="snapshot-panel-title">
-                  <i data-lucide="building-2" style="width:18px;height:18px;color:var(--accent-cyan);"></i>
-                  <span>Top Recruiters by Offer Volume</span>
-                </div>
-                <span style="font-size:0.75rem;color:var(--text-muted);font-weight:600;">Top 20 in Snapshot</span>
+          <div class="snapshot-story">
+            <article class="story-panel story-bands" aria-labelledby="bands-title">
+              <h3 id="bands-title" class="story-title">Average CTC of the top offers</h3>
+              <p class="story-summary" id="bands-summary">—</p>
+              <ol class="band-chart" id="offer-bands-list"></ol>
+            </article>
+
+            <article class="story-panel story-categories" aria-labelledby="categories-title">
+              <h3 id="categories-title" class="story-title">Recruiter categories</h3>
+              <p class="story-summary">Ranked by recruiting profiles. One company can sit in several categories, so these counts are not shares of a whole.</p>
+              <ol class="category-rank" id="category-rank-list"></ol>
+            </article>
+
+            <article class="story-panel story-recruiters" aria-labelledby="recruiters-title">
+              <div class="story-head">
+                <h3 id="recruiters-title" class="story-title">Top recruiters by offers</h3>
+                <label class="table-filter">
+                  <i data-lucide="search" style="width:15px;height:15px;"></i>
+                  <span class="sr-only">Filter recruiters</span>
+                  <input type="search" id="snapshot-company-search" placeholder="Filter by company" autocomplete="off">
+                </label>
               </div>
-
-              <div class="snapshot-table-search">
-                <i data-lucide="search" style="width:15px;height:15px;color:var(--text-muted);"></i>
-                <input type="text" id="snapshot-company-search" placeholder="Filter company (e.g. TCS, Infosys, Google)..." aria-label="Filter company in placement table">
-              </div>
-
-              <div class="recruiters-table-wrapper" tabindex="0" role="region" aria-label="Placement Recruiters Table">
+              <div class="recruiters-table-wrapper" tabindex="0" role="region" aria-labelledby="recruiters-title">
                 <table class="recruiters-table" id="snapshot-recruiters-table">
+                  <caption class="sr-only">Top recruiters in the 2026 placement snapshot, by number of offers</caption>
                   <thead>
                     <tr>
                       <th scope="col">#</th>
                       <th scope="col">Company</th>
-                      <th scope="col" style="text-align:right;">Offers</th>
-                      <th scope="col" style="text-align:right;">Profiles</th>
-                      <th scope="col" style="text-align:right;">Highest CTC</th>
-                      <th scope="col" style="text-align:center;">Action</th>
+                      <th scope="col" class="num">Offers</th>
+                      <th scope="col" class="num">Profiles</th>
+                      <th scope="col" class="num">Highest CTC</th>
+                      <th scope="col"><span class="sr-only">Action</span></th>
                     </tr>
                   </thead>
-                  <tbody id="snapshot-table-body">
-                    <tr><td>1</td><td><strong>TCS</strong></td><td style="text-align:right;">826</td><td style="text-align:right;">6</td><td style="text-align:right;">₹9.09 LPA</td><td style="text-align:center;"><button type="button" class="btn-use-context" data-company="TCS" data-highest="9.09">Target</button></td></tr>
-                    <tr><td>2</td><td><strong>Accenture</strong></td><td style="text-align:right;">720</td><td style="text-align:right;">3</td><td style="text-align:right;">₹11.0 LPA</td><td style="text-align:center;"><button type="button" class="btn-use-context" data-company="Accenture" data-highest="11.0">Target</button></td></tr>
-                    <tr><td>3</td><td><strong>LTI Mindtree</strong></td><td style="text-align:right;">601</td><td style="text-align:right;">2</td><td style="text-align:right;">₹4.05 LPA</td><td style="text-align:center;"><button type="button" class="btn-use-context" data-company="LTI Mindtree" data-highest="4.05">Target</button></td></tr>
-                    <tr><td>4</td><td><strong>Infosys</strong></td><td style="text-align:right;">525</td><td style="text-align:right;">7</td><td style="text-align:right;">₹16.0 LPA</td><td style="text-align:center;"><button type="button" class="btn-use-context" data-company="Infosys" data-highest="16.0">Target</button></td></tr>
-                    <tr><td>5</td><td><strong>Cognizant</strong></td><td style="text-align:right;">414</td><td style="text-align:right;">4</td><td style="text-align:right;">₹12.0 LPA</td><td style="text-align:center;"><button type="button" class="btn-use-context" data-company="Cognizant" data-highest="12.0">Target</button></td></tr>
-                    <tr><td>6</td><td><strong>Acmegrade Pvt Ltd</strong></td><td style="text-align:right;">278</td><td style="text-align:right;">1</td><td style="text-align:right;">₹6.5 LPA</td><td style="text-align:center;"><button type="button" class="btn-use-context" data-company="Acmegrade Pvt Ltd" data-highest="6.5">Target</button></td></tr>
-                    <tr><td>7</td><td><strong>CAPGEMINI</strong></td><td style="text-align:right;">275</td><td style="text-align:right;">2</td><td style="text-align:right;">₹5.75 LPA</td><td style="text-align:center;"><button type="button" class="btn-use-context" data-company="CAPGEMINI" data-highest="5.75">Target</button></td></tr>
-                    <tr><td>8</td><td><strong>Deloitte</strong></td><td style="text-align:right;">169</td><td style="text-align:right;">2</td><td style="text-align:right;">₹7.6 LPA</td><td style="text-align:center;"><button type="button" class="btn-use-context" data-company="Deloitte" data-highest="7.6">Target</button></td></tr>
-                    <tr><td>9</td><td><strong>HighRadius Technologies</strong></td><td style="text-align:right;">142</td><td style="text-align:right;">2</td><td style="text-align:right;">₹8.0 LPA</td><td style="text-align:center;"><button type="button" class="btn-use-context" data-company="HighRadius Technologies" data-highest="8.0">Target</button></td></tr>
-                    <tr><td>10</td><td><strong>Glowlogics Solutions</strong></td><td style="text-align:right;">141</td><td style="text-align:right;">1</td><td style="text-align:right;">₹6.2 LPA</td><td style="text-align:center;"><button type="button" class="btn-use-context" data-company="Glowlogics Solutions" data-highest="6.2">Target</button></td></tr>
-                  </tbody>
+                  <tbody id="snapshot-table-body"></tbody>
                 </table>
               </div>
-
-              <div style="margin-top:14px;font-size:0.74rem;color:var(--text-muted);display:flex;align-items:center;justify-content:space-between;">
-                <span>* Highest CTC denotes the peak recorded tier for that employer in this snapshot.</span>
-                <span>339 offers without CTC recorded</span>
-              </div>
-            </div>
-
+            </article>
           </div>
 
+          <aside class="snapshot-caveats" aria-labelledby="caveats-title">
+            <h3 id="caveats-title" class="caveats-title"><i data-lucide="alert-triangle" style="width:16px;height:16px;"></i> Read these numbers with care</h3>
+            <ul class="caveats-list">
+              <li><strong>Offers, not students.</strong> <span id="caveat-students">—</span></li>
+              <li><strong>Categories overlap.</strong> <span id="caveat-categories">—</span></li>
+              <li><strong><span id="caveat-no-ctc-count">—</span> offers have no reported CTC.</strong> They count towards the offer total but not towards any CTC figure.</li>
+            </ul>
+          </aside>
         </div>
       </section>
 

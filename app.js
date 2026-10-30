@@ -5265,36 +5265,21 @@ async function handleActivateLLMProvider() {
 // ==============================================================================
 // 17. PLACEMENT SNAPSHOT CONTROLLER (17-SEP-2026 HAVELOC DATASET)
 // ==============================================================================
+// Every figure in the snapshot section comes from placement_snapshot_2026.json;
+// nothing is duplicated in markup. If the file cannot be loaded, the section says so.
 function initPlacementSnapshot() {
-  const searchInput = document.getElementById('snapshot-company-search');
   const tableBody = document.getElementById('snapshot-table-body');
   if (!tableBody) return;
 
-  function bindTargetButtons() {
-    tableBody.querySelectorAll('.btn-use-context').forEach(btn => {
-      btn.addEventListener('click', () => {
-        const company = btn.getAttribute('data-company');
-        const highest = btn.getAttribute('data-highest');
-        const jdInput = document.getElementById('jd-textarea');
-        if (jdInput) {
-          const contextNote = `Target Company: ${company} (Placement Snapshot Benchmark: Highest listed CTC ₹${highest} LPA)\nRole Expectations:\n`;
-          if (!jdInput.value.trim()) {
-            jdInput.value = contextNote;
-          } else if (!jdInput.value.includes(company)) {
-            jdInput.value = contextNote + jdInput.value;
-          }
-          const charCount = document.getElementById('jd-char-count');
-          if (charCount) charCount.textContent = `${jdInput.value.length} chars`;
-          showToast(`Target context added for ${company}. Now upload your resume to analyze alignment.`);
-          const analyzerSec = document.getElementById('analyzer');
-          if (analyzerSec) analyzerSec.scrollIntoView({ behavior: 'smooth' });
-        }
-      });
-    });
-  }
+  tableBody.addEventListener('click', (e) => {
+    const btn = e.target.closest('.btn-use-context');
+    if (btn) useCompanyAsAnalyzerTarget(btn.getAttribute('data-company'), btn.getAttribute('data-highest'));
+  });
 
-  // Bind initial static rows
-  bindTargetButtons();
+  const searchInput = document.getElementById('snapshot-company-search');
+  if (searchInput) {
+    searchInput.addEventListener('input', () => filterSnapshotTable(searchInput.value));
+  }
 
   fetch('/placement_snapshot_2026.json')
     .then(res => {
@@ -5302,58 +5287,132 @@ function initPlacementSnapshot() {
       return res.json();
     })
     .then(data => {
-      if (!data || !data.top_recruiters) return;
-
+      if (!data || !Array.isArray(data.top_recruiters)) throw new Error('Unexpected snapshot schema');
       appState.placementSnapshot = data;
+      renderPlacementSnapshot(data);
       renderCompanyDirectory(); // swap the directory's dashes for report figures
       renderEvidenceStrip();
-
-      const totalOffersEl = document.getElementById('kpi-total-offers');
-      if (totalOffersEl && data.total_offers) totalOffersEl.textContent = Number(data.total_offers).toLocaleString();
-
-      const employersEl = document.getElementById('kpi-unique-employers');
-      if (employersEl && data.unique_employers) employersEl.textContent = data.unique_employers;
-
-      const profilesEl = document.getElementById('kpi-job-profiles');
-      if (profilesEl && data.job_profiles) profilesEl.textContent = data.job_profiles;
-
-      const avgCtcEl = document.getElementById('kpi-avg-ctc');
-      if (avgCtcEl && data.average_ctc_lpa) avgCtcEl.innerHTML = `₹${data.average_ctc_lpa} <span style="font-size:1rem;font-weight:600;">LPA</span>`;
-
-      const medianCtcEl = document.getElementById('kpi-median-ctc');
-      if (medianCtcEl && data.median_ctc_lpa) medianCtcEl.innerHTML = `₹${data.median_ctc_lpa} <span style="font-size:1rem;font-weight:600;">LPA</span>`;
-
-      const highestCtcEl = document.getElementById('kpi-highest-ctc');
-      if (highestCtcEl && data.highest_ctc_lpa) highestCtcEl.innerHTML = `₹${data.highest_ctc_lpa} <span style="font-size:1rem;font-weight:600;">LPA</span>`;
-
-      tableBody.innerHTML = data.top_recruiters.map(r => `
-        <tr>
-          <td>${r.rank}</td>
-          <td><strong>${r.company}</strong></td>
-          <td style="text-align:right;">${r.offers}</td>
-          <td style="text-align:right;">${r.profiles}</td>
-          <td style="text-align:right;">₹${r.highest_ctc_lpa} LPA</td>
-          <td style="text-align:center;">
-            <button type="button" class="btn-use-context" data-company="${r.company}" data-highest="${r.highest_ctc_lpa}">Target</button>
-          </td>
-        </tr>
-      `).join('');
-
-      bindTargetButtons();
     })
     .catch(err => {
-      console.warn('Placement snapshot using static fallback:', err);
+      console.warn('Placement snapshot unavailable:', err);
+      const status = document.getElementById('snapshot-status');
+      if (status) {
+        status.hidden = false;
+        status.textContent = 'The 2026 snapshot file could not be loaded, so no placement figures are shown. Reload the page to try again.';
+      }
     });
+}
 
-  if (searchInput) {
-    searchInput.addEventListener('input', (e) => {
-      const q = e.target.value.toLowerCase().trim();
-      const rows = tableBody.querySelectorAll('tr');
-      rows.forEach(row => {
-        row.style.display = row.textContent.toLowerCase().includes(q) ? '' : 'none';
-      });
-    });
+function filterSnapshotTable(query) {
+  const q = (query || '').toLowerCase().trim();
+  document.querySelectorAll('#snapshot-table-body tr').forEach(row => {
+    row.hidden = q !== '' && !(row.getAttribute('data-company') || '').toLowerCase().includes(q);
+  });
+}
+
+// Hand a recruiter from the snapshot to the analyzer as the target context.
+function useCompanyAsAnalyzerTarget(company, highest) {
+  const jdInput = document.getElementById('jd-textarea');
+  if (!jdInput || !company) return;
+  const contextNote = `Target company: ${company} (2026 snapshot: highest listed CTC ₹${highest} LPA)\nRole expectations:\n`;
+  if (!jdInput.value.trim()) {
+    jdInput.value = contextNote;
+  } else if (!jdInput.value.includes(company)) {
+    jdInput.value = contextNote + jdInput.value;
   }
+  jdInput.dispatchEvent(new Event('input', { bubbles: true }));
+  showToast(`Added ${company} as the target. Paste the job description and upload your resume.`);
+  const analyzerSec = document.getElementById('analyzer');
+  if (analyzerSec) analyzerSec.scrollIntoView({ behavior: appState.motionMode === 'reduced' ? 'auto' : 'smooth' });
+}
+
+function renderPlacementSnapshot(data) {
+  const byId = (id) => document.getElementById(id);
+  const setText = (id, value) => {
+    const el = byId(id);
+    if (el && value !== undefined && value !== null) el.textContent = String(value);
+  };
+  const lpa = (value) => `₹${escapeHTML(String(value))}<span class="unit">LPA</span>`;
+  const count = (value) => Number(value).toLocaleString('en-IN');
+
+  setText('kpi-total-offers', count(data.total_offers));
+  setText('kpi-unique-employers', count(data.unique_employers));
+  setText('kpi-job-profiles', count(data.job_profiles));
+  [['kpi-avg-ctc', data.average_ctc_lpa], ['kpi-median-ctc', data.median_ctc_lpa], ['kpi-highest-ctc', data.highest_ctc_lpa]]
+    .forEach(([id, value]) => { if (byId(id) && typeof value === 'number') byId(id).innerHTML = lpa(value); });
+  if (data.highest_ctc_company) setText('kpi-note-highest', `${data.highest_ctc_company}, the single highest offer`);
+
+  const meta = {
+    source_name: data.source_name,
+    source_snapshot_date: data.source_snapshot_date ? formatSnapshotDate(data.source_snapshot_date) : null,
+    batch: data.batch
+  };
+  document.querySelectorAll('[data-snapshot]').forEach(el => {
+    const value = meta[el.getAttribute('data-snapshot')];
+    if (value) el.textContent = value;
+  });
+
+  // Offer bands: horizontal bars scaled to the top band, value always printed.
+  const bands = Array.isArray(data.top_offer_bands) ? data.top_offer_bands : [];
+  const bandList = byId('offer-bands-list');
+  if (bandList && bands.length) {
+    const max = Math.max(...bands.map(b => b.average_ctc_lpa));
+    bandList.innerHTML = bands.map(b => `
+      <li class="band-row">
+        <span class="band-label">${escapeHTML(String(b.band))}</span>
+        <span class="band-track" aria-hidden="true"><span class="band-fill" style="--w:${(b.average_ctc_lpa / max * 100).toFixed(1)}%"></span></span>
+        <span class="band-value">₹${Number(b.average_ctc_lpa).toFixed(2)} LPA</span>
+      </li>`).join('');
+    const first = bands[0];
+    const last = bands[bands.length - 1];
+    setText('bands-summary', `The ${first.band.toLowerCase()} offers averaged ₹${first.average_ctc_lpa} LPA. Across the ${last.band.toLowerCase()} the average falls to ₹${last.average_ctc_lpa} LPA, against a median offer of ₹${data.median_ctc_lpa} LPA.`);
+    animateOnFirstView(bandList);
+  }
+
+  // Categories: a ranked list of counts, never a share-of-whole chart.
+  const catList = byId('category-rank-list');
+  if (catList && Array.isArray(data.categories)) {
+    catList.innerHTML = [...data.categories]
+      .sort((a, b) => b.count - a.count)
+      .map(c => `<li><span class="cat-name">${escapeHTML(String(c.category))}</span><span class="cat-count">${count(c.count)}</span></li>`)
+      .join('');
+  }
+
+  // Recruiters table; a small bar sits beside each offer count, which stays visible.
+  const tableBody = byId('snapshot-table-body');
+  if (tableBody) {
+    const maxOffers = Math.max(...data.top_recruiters.map(r => r.offers));
+    tableBody.innerHTML = data.top_recruiters.map(r => {
+      const company = escapeHTML(String(r.company));
+      return `
+        <tr data-company="${company}">
+          <td class="num">${r.rank}</td>
+          <td><strong>${company}</strong></td>
+          <td class="num"><span class="offer-cell"><span class="offer-spark" aria-hidden="true"><i style="--w:${(r.offers / maxOffers * 100).toFixed(1)}%"></i></span>${count(r.offers)}</span></td>
+          <td class="num">${count(r.profiles)}</td>
+          <td class="num">₹${escapeHTML(String(r.highest_ctc_lpa))} LPA</td>
+          <td><button type="button" class="btn-use-context" data-company="${company}" data-highest="${escapeHTML(String(r.highest_ctc_lpa))}" aria-label="Use ${company} as the analyzer target">Target</button></td>
+        </tr>`;
+    }).join('');
+    const searchInput = byId('snapshot-company-search');
+    if (searchInput && searchInput.value) filterSnapshotTable(searchInput.value);
+  }
+
+  setText('caveat-students', data.students_placed_note);
+  setText('caveat-categories', data.category_sum_caveat);
+  if (typeof data.offers_without_ctc === 'number') setText('caveat-no-ctc-count', count(data.offers_without_ctc));
+}
+
+// Adds .animate the first time an element scrolls into view (never again).
+function animateOnFirstView(el) {
+  if (appState.motionMode === 'reduced' || typeof IntersectionObserver === 'undefined') return;
+  const observer = new IntersectionObserver((entries) => {
+    if (entries.some(entry => entry.isIntersecting)) {
+      el.classList.add('animate');
+      observer.disconnect();
+    }
+  }, { threshold: 0.3 });
+  observer.observe(el);
 }
 
 
