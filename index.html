@@ -474,164 +474,144 @@
       <!-- =======================================================================
            SECTION 3: RESUME ANALYZER WORKSPACE (PRIMARY JOURNEY)
            ======================================================================= -->
-      <section id="analyzer" class="analyzer-section" aria-labelledby="analyzer-heading">
+      <section id="analyzer" class="analyzer-section band-paper" aria-labelledby="analyzer-heading">
         <div class="container">
-          
-          <div style="text-align:center;max-width:760px;margin:0 auto 48px;">
-            <span style="font-size:0.78rem;font-weight:700;text-transform:uppercase;letter-spacing:0.12em;color:var(--accent-blue-light);margin-bottom:12px;display:inline-block;">
-              Inference Workspace
-            </span>
-            <h2 id="analyzer-heading" style="font-family:var(--font-display);font-size:clamp(2rem, 3.5vw, 2.6rem);font-weight:800;color:var(--text-primary);margin-bottom:12px;">
-              Live Resume vs Placed Alumni Analyzer
-            </h2>
-            <p style="color:var(--text-secondary);font-size:1rem;line-height:1.6;">
-              Upload your resume PDF and enter the target Job Description to stream real-time placement feedback.
-            </p>
-          </div>
+          <header class="section-head section-head-split">
+            <div>
+              <p class="section-kicker"><span class="section-index">03</span> Analyzer</p>
+              <h2 id="analyzer-heading" class="section-title">Resume analyzer</h2>
+            </div>
+            <p class="section-lede">Upload a PDF, add the job description and run. The report streams in beside the form, and each score component points back to evidence in your resume.</p>
+          </header>
 
           <div class="analyzer-grid">
-            
-            <!-- LEFT PANEL: INPUT FORM & DROPZONE -->
-            <div class="analyzer-form-card neu-card spatial-tilt-card">
-              <div class="specular-glare"></div>
-              
-              <div class="panel-title-row">
-                <h3 class="panel-title">
-                  <i data-lucide="sliders" style="color:var(--accent-cyan);width:18px;height:18px;"></i>
-                  <span>Analysis Inputs</span>
-                </h3>
-                
-                <div style="display:flex;align-items:center;gap:8px;">
-                  <label for="demo-mode-toggle" style="font-size:0.78rem;color:var(--text-muted);cursor:pointer;">Demo Mode:</label>
-                  <input type="checkbox" id="demo-mode-toggle" style="accent-color:var(--accent-blue);cursor:pointer;" title="Toggle offline demo simulation">
-                </div>
+
+            <!-- LEFT PANEL: ordered inputs — PDF, job description, optional review lens, run -->
+            <div class="analyzer-form-card workspace-panel">
+              <div class="workspace-panel-head">
+                <h3 class="panel-title">Your inputs</h3>
+                <label class="demo-switch" for="demo-mode-toggle">
+                  <input type="checkbox" id="demo-mode-toggle" aria-describedby="demo-mode-note">
+                  <span class="demo-switch-track" aria-hidden="true"></span>
+                  <span class="demo-switch-label">Demo mode</span>
+                </label>
               </div>
+              <p class="demo-note" id="demo-mode-note">Demo mode plays a bundled, illustrative report with a sample score. Nothing is uploaded or analyzed.</p>
 
-              <!-- Field 1: Job Description -->
-              <div class="form-group">
-                <div class="form-label-row">
-                  <label for="jd-textarea">1. Target Job Description <span style="color:var(--accent-coral);">*</span></label>
-                  <span class="form-hint">Paste full JD text or dictate via voice</span>
-                </div>
+              <ol class="input-steps">
+                <li class="input-step">
+                  <div class="form-label-row">
+                    <label for="resume-file-input"><span class="step-no" aria-hidden="true">1</span>Resume PDF <span class="req" aria-hidden="true">*</span></label>
+                    <span class="form-hint">PDF only · up to 10 MB</span>
+                  </div>
+                  <p class="privacy-note">
+                    <i data-lucide="shield-check" style="width:15px;height:15px;"></i>
+                    <span>Read in memory for this request only. The file is not stored.</span>
+                  </p>
+                  <div id="resume-dropzone" class="dropzone-container neu-dropzone" tabindex="0" role="button" aria-label="Upload resume PDF document">
+                    <input type="file" id="resume-file-input" class="dropzone-input-hidden" accept=".pdf" aria-label="Resume file input">
+                    <div class="dropzone-icon">
+                      <i data-lucide="upload-cloud" style="width:26px;height:26px;"></i>
+                    </div>
+                    <div class="dropzone-title">Click to browse or drag & drop</div>
+                    <div class="dropzone-meta">PDF format up to 10 MB limit • In-memory privacy</div>
 
-                <div class="presets-strip" style="justify-content:space-between;flex-wrap:wrap;gap:6px;">
-                  <div style="display:flex;align-items:center;gap:6px;flex-wrap:wrap;">
-                    <span style="font-size:0.72rem;color:var(--text-muted);align-self:center;margin-right:2px;">Presets:</span>
+                    <div id="selected-file-pill" class="selected-file-pill" style="display:none;">
+                      <i data-lucide="file-check" style="width:16px;height:16px;"></i>
+                      <span id="selected-filename">resume.pdf</span>
+                      <button type="button" id="clear-file-btn" class="btn-clear-file" title="Remove selected file" aria-label="Remove selected file">
+                        <i data-lucide="x" style="width:14px;height:14px;"></i>
+                      </button>
+                    </div>
+                  </div>
+                  <div id="file-error-msg" class="field-error-msg" role="alert"></div>
+                </li>
+
+                <li class="input-step">
+                  <div class="form-label-row">
+                    <label for="jd-textarea"><span class="step-no" aria-hidden="true">2</span>Job description <span class="req" aria-hidden="true">*</span></label>
+                    <button type="button" id="btn-quick-dictate-jd" class="btn-text-action btn-dictate" title="Dictate the job description with your microphone">
+                      <i data-lucide="mic" style="width:14px;height:14px;"></i>
+                      <span>Dictate</span>
+                    </button>
+                  </div>
+                  <div class="presets-strip" role="group" aria-label="Sample job descriptions">
+                    <span class="presets-label">Samples</span>
                     <button type="button" class="btn-preset-chip neu-btn" data-preset="google">Google SWE</button>
                     <button type="button" class="btn-preset-chip neu-btn" data-preset="microsoft">Microsoft SDE-1</button>
                     <button type="button" class="btn-preset-chip neu-btn" data-preset="amazon">Amazon Cloud</button>
                     <button type="button" class="btn-preset-chip neu-btn" data-preset="goldman">Goldman Analyst</button>
                   </div>
-                  <button type="button" id="btn-quick-dictate-jd" class="neu-btn" style="padding:4px 10px;font-size:0.74rem;gap:5px;border-color:rgba(var(--tint-rgb),0.2);" title="Dictate Job Description with microphone">
-                    <i data-lucide="mic" style="width:13px;height:13px;color:var(--accent-cyan);"></i>
-                    <span>Dictate JD</span>
-                  </button>
-                </div>
+                  <textarea id="jd-textarea" class="jd-textarea neu-textarea" placeholder="Paste the target job description, requirements, or qualifications here..."></textarea>
 
-                <textarea id="jd-textarea" class="jd-textarea neu-textarea" placeholder="Paste the target job description, requirements, or qualifications here..."></textarea>
-                
-                <div class="char-counter-row">
-                  <span id="jd-char-count">0 characters</span>
-                  <button type="button" id="btn-clear-jd" class="btn-text-action">Clear JD</button>
-                </div>
-                <div id="jd-error-msg" class="field-error-msg" role="alert"></div>
-              </div>
-
-              <!-- Field 2: PDF Dropzone -->
-              <div class="form-group">
-                <div class="form-label-row">
-                  <label for="resume-file-input">2. Upload Resume PDF <span style="color:var(--accent-coral);">*</span></label>
-                  <span class="form-hint">Accepted: .pdf, max 10 MB</span>
-                </div>
-
-                <div id="resume-dropzone" class="dropzone-container neu-dropzone" tabindex="0" role="button" aria-label="Upload resume PDF document">
-                  <input type="file" id="resume-file-input" class="dropzone-input-hidden" accept=".pdf" aria-label="Resume file input">
-                  <div class="dropzone-icon">
-                    <i data-lucide="upload-cloud" style="width:26px;height:26px;"></i>
+                  <div class="char-counter-row">
+                    <span id="jd-char-count">0 characters</span>
+                    <button type="button" id="btn-clear-jd" class="btn-text-action">Clear JD</button>
                   </div>
-                  <div class="dropzone-title">Click to browse or drag & drop</div>
-                  <div class="dropzone-meta">PDF format up to 10 MB limit • In-memory privacy</div>
+                  <div id="jd-error-msg" class="field-error-msg" role="alert"></div>
+                </li>
 
-                  <div id="selected-file-pill" class="selected-file-pill" style="display:none;">
-                    <i data-lucide="file-check" style="width:16px;height:16px;"></i>
-                    <span id="selected-filename">resume.pdf</span>
-                    <button type="button" id="clear-file-btn" class="btn-clear-file" title="Remove selected file" aria-label="Remove selected file">
-                      <i data-lucide="x" style="width:14px;height:14px;"></i>
-                    </button>
+                <li class="input-step" id="executive-persona-group">
+                  <div class="form-label-row">
+                    <span class="label-like" id="persona-group-label"><span class="step-no" aria-hidden="true">3</span>Review lens <span class="optional">optional</span></span>
+                    <span class="form-hint">Changes the simulated reviewer, never the score</span>
                   </div>
-                </div>
-                <div id="file-error-msg" class="field-error-msg" role="alert"></div>
-              </div>
+                  <div class="persona-chips-grid" id="persona-select-container" role="radiogroup" aria-labelledby="persona-group-label">
+                    <label class="persona-chip neu-card active" data-persona="auto">
+                      <input type="radio" name="executive_persona" value="auto" checked class="sr-only">
+                      <div class="persona-chip-head">
+                        <i data-lucide="sparkles" style="width:15px;height:15px;color:var(--accent-cyan);"></i>
+                        <strong>Auto (Inferred)</strong>
+                      </div>
+                      <p class="persona-chip-desc">Infers lens from role &amp; JD requirements.</p>
+                    </label>
 
-              <!-- Field 3: Executive Review Persona Selector -->
-              <div class="form-group" id="executive-persona-group">
-                <div class="form-label-row">
-                  <label for="persona-select-container">3. Executive Review Lens (Optional)</label>
-                  <span class="form-hint">Simulated role scrutiny • Rubric invariant</span>
-                </div>
+                    <label class="persona-chip neu-card" data-persona="director_ai_research">
+                      <input type="radio" name="executive_persona" value="director_ai_research" class="sr-only">
+                      <div class="persona-chip-head">
+                        <i data-lucide="brain-circuit" style="width:15px;height:15px;color:var(--color-orchid);"></i>
+                        <strong>Director of AI &amp; Research</strong>
+                      </div>
+                      <p class="persona-chip-desc">Scrutinizes ML problem framing, data leakage, and metrics.</p>
+                    </label>
 
-                <div class="persona-chips-grid" id="persona-select-container" role="radiogroup" aria-label="Executive Persona Lens">
-                  <label class="persona-chip neu-card active" data-persona="auto">
-                    <input type="radio" name="executive_persona" value="auto" checked class="sr-only">
-                    <div class="persona-chip-head">
-                      <i data-lucide="sparkles" style="width:15px;height:15px;color:var(--accent-cyan);"></i>
-                      <strong>Auto (Inferred)</strong>
-                    </div>
-                    <p class="persona-chip-desc">Infers lens from role &amp; JD requirements.</p>
-                  </label>
+                    <label class="persona-chip neu-card" data-persona="principal_sde">
+                      <input type="radio" name="executive_persona" value="principal_sde" class="sr-only">
+                      <div class="persona-chip-head">
+                        <i data-lucide="terminal" style="width:15px;height:15px;color:var(--color-lagoon);"></i>
+                        <strong>Principal SDE / VP Eng</strong>
+                      </div>
+                      <p class="persona-chip-desc">Audits API contracts, concurrency, error semantics, and scale.</p>
+                    </label>
 
-                  <label class="persona-chip neu-card" data-persona="director_ai_research">
-                    <input type="radio" name="executive_persona" value="director_ai_research" class="sr-only">
-                    <div class="persona-chip-head">
-                      <i data-lucide="brain-circuit" style="width:15px;height:15px;color:var(--color-orchid);"></i>
-                      <strong>Director of AI &amp; Research</strong>
-                    </div>
-                    <p class="persona-chip-desc">Scrutinizes ML problem framing, data leakage, and metrics.</p>
-                  </label>
-
-                  <label class="persona-chip neu-card" data-persona="principal_sde">
-                    <input type="radio" name="executive_persona" value="principal_sde" class="sr-only">
-                    <div class="persona-chip-head">
-                      <i data-lucide="terminal" style="width:15px;height:15px;color:var(--color-lagoon);"></i>
-                      <strong>Principal SDE / VP Eng</strong>
-                    </div>
-                    <p class="persona-chip-desc">Audits API contracts, concurrency, error semantics, and scale.</p>
-                  </label>
-
-                  <label class="persona-chip neu-card" data-persona="cloud_infrastructure_director">
-                    <input type="radio" name="executive_persona" value="cloud_infrastructure_director" class="sr-only">
-                    <div class="persona-chip-head">
-                      <i data-lucide="server" style="width:15px;height:15px;color:var(--color-forest);"></i>
-                      <strong>Cloud Infrastructure Dir.</strong>
-                    </div>
-                    <p class="persona-chip-desc">Audits cloud targets, CI/CD, Kubernetes, and reliability.</p>
-                  </label>
-                </div>
-              </div>
+                    <label class="persona-chip neu-card" data-persona="cloud_infrastructure_director">
+                      <input type="radio" name="executive_persona" value="cloud_infrastructure_director" class="sr-only">
+                      <div class="persona-chip-head">
+                        <i data-lucide="server" style="width:15px;height:15px;color:var(--color-forest);"></i>
+                        <strong>Cloud Infrastructure Dir.</strong>
+                      </div>
+                      <p class="persona-chip-desc">Audits cloud targets, CI/CD, Kubernetes, and reliability.</p>
+                    </label>
+                  </div>
+                </li>
+              </ol>
 
               <!-- General Error / Alert Card -->
               <div id="analyzer-alert-card" class="alert-card error" role="alert"></div>
 
-              <!-- Action Submit Button -->
-              <button id="btn-analyze-submit" class="btn-analyze-submit neu-btn neu-btn-primary" type="button">
-                <i data-lucide="zap" style="width:18px;height:18px;"></i>
-                <span id="btn-analyze-text">Analyze My Placement Fit</span>
+              <button id="btn-analyze-submit" class="btn-analyze-submit" type="button">
+                <i data-lucide="scan-search" style="width:18px;height:18px;"></i>
+                <span id="btn-analyze-text">Analyze resume</span>
               </button>
 
               <button id="btn-cancel-request" class="btn-cancel-request" type="button">
-                Cancel Analysis Request
+                Cancel analysis
               </button>
-
-              <div style="font-size:0.75rem;color:var(--text-muted);text-align:center;margin-top:14px;">
-                Direct endpoint: <code>POST /analyze</code> on <code>http://127.0.0.1:8000</code>
-              </div>
-
             </div>
 
             <!-- RIGHT PANEL: STREAMING RESULTS & DIAGNOSTIC REPORT -->
-            <div class="analyzer-results-card neu-card spatial-tilt-card" aria-live="polite">
-              <div class="specular-glare"></div>
-              
+            <div class="analyzer-results-card workspace-panel">
+
               <!-- Tabbed Results Navigation -->
               <div class="results-tab-bar" role="tablist" aria-label="Diagnostic Workspace Tabs">
                 <button type="button" class="results-tab-btn active" id="tab-btn-report" role="tab" aria-selected="true" aria-controls="pane-diagnostic-report">
@@ -644,15 +624,15 @@
                 </button>
                 <button type="button" class="results-tab-btn" id="tab-btn-tailoring" role="tab" aria-selected="false" aria-controls="pane-interactive-tailoring">
                   <i data-lucide="highlighter" style="width:14px;height:14px;"></i>
-                  <span>In-Doc Tailoring</span>
+                  <span>Resume Tailoring</span>
                   <span id="tab-markup-count-badge" class="tab-badge" style="display:none;">0</span>
                 </button>
                 <button type="button" class="results-tab-btn" id="tab-btn-coach" role="tab" aria-selected="false" aria-controls="pane-career-coach">
                   <i data-lucide="messages-square" style="width:14px;height:14px;"></i>
-                  <span>Voice Coach</span>
+                  <span>Career Coach</span>
                 </button>
 
-                <div class="results-actions-row" style="margin-left:auto;">
+                <div class="results-actions-row">
                   <button type="button" class="btn-icon-circle" onclick="copyAnalysisToClipboard()" title="Copy Markdown Report to Clipboard" aria-label="Copy report">
                     <i data-lucide="copy" style="width:15px;height:15px;"></i>
                   </button>
@@ -664,15 +644,15 @@
 
               <!-- Empty Results Placeholder -->
               <div id="results-placeholder" class="empty-results-box">
-                <div class="empty-icon-ring">
-                  <i data-lucide="sparkles" style="width:34px;height:34px;"></i>
+                <div class="empty-icon-ring" aria-hidden="true">
+                  <i data-lucide="file-text" style="width:30px;height:30px;"></i>
                 </div>
-                <h4 class="empty-title">Ready for Placement Benchmarking</h4>
+                <h4 class="empty-title">Your report will appear here</h4>
                 <p class="empty-desc">
-                  Provide your target job description and upload a resume on the left. The engine will retrieve relevant alumni archetypes from FAISS and stream actionable feedback.
+                  Add a resume PDF and a job description, then run the analysis. The report covers the score components, matched and missing evidence, reference resumes from the corpus and suggested rewrites.
                 </p>
-                <button type="button" class="btn-glass-shimmer" onclick="enableDemoAndRun()">
-                  <i data-lucide="play" style="width:16px;height:16px;"></i> Test with Illustrative Demo
+                <button type="button" class="btn-secondary" onclick="enableDemoAndRun()">
+                  <i data-lucide="play" style="width:16px;height:16px;"></i> Try the illustrative demo
                 </button>
               </div>
 
@@ -684,14 +664,14 @@
                   <div class="score-banner-left">
                     <div class="mini-score-ring">
                       <svg width="86" height="86" viewBox="0 0 86 86" style="transform:rotate(-90deg);">
-                        <circle cx="43" cy="43" r="38" fill="none" stroke="rgba(var(--tint-rgb),0.08)" stroke-width="8" />
+                        <circle cx="43" cy="43" r="38" fill="none" stroke="var(--color-surface-inset)" stroke-width="8" />
                         <circle id="mini-progress-ring" cx="43" cy="43" r="38" fill="none" stroke="var(--accent-emerald)" stroke-width="8" stroke-linecap="round" style="transition: stroke-dashoffset 1.2s ease;" />
                       </svg>
                       <div id="mini-score-val" class="mini-score-val">--</div>
                     </div>
                     <div class="score-banner-meta">
-                      <h4>Placement Alignment Score</h4>
-                      <p>Evaluated against successfully placed alumni patterns.</p>
+                      <h4>Alignment score</h4>
+                      <p>How closely the resume's evidence matches this job description. Not a hiring probability.</p>
                       <span id="provenance-tag" class="provenance-tag provenance-live">Live Session</span>
                     </div>
                   </div>
@@ -701,9 +681,6 @@
                       <i data-lucide="volume-2" style="width:15px;height:15px;color:var(--accent-cyan);"></i>
                       <span id="tts-quick-btn-label">Spoken Briefing</span>
                     </button>
-                    <div class="match-metric-icon icon-emerald" style="width:44px;height:44px;border-radius:var(--radius-md);">
-                      <i data-lucide="award" style="width:22px;height:22px;"></i>
-                    </div>
                   </div>
                 </div>
 

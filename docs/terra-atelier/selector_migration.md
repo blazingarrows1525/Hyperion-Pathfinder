@@ -39,3 +39,20 @@ which also fails if `app.js` reads an ID that no longer exists.
 | — | added | `#snapshot-status`: a truthful notice if the snapshot file cannot be loaded (no hard-coded fallback copy of the data) |
 | `.btn-use-context` "Target" | kept | Same class and data attributes, plus an `aria-label`; handled by one delegated listener → `useCompanyAsAnalyzerTarget()`, which fires the JD textarea's own `input` event |
 | `#snapshot-company-search` | kept | `filterSnapshotTable()` hides non-matching rows with the `hidden` attribute |
+
+## Analyzer workspace and results
+
+All analyzer IDs used by `app.js` are kept; the changes are structural.
+
+| Removed / changed | Status | Replacement |
+|---|---|---|
+| Input order: JD → PDF → lens | reordered | `ol.input-steps`: 1 Resume PDF, 2 Job description, 3 Review lens (optional), then run. A privacy and size note sits above the dropzone. |
+| `.analyzer-form-card.neu-card.spatial-tilt-card`, `.analyzer-results-card.neu-card.spatial-tilt-card`, `.specular-glare` | replaced | `.workspace-panel` (no tilt or glare on forms or reports; `init3DCardTilt()` now targets only small showcase cards) |
+| "Demo Mode:" checkbox in the card header | restyled | Same `#demo-mode-toggle`, inside a labelled `.demo-switch` with `#demo-mode-note`; when demo mode is on, the whole input card is outlined in ochre |
+| `label[for="persona-select-container"]` (pointed at a div) | fixed | `#persona-group-label` + `aria-labelledby` on the radiogroup |
+| `input[name="persona_option"]` (JS) vs `name="executive_persona"` (HTML) | **bug fixed** | The JS now reads `executive_persona`, so the selected lens is sent (`selected_persona_id`) and the chip shows `.active`. Before this, every analysis sent `auto`. |
+| "Direct endpoint: POST /analyze on http://127.0.0.1:8000" | removed | A hard-coded host note, wrong on any deployment |
+| Tabs "In-Doc Tailoring" / "Voice Coach" | renamed | "Resume Tailoring" / "Career Coach" (IDs unchanged) |
+| Empty state "Ready for Placement Benchmarking" + `.btn-glass-shimmer` | replaced | "Your report will appear here" + `.btn-secondary`. `enableDemoAndRun()` now loads a sample JD when the field is empty; before, the one-click demo failed validation. |
+| Score banner "Placement Alignment Score — evaluated against successfully placed alumni patterns" and the decorative award tile | replaced | "Alignment score — how closely the resume's evidence matches this job description. Not a hiring probability." |
+| Confetti on analysis completion | removed | A diagnostic report is not a celebration. `triggerConfetti()` remains for the interaction showcase button. |

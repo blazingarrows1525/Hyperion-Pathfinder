@@ -2050,7 +2050,8 @@ function init3DCardTilt() {
   const canHover = window.matchMedia('(hover: hover) and (pointer: fine)').matches;
   if (!canHover) return;
 
-  const cardSelector = '.kpi-card, .archetype-card, .company-card, .prompt-card, .btn-lab-item, .step-card, .analyzer-form-card, .report-workspace-card, .snapshot-band-card, .faq-item, .card-3d-tilt, .spatial-tilt-card, #hero-diagnostic-card';
+  // Forms, reports and long text stay still; tilt is for small showcase cards only.
+  const cardSelector = '.archetype-card, .company-card, .btn-lab-item, .card-3d-tilt, .spatial-tilt-card';
   const tiltCards = document.querySelectorAll(cardSelector);
 
   tiltCards.forEach(card => {
@@ -2467,7 +2468,7 @@ async function executeAnalysis() {
     const url = new URL(`${appState.backendBaseUrl}/analyze`);
     url.searchParams.append('job_description', jd);
 
-    const personaInput = document.querySelector('input[name="persona_option"]:checked');
+    const personaInput = document.querySelector('input[name="executive_persona"]:checked');
     const selectedPersona = personaInput ? personaInput.value : (appState.executiveReview.selectedPersonaId || 'auto');
     url.searchParams.append('selected_persona_id', selectedPersona);
 
@@ -2503,8 +2504,7 @@ async function executeAnalysis() {
     parseAndHydrateStructuredReport(appState.analyzer.streamBuffer);
     renderSafeMarkdown(appState.analyzer.streamBuffer, false);
     updateScoreRing(appState.analyzer.streamBuffer);
-    showToast('Analysis completed successfully!');
-    triggerConfetti();
+    showToast('Analysis complete.');
 
   } catch (err) {
     if (err.name === 'AbortError') {
@@ -2533,6 +2533,17 @@ function enableDemoAndRun() {
   const demoToggle = document.getElementById('demo-mode-toggle');
   if (demoToggle) demoToggle.checked = true;
   appState.analyzer.demoMode = true;
+
+  // One click must be enough: an empty JD gets the first sample role, through
+  // the textarea's own input handling so the counter and validation stay in sync.
+  const jdTextarea = document.getElementById('jd-textarea');
+  if (jdTextarea && !jdTextarea.value.trim()) {
+    const sample = companyDatabase.find(c => c.sampleJd);
+    if (sample) {
+      jdTextarea.value = sample.sampleJd;
+      jdTextarea.dispatchEvent(new Event('input', { bubbles: true }));
+    }
+  }
   checkBackendHealth();
   executeAnalysis();
 }
@@ -2569,8 +2580,7 @@ function runDemoAnalysis() {
       hydrateDemoStructuredReport();
       renderSafeMarkdown(demoText, true);
       updateScoreRing(demoText);
-      showToast('Illustrative Demo Analysis complete.');
-      triggerConfetti();
+      showToast('Illustrative demo report loaded.');
       resetAnalyzerButtons();
     }
   }, 20);
@@ -2585,7 +2595,7 @@ function resetAnalyzerButtons() {
     analyzeBtn.disabled = false;
   }
   if (btnText) {
-    btnText.textContent = 'Analyze My Placement Fit';
+    btnText.textContent = 'Analyze resume';
   }
   if (cancelBtn) {
     cancelBtn.style.display = 'none';
@@ -3770,11 +3780,16 @@ function switchResultsTab(paneId) {
 
 // --- 16.2 EXECUTIVE PERSONA CONTROLLER ---
 function initExecutivePersonaSelector() {
-  document.querySelectorAll('input[name="persona_option"]').forEach(radio => {
+  // The radios are named "executive_persona" in index.html; the chip label
+  // carries the visible selected state.
+  document.querySelectorAll('input[name="executive_persona"]').forEach(radio => {
     radio.addEventListener('change', (e) => {
       appState.executiveReview.selectedPersonaId = e.target.value;
-      const label = e.target.closest('.persona-option-card')?.querySelector('.persona-name')?.textContent || e.target.value;
-      showToast(`Selected Senior Lens: ${label}`);
+      document.querySelectorAll('.persona-chip').forEach(chip => {
+        chip.classList.toggle('active', chip.contains(e.target));
+      });
+      const label = e.target.closest('.persona-chip')?.querySelector('strong')?.textContent || e.target.value;
+      showToast(`Review lens: ${label}`);
     });
   });
 }
