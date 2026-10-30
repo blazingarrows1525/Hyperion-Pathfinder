@@ -42,6 +42,7 @@ from services.llm_provider import (
     test_llm_connection
 )
 from services.retrieval import load_vector_store
+from services.archetypes import ARCHETYPE_TAXONOMY
 import services.skills as skill_engine
 import services.scoring as score_engine
 import services.markup as markup_engine
@@ -111,6 +112,33 @@ async def serve_manifest():
     if os.path.exists(p):
         return FileResponse(p, media_type="application/json")
     raise HTTPException(status_code=404)
+
+@app.get("/api/corpus-summary")
+async def corpus_summary():
+    """Privacy-safe public summary of the alumni corpus manifest.
+
+    Counts, embedding facts and per-archetype totals keyed by cluster id. The
+    degraded-document list (which names files) is never included.
+    """
+    p = os.path.join(os.path.dirname(__file__), "data_manifest.json")
+    if not os.path.exists(p):
+        raise HTTPException(status_code=404, detail="Corpus manifest not found.")
+    with open(p, encoding="utf-8") as f:
+        manifest = json.load(f)
+    distribution = manifest.get("archetype_distribution", {})
+    return {
+        "dataset_version": manifest.get("dataset_version"),
+        "source_count": manifest.get("source_count"),
+        "valid_document_count": manifest.get("valid_document_count"),
+        "degraded_document_count": manifest.get("degraded_document_count"),
+        "embedding_model_id": manifest.get("embedding_model_id"),
+        "embedding_dimension": manifest.get("embedding_dimension"),
+        "total_indexed_vectors": manifest.get("total_indexed_vectors"),
+        "archetypes": [
+            {"cluster_id": cluster_id, "label": label, "count": distribution.get(label, 0)}
+            for cluster_id, label in ARCHETYPE_TAXONOMY.items()
+        ],
+    }
 
 @app.get("/placement_snapshot_2026.json")
 @app.get("/api/placement-snapshot")

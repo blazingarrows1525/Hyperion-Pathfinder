@@ -35,6 +35,17 @@ class TestFeatureAPIEndpoints(unittest.TestCase):
         self.assertTrue(caps["draft_recalculation_enabled"])
         self.assertTrue(caps["browser_tts_recommended"])
 
+    def test_corpus_summary_is_privacy_safe(self):
+        response = self.client.get("/api/corpus-summary")
+        self.assertEqual(response.status_code, 200)
+        data = response.json()
+        self.assertNotIn("degraded_documents", data)
+        archetypes = {a["cluster_id"]: a for a in data["archetypes"]}
+        self.assertEqual(sorted(archetypes), [0, 1, 2, 3, 4])
+        self.assertEqual(sum(a["count"] for a in archetypes.values()), data["source_count"])
+        self.assertEqual(archetypes[1]["label"], "Data Science & AI/ML")
+        self.assertEqual(data["embedding_dimension"], 384)
+
     def test_coach_chat_endpoint(self):
         payload = {
             "message": "How do I explain my Kubernetes experience to a hiring manager?",

@@ -27,7 +27,7 @@ class SpatialAudioEngine {
         if (window.lucide) window.lucide.createIcons();
       }
     }
-    if (label) label.textContent = this.enabled ? 'Sound: On' : 'Sound: Off';
+    if (label) label.textContent = this.enabled ? 'On' : 'Off';
     if (this.enabled) this.click();
     showToast(this.enabled ? 'Spatial Audio Synthesizer: Active' : 'Spatial Audio: Muted');
     return this.enabled;
@@ -82,7 +82,6 @@ function initSpatialAudioController() {
   }
 }
 
-// Full-Page Ambient Spatial Canvas with Cosmic Dust Parallax
 // ==============================================================================
 // THEME PALETTE — the single colour source for canvases, charts and Three.js.
 // Reads the active theme's CSS tokens, so a theme switch only needs a re-read.
@@ -114,78 +113,6 @@ function getThemePalette() {
   palette.archetypes = [0, 1, 2, 3, 4].map(id => read(`--arch-${id}-color`) || palette.forest);
   palette.isDark = document.documentElement.getAttribute('data-theme') === 'grove';
   return palette;
-}
-
-function initAmbientSpatialCanvas() {
-  const canvas = document.getElementById('ambient-spatial-canvas');
-  if (!canvas) return;
-  const ctx = canvas.getContext('2d');
-  if (!ctx) return;
-
-  let width = (canvas.width = window.innerWidth);
-  let height = (canvas.height = window.innerHeight);
-
-  window.addEventListener('resize', () => {
-    width = canvas.width = window.innerWidth;
-    height = canvas.height = window.innerHeight;
-  }, { passive: true });
-
-  const particleCount = 65;
-  const stars = [];
-  const colors = getThemePalette().archetypes;
-
-  for (let i = 0; i < particleCount; i++) {
-    stars.push({
-      x: Math.random() * width,
-      y: Math.random() * height,
-      z: Math.random() * 0.8 + 0.2,
-      r: Math.random() * 1.8 + 0.6,
-      vx: (Math.random() - 0.5) * 0.25,
-      vy: (Math.random() - 0.5) * 0.25,
-      alpha: Math.random() * 0.6 + 0.2,
-      color: colors[Math.floor(Math.random() * colors.length)]
-    });
-  }
-
-  let mouseShiftX = 0;
-  let mouseShiftY = 0;
-
-  window.addEventListener('mousemove', (e) => {
-    mouseShiftX = (e.clientX / width - 0.5) * 35;
-    mouseShiftY = (e.clientY / height - 0.5) * 35;
-  }, { passive: true });
-
-  function renderAmbient() {
-    if (appState.motionMode === 'reduced') {
-      ctx.clearRect(0, 0, width, height);
-      return;
-    }
-    ctx.clearRect(0, 0, width, height);
-    const scrollY = window.scrollY || 0;
-
-    for (let i = 0; i < stars.length; i++) {
-      const s = stars[i];
-      s.x += s.vx;
-      s.y += s.vy;
-
-      if (s.x < 0) s.x = width;
-      if (s.x > width) s.x = 0;
-      if (s.y < 0) s.y = height;
-      if (s.y > height) s.y = 0;
-
-      const px = s.x + mouseShiftX * s.z;
-      const py = ((s.y - scrollY * s.z * 0.12) % height + height) % height;
-
-      ctx.beginPath();
-      ctx.arc(px, py, s.r * s.z, 0, Math.PI * 2);
-      ctx.fillStyle = s.color;
-      ctx.globalAlpha = s.alpha * s.z;
-      ctx.fill();
-    }
-    ctx.globalAlpha = 1.0;
-    requestAnimationFrame(renderAmbient);
-  }
-  requestAnimationFrame(renderAmbient);
 }
 
 /**
@@ -237,8 +164,8 @@ const appState = {
   // snapshot section and the company directory once loaded.
   placementSnapshot: null,
 
-  // data_manifest.json: source of truth for the alumni corpus cluster sizes.
-  dataManifest: null,
+  // GET /api/corpus-summary: alumni corpus counts per archetype (no names or files).
+  corpusSummary: null,
 
   // Prompt Studio State (All 18 Frameworks)
   promptStudio: {
@@ -2284,7 +2211,7 @@ async function checkBackendHealth() {
 
   if (appState.analyzer.demoMode) {
     badge.className = 'engine-status-badge status-demo';
-    label.textContent = 'Demo Mode (Offline)';
+    label.textContent = 'Demo mode';
     return;
   }
 
@@ -2302,31 +2229,14 @@ async function checkBackendHealth() {
       const data = await response.json();
       appState.apiStatus = 'connected';
       badge.className = 'engine-status-badge status-connected';
-      label.textContent = 'API Connected (FastAPI)';
-      updateHudFromHealth(data);
+      label.textContent = 'API connected';
     } else {
       throw new Error(`HTTP ${response.status}`);
     }
   } catch (err) {
     appState.apiStatus = 'offline';
     badge.className = 'engine-status-badge status-offline';
-    label.textContent = 'API Offline (Demo Available)';
-    updateHudFromHealth(null);
-  }
-}
-
-// The maximalist HUD shows only values reported by GET /health; without a
-// live response it shows a dash rather than a plausible-looking number.
-function updateHudFromHealth(health) {
-  const faissVal = document.getElementById('hud-faiss-val');
-  const vectorVal = document.getElementById('hud-vector-val');
-  if (faissVal) {
-    faissVal.textContent = !health ? '—' : (health.faiss_ready ? 'READY' : 'NOT READY');
-  }
-  if (vectorVal) {
-    vectorVal.textContent = health && typeof health.vector_count === 'number'
-      ? `${health.vector_count} RECORDS`
-      : '—';
+    label.textContent = 'API offline · demo available';
   }
 }
 
@@ -2812,25 +2722,34 @@ function updateScoreRingFromNumber(score) {
 // ==============================================================================
 // 10. CAREER GENOME & CROSS-ARCHETYPE COMPARISON
 // ==============================================================================
-// archetypesDatabase ids are the K-Means cluster ids; these are the matching
-// keys of data_manifest.json's archetype_distribution. The corpus holds resumes
-// only, so there is no per-archetype salary or placement-rate data to show.
-const ARCHETYPE_MANIFEST_KEYS = {
-  0: 'Core Engineering & Business',
-  1: 'Data Science & AI/ML',
-  2: 'General CS & Software Development',
-  3: 'Full-Stack Web Development',
-  4: 'Core Engineering (Mechanical/Civil)'
-};
+// archetypesDatabase ids are the K-Means cluster ids, matching cluster_id in
+// GET /api/corpus-summary. The corpus holds resumes only, so there is no
+// per-archetype salary or placement-rate data to show.
+let corpusSummaryPromise = null;
+
+// Privacy-safe corpus facts: counts, dimensions and labels only — the full
+// manifest (which lists degraded files by name) is never fetched client-side.
+function loadCorpusSummary() {
+  if (!corpusSummaryPromise) {
+    corpusSummaryPromise = fetch('/api/corpus-summary')
+      .then(res => (res.ok ? res.json() : null))
+      .then(summary => {
+        if (summary) appState.corpusSummary = summary;
+        return summary;
+      })
+      .catch(() => null);
+  }
+  return corpusSummaryPromise;
+}
 
 function getArchetypeCorpusCount(arch) {
-  const m = appState.dataManifest;
-  const count = m && m.archetype_distribution
-    ? m.archetype_distribution[ARCHETYPE_MANIFEST_KEYS[arch.id]]
-    : undefined;
-  if (typeof count !== 'number') return null;
-  const total = m.source_count;
-  return { count, total, pct: total ? ((count / total) * 100).toFixed(1) : null };
+  const summary = appState.corpusSummary;
+  const entry = summary && Array.isArray(summary.archetypes)
+    ? summary.archetypes.find(a => a.cluster_id === arch.id)
+    : null;
+  if (!entry || typeof entry.count !== 'number') return null;
+  const total = summary.source_count;
+  return { count: entry.count, total, pct: total ? ((entry.count / total) * 100).toFixed(1) : null };
 }
 
 function formatCorpusCount(arch, long) {
@@ -2839,24 +2758,15 @@ function formatCorpusCount(arch, long) {
   return long ? `${c.count} of ${c.total} records (${c.pct}%)` : `${c.count} corpus records`;
 }
 
-let dataManifestRequested = false;
-
 function initCareerGenome() {
   const selectorContainer = document.getElementById('archetypes-selector-grid');
   if (!selectorContainer) return;
 
   // Fetch once; re-render when the cluster sizes arrive.
-  if (!dataManifestRequested) {
-    dataManifestRequested = true;
-    fetch('/data_manifest.json')
-      .then(res => (res.ok ? res.json() : null))
-      .then(manifest => {
-        if (manifest) {
-          appState.dataManifest = manifest;
-          initCareerGenome();
-        }
-      })
-      .catch(() => {});
+  if (!appState.corpusSummary) {
+    loadCorpusSummary().then(summary => {
+      if (summary) initCareerGenome();
+    });
   }
 
   selectorContainer.innerHTML = archetypesDatabase.map(arch => `
@@ -2875,6 +2785,7 @@ function initCareerGenome() {
 
 function selectArchetype(id) {
   appState.genome.selectedArchetypeId = id;
+  if (typeof renderAtlasLegend === 'function') renderAtlasLegend();
   document.querySelectorAll('.archetype-chip-card').forEach(card => {
     const cardId = parseInt(card.getAttribute('data-arch-id'), 10);
     card.classList.toggle('active', cardId === id);
@@ -3771,7 +3682,8 @@ function initAccessibilityAndMotion() {
     motionBtn.addEventListener('click', () => {
       appState.motionMode = appState.motionMode === 'full' ? 'reduced' : 'full';
       document.body.setAttribute('data-motion', appState.motionMode);
-      motionLabel.textContent = appState.motionMode === 'full' ? 'Motion: Full' : 'Motion: Reduced';
+      motionLabel.textContent = appState.motionMode === 'full' ? 'Full' : 'Reduced';
+      motionBtn.setAttribute('aria-pressed', String(appState.motionMode === 'reduced'));
 
       if (appState.motionMode === 'reduced') {
         cleanup3DScene();
@@ -5125,15 +5037,15 @@ function setDesignheadMode(mode, triggerToast = true) {
   if (mode === 'minimalist') {
     document.body.classList.remove('designhead-maximalist');
     document.body.classList.add('designhead-minimalist');
-    if (btnMin) btnMin.classList.add('active');
-    if (btnMax) btnMax.classList.remove('active');
-    if (triggerToast) showToast('Designhead: Minimalist Zen Mode Activated', 'info');
+    if (btnMin) { btnMin.classList.add('active'); btnMin.setAttribute('aria-checked', 'true'); }
+    if (btnMax) { btnMax.classList.remove('active'); btnMax.setAttribute('aria-checked', 'false'); }
+    if (triggerToast) showToast('3D detail: Low', 'info');
   } else {
     document.body.classList.remove('designhead-minimalist');
     document.body.classList.add('designhead-maximalist');
-    if (btnMax) btnMax.classList.add('active');
-    if (btnMin) btnMin.classList.remove('active');
-    if (triggerToast) showToast('Designhead: Maximalist Cyberpunk Mode Activated', 'success');
+    if (btnMax) { btnMax.classList.add('active'); btnMax.setAttribute('aria-checked', 'true'); }
+    if (btnMin) { btnMin.classList.remove('active'); btnMin.setAttribute('aria-checked', 'false'); }
+    if (triggerToast) showToast('3D detail: High', 'info');
   }
 
   localStorage.setItem('resume_checker_mode', mode);
@@ -5218,7 +5130,6 @@ async function refreshLLMProvidersList() {
 
     // Update active badges
     const navLabel = document.getElementById('nav-active-llm-label');
-    const hudVal = document.getElementById('hud-llm-engine-val');
     const activeName = document.getElementById('llm-active-name');
     const activeModel = document.getElementById('llm-active-model-tag');
 
@@ -5226,8 +5137,7 @@ async function refreshLLMProvidersList() {
     // model; say so instead of showing a model name. Detect it by its stable
     // model id rather than by a display string.
     const isLocalEngine = data.active_model === 'deterministic-fallback';
-    if (navLabel) navLabel.textContent = isLocalEngine ? 'LLM: Off (local engine)' : `LLM: ${data.active_provider}`;
-    if (hudVal) hudVal.textContent = isLocalEngine ? 'LOCAL · NO LLM' : (data.active_model || '—').toUpperCase();
+    if (navLabel) navLabel.textContent = isLocalEngine ? 'Local engine (no LLM)' : data.active_provider;
     if (activeName) activeName.textContent = data.active_provider;
     if (activeModel) activeModel.textContent = data.active_model;
 
@@ -5396,6 +5306,7 @@ function initPlacementSnapshot() {
 
       appState.placementSnapshot = data;
       renderCompanyDirectory(); // swap the directory's dashes for report figures
+      renderEvidenceStrip();
 
       const totalOffersEl = document.getElementById('kpi-total-offers');
       if (totalOffersEl && data.total_offers) totalOffersEl.textContent = Number(data.total_offers).toLocaleString();
@@ -5448,11 +5359,176 @@ function initPlacementSnapshot() {
 
 // 16. INITIALIZE ON DOM READY
 // ==============================================================================
+// ==============================================================================
+// MASTHEAD, CAREER ATLAS LEGEND & EVIDENCE STRIP
+// ==============================================================================
+
+// A small disclosure (button + panel) that closes on Escape or an outside click
+// and returns focus to its trigger.
+function initDisclosure(triggerId, panelId, { useHidden = false, onToggle } = {}) {
+  const trigger = document.getElementById(triggerId);
+  const panel = document.getElementById(panelId);
+  if (!trigger || !panel) return null;
+
+  const isOpen = () => trigger.getAttribute('aria-expanded') === 'true';
+  const setOpen = (open, { restoreFocus = false } = {}) => {
+    trigger.setAttribute('aria-expanded', String(open));
+    if (useHidden) panel.hidden = !open;
+    else panel.classList.toggle('open', open);
+    if (onToggle) onToggle(open);
+    if (!open && restoreFocus) trigger.focus();
+  };
+
+  trigger.addEventListener('click', (e) => {
+    e.stopPropagation();
+    setOpen(!isOpen());
+  });
+  document.addEventListener('click', (e) => {
+    if (isOpen() && !panel.contains(e.target) && !trigger.contains(e.target)) setOpen(false);
+  });
+  document.addEventListener('keydown', (e) => {
+    if (e.key === 'Escape' && isOpen()) setOpen(false, { restoreFocus: true });
+  });
+  return { setOpen, isOpen };
+}
+
+function initMasthead() {
+  initDisclosure('btn-prefs', 'prefs-panel', { useHidden: true });
+  const more = initDisclosure('btn-nav-more', 'nav-more-menu');
+
+  // The mobile drawer reuses #nav-links-menu; close it after navigating.
+  const navLinks = document.getElementById('nav-links-menu');
+  const mobileBtn = document.getElementById('btn-mobile-menu');
+  const closeDrawer = () => {
+    if (navLinks) navLinks.classList.remove('mobile-open');
+    if (mobileBtn) {
+      mobileBtn.setAttribute('aria-expanded', 'false');
+      mobileBtn.setAttribute('aria-label', 'Open navigation menu');
+    }
+    if (more) more.setOpen(false);
+  };
+  if (navLinks) {
+    navLinks.querySelectorAll('a').forEach(link => link.addEventListener('click', closeDrawer));
+  }
+  if (mobileBtn) {
+    mobileBtn.addEventListener('click', () => {
+      const open = mobileBtn.getAttribute('aria-expanded') === 'true';
+      mobileBtn.setAttribute('aria-label', open ? 'Close navigation menu' : 'Open navigation menu');
+    });
+  }
+  document.addEventListener('keydown', (e) => {
+    if (e.key === 'Escape' && navLinks && navLinks.classList.contains('mobile-open')) {
+      closeDrawer();
+      if (mobileBtn) mobileBtn.focus();
+    }
+  });
+
+  initSectionScrollSpy();
+}
+
+// Marks the nav link of the section currently in view (aria-current + .active).
+function initSectionScrollSpy() {
+  if (typeof IntersectionObserver === 'undefined') return;
+  const links = Array.from(document.querySelectorAll('#nav-links-menu a.nav-link-btn[href^="#"]'));
+  const byId = new Map(links.map(link => [link.getAttribute('href').slice(1), link]));
+  const sections = Array.from(byId.keys()).map(id => document.getElementById(id)).filter(Boolean);
+
+  const observer = new IntersectionObserver((entries) => {
+    entries.forEach(entry => {
+      if (!entry.isIntersecting) return;
+      links.forEach(link => {
+        link.classList.remove('active');
+        link.removeAttribute('aria-current');
+      });
+      const link = byId.get(entry.target.id);
+      if (link) {
+        link.classList.add('active');
+        link.setAttribute('aria-current', 'true');
+      }
+    });
+  }, { rootMargin: '-45% 0px -50% 0px' });
+  sections.forEach(section => observer.observe(section));
+}
+
+// Legend of the five archetypes beside the 3D stage. Labels and counts come
+// from GET /api/corpus-summary, keyed by cluster id.
+function renderAtlasLegend() {
+  const summary = appState.corpusSummary;
+  if (summary && Array.isArray(summary.archetypes)) {
+    summary.archetypes.forEach(entry => {
+      const item = document.querySelector(`.atlas-legend-item[data-archetype-id="${entry.cluster_id}"]`);
+      if (!item) return;
+      const name = item.querySelector('.legend-name');
+      const count = item.querySelector('.legend-count');
+      if (name && entry.label) name.textContent = entry.label;
+      if (count) {
+        count.textContent = String(entry.count);
+        count.setAttribute('aria-label', `${entry.count} records`);
+      }
+    });
+  }
+  document.querySelectorAll('.atlas-legend-item').forEach(item => {
+    const id = parseInt(item.getAttribute('data-archetype-id'), 10);
+    item.classList.toggle('is-selected', id === appState.genome.selectedArchetypeId);
+  });
+}
+
+function initAtlasLegend() {
+  document.querySelectorAll('.atlas-legend-item').forEach(item => {
+    item.addEventListener('click', () => {
+      const id = parseInt(item.getAttribute('data-archetype-id'), 10);
+      if (!Number.isNaN(id) && typeof selectArchetype === 'function') selectArchetype(id);
+      renderAtlasLegend();
+    });
+  });
+  renderAtlasLegend();
+  loadCorpusSummary().then(() => {
+    renderAtlasLegend();
+    renderEvidenceStrip();
+  });
+}
+
+function formatSnapshotDate(isoDate) {
+  const date = new Date(`${isoDate}T00:00:00`);
+  if (Number.isNaN(date.getTime())) return isoDate;
+  return date.toLocaleDateString('en-GB', { day: 'numeric', month: 'long', year: 'numeric' });
+}
+
+// Fills [data-evidence] slots from the two sources, which stay separate:
+// the alumni corpus summary (panel A) and the 2026 placement snapshot (panel B).
+function renderEvidenceStrip() {
+  const values = {};
+  const corpus = appState.corpusSummary;
+  if (corpus) {
+    values.source_count = corpus.source_count;
+    values.archetype_count = Array.isArray(corpus.archetypes) ? corpus.archetypes.length : undefined;
+    values.embedding_dimension = corpus.embedding_dimension;
+    values.valid_document_count = corpus.valid_document_count;
+    values.degraded_document_count = corpus.degraded_document_count;
+    if (corpus.dataset_version) values.dataset_version = `v${corpus.dataset_version}`;
+  }
+  const snap = appState.placementSnapshot;
+  if (snap) {
+    if (typeof snap.total_offers === 'number') values.total_offers = snap.total_offers.toLocaleString('en-IN');
+    values.unique_employers = snap.unique_employers;
+    values.job_profiles = snap.job_profiles;
+    if (typeof snap.average_ctc_lpa === 'number') values.average_ctc_lpa = `₹${snap.average_ctc_lpa}`;
+    if (typeof snap.median_ctc_lpa === 'number') values.median_ctc_lpa = `₹${snap.median_ctc_lpa}`;
+    values.source_name = snap.source_name;
+    if (snap.source_snapshot_date) values.source_snapshot_date = formatSnapshotDate(snap.source_snapshot_date);
+  }
+  document.querySelectorAll('[data-evidence]').forEach(el => {
+    const value = values[el.getAttribute('data-evidence')];
+    if (value !== undefined && value !== null && value !== '') el.textContent = String(value);
+  });
+}
+
 document.addEventListener('DOMContentLoaded', () => {
   if (window.lucide) window.lucide.createIcons();
 
   // 1. Accessibility, Motion & Theme Setup
   initAccessibilityAndMotion();
+  initMasthead();
   initThemeSwitcher();
   initDesignheadController();
 
@@ -5476,6 +5552,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
   // 6. Career Genome & Archetypes
   initCareerGenome();
+  initAtlasLegend();
 
   // 7. Company Intelligence Directory
   initCompanyIntelligence();
@@ -5496,13 +5573,6 @@ document.addEventListener('DOMContentLoaded', () => {
   initSpeechSynthesisController();
   initCareerCoachController();
 
-  // Hero Live Card Progress ring initial draw
-  setTimeout(() => {
-    const heroRing = document.getElementById('hero-gauge-ring');
-    if (heroRing) {
-      heroRing.style.strokeDashoffset = '75';
-    }
-  }, 600);
 });
 
 // Explicit Global Window Exports for Inline & External Triggers

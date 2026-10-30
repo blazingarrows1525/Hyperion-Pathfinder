@@ -179,7 +179,8 @@ try {
       for (const id of SECTIONS) {
         const found = await evaluate(`(() => { const el = document.getElementById(${JSON.stringify(id)}); if (!el) return false;
           document.documentElement.style.scrollBehavior = 'auto';
-          window.scrollTo(0, el.getBoundingClientRect().top + window.scrollY - (${JSON.stringify(id)} === 'hero' ? window.scrollY : 0)); return true; })()`);
+          if (${JSON.stringify(id)} === 'hero') window.scrollTo(0, 0); else el.scrollIntoView({ block: 'start' });
+          return true; })()`);
         if (!found) { entry.shots.push(`${id}: missing`); continue; }
         await sleep(900);
         const shot = await send('Page.captureScreenshot', { format: 'jpeg', quality: 72 });

@@ -40,98 +40,101 @@
   <!-- Accessible Skip Link -->
   <a href="#analyzer" class="skip-link">Skip to Resume Analyzer</a>
 
-  <!-- 3D WebGL Canvas Layer -->
-  <div id="canvas-3d-container" aria-hidden="true"></div>
-
-  <!-- Ambient Light Orbs -->
-  <div class="aurora-blur aurora-1" aria-hidden="true"></div>
-  <div class="aurora-blur aurora-2" aria-hidden="true"></div>
-  <div class="aurora-blur aurora-3" aria-hidden="true"></div>
-
-  <!-- Ambient Spatial Canvas for Full-Page 3D Depth -->
-  <canvas id="ambient-spatial-canvas" class="ambient-spatial-canvas" aria-hidden="true"></canvas>
-
   <!-- Main Application Wrapper -->
   <div class="app-wrapper">
 
-    <!-- Top Sticky Glassmorphic Navigation -->
-    <header class="top-nav" role="banner">
-      <a href="#hero" class="nav-brand" aria-label="Resume Checker Home">
-        <div class="brand-icon-box">
-          <i data-lucide="sparkles" style="color:var(--color-on-accent);width:22px;height:22px;"></i>
-        </div>
-        <div>
-          <span class="brand-name">Resume Checker</span>
-          <div class="brand-tag">Placement Intelligence System</div>
-        </div>
-      </a>
-
-      <nav role="navigation" aria-label="Main Navigation">
-        <ul id="nav-links-menu" class="nav-links">
-          <li><a href="#hero" class="nav-link-btn active"><i data-lucide="sparkles" style="width:15px;height:15px;"></i> Home</a></li>
-          <li><a href="#how-it-works" class="nav-link-btn"><i data-lucide="git-merge" style="width:15px;height:15px;"></i> How It Works</a></li>
-          <li><a href="#placement-snapshot" class="nav-link-btn"><i data-lucide="bar-chart-3" style="width:15px;height:15px;"></i> Placement 2026</a></li>
-          <li><a href="#analyzer" class="nav-link-btn"><i data-lucide="file-check-2" style="width:15px;height:15px;"></i> Analyzer</a></li>
-          <li><a href="#genome" class="nav-link-btn"><i data-lucide="network" style="width:15px;height:15px;"></i> Career Genome</a></li>
-          <li><a href="#company-intel" class="nav-link-btn"><i data-lucide="building-2" style="width:15px;height:15px;"></i> Company Intel</a></li>
-          <li><a href="#prompt-studio" class="nav-link-btn"><i data-lucide="terminal" style="width:15px;height:15px;"></i> Prompt Studio</a></li>
-          <li><a href="#buttons-lab" class="nav-link-btn"><i data-lucide="mouse-pointer-click" style="width:15px;height:15px;"></i> Button Lab</a></li>
-          <li><a href="#faq" class="nav-link-btn"><i data-lucide="help-circle" style="width:15px;height:15px;"></i> FAQ</a></li>
-        </ul>
-      </nav>
-
-      <div class="nav-actions">
-        <!-- Truthful Backend API Status Badge -->
-        <div id="engine-status-badge" class="engine-status-badge status-offline" role="status" aria-live="polite">
-          <span class="status-dot"></span>
-          <span id="status-label-text">Checking API...</span>
-        </div>
-
-        <!-- Designhead Aesthetic Mode Controller (Minimalist Zen vs Maximalist Cyber) -->
-        <div class="designhead-controller" role="radiogroup" aria-label="Aesthetic Designhead Mode">
-          <button type="button" id="btn-designhead-minimalist" class="designhead-btn" data-mode="minimalist" title="Switch to Minimalist Zen Mode">
-            <i data-lucide="feather" style="width:13px;height:13px;"></i>
-            <span>Minimalist</span>
-          </button>
-          <button type="button" id="btn-designhead-maximalist" class="designhead-btn active" data-mode="maximalist" title="Switch to Maximalist Cyberpunk Mode">
-            <i data-lucide="zap" style="width:13px;height:13px;"></i>
-            <span>Maximalist</span>
-          </button>
-        </div>
-
-        <!-- LLM Service & Model Control Hub Button -->
-        <button type="button" id="btn-llm-control-hub" class="btn-llm-hub" title="Configure LLM Service Providers & Model Engine" aria-label="Open LLM Control Hub">
-          <i data-lucide="cpu" style="width:14px;height:14px;color:var(--accent-cyan);"></i>
-          <span id="nav-active-llm-label">LLM: Checking…</span>
-        </button>
-
-        <!-- Theme toggle: Terra Atelier (light) <-> Midnight Grove (dark) -->
-        <button type="button" id="btn-theme-toggle" class="btn-theme-toggle" title="Switch between Terra Atelier and Midnight Grove" aria-label="Switch to Midnight Grove theme" aria-pressed="false">
-          <i data-lucide="palette" style="width:14px;height:14px;"></i>
-          <span id="theme-mode-label">Terra Atelier</span>
-        </button>
-
-        <!-- Motion Preference Toggle -->
-        <!-- Spatial Audio Synthesizer Toggle -->
-        <button type="button" id="btn-sound-toggle" class="btn-sound-toggle" title="Toggle Spatial UI Synthesizer Audio" aria-label="Toggle UI synthesizer sound" aria-pressed="false">
-          <i data-lucide="volume-x" style="width:14px;height:14px;"></i>
-          <span id="sound-toggle-label">Sound: Off</span>
-        </button>
-
-        <button type="button" id="btn-motion-toggle" class="btn-motion-toggle" title="Toggle Full / Reduced Motion" aria-label="Toggle motion mode">
-          <i data-lucide="orbit" style="width:14px;height:14px;"></i>
-          <span id="motion-mode-label">Motion: Full</span>
-        </button>
-
-        <!-- Primary Header CTA -->
-        <a href="#analyzer" class="btn-magnetic-glow" style="padding:10px 18px;font-size:0.88rem;">
-          <i data-lucide="zap" style="width:15px;height:15px;"></i> Analyze Resume
+    <!-- Masthead: wordmark, primary sections, truthful status, one preferences entry, one CTA -->
+    <header class="masthead" role="banner">
+      <div class="masthead-inner">
+        <a href="#hero" class="wordmark" aria-label="Resume Checker, back to top">
+          <span class="wordmark-mark" aria-hidden="true">
+            <i data-lucide="compass" style="width:19px;height:19px;"></i>
+          </span>
+          <span class="wordmark-text">
+            <span class="brand-name">Resume Checker</span>
+            <span class="brand-tag">Placement Intelligence</span>
+          </span>
         </a>
 
-        <!-- Mobile Menu Toggle -->
-        <button type="button" id="btn-mobile-menu" class="btn-mobile-menu" aria-label="Open mobile menu" aria-expanded="false">
-          <i data-lucide="menu" style="width:20px;height:20px;"></i>
-        </button>
+        <nav class="masthead-nav" aria-label="Main navigation">
+          <ul id="nav-links-menu" class="nav-links">
+            <li><a href="#placement-snapshot" class="nav-link-btn">Snapshot</a></li>
+            <li><a href="#analyzer" class="nav-link-btn">Analyzer</a></li>
+            <li><a href="#genome" class="nav-link-btn">Genome</a></li>
+            <li><a href="#company-intel" class="nav-link-btn">Companies</a></li>
+            <li><a href="#prompt-studio" class="nav-link-btn">Prompt Studio</a></li>
+            <li class="nav-more">
+              <button type="button" id="btn-nav-more" class="nav-link-btn nav-more-btn" aria-expanded="false" aria-controls="nav-more-menu">
+                More <i data-lucide="chevron-down" style="width:14px;height:14px;"></i>
+              </button>
+              <ul id="nav-more-menu" class="nav-more-menu">
+                <li><a href="#how-it-works" class="nav-link-btn">How it works</a></li>
+                <li><a href="#faq" class="nav-link-btn">Methodology &amp; FAQ</a></li>
+                <li><a href="#buttons-lab" class="nav-link-btn">Interaction showcase</a></li>
+              </ul>
+            </li>
+          </ul>
+        </nav>
+
+        <div class="nav-actions">
+          <!-- Truthful backend status (GET /health) -->
+          <div id="engine-status-badge" class="engine-status-badge status-offline" role="status" aria-live="polite">
+            <span class="status-dot" aria-hidden="true"></span>
+            <span id="status-label-text">Checking API…</span>
+          </div>
+
+          <!-- One entry point for appearance and interaction preferences -->
+          <div class="prefs-anchor">
+            <button type="button" id="btn-prefs" class="btn-prefs" aria-expanded="false" aria-controls="prefs-panel" title="Appearance and interaction preferences">
+              <i data-lucide="sliders-horizontal" style="width:16px;height:16px;"></i>
+              <span class="btn-prefs-label">Preferences</span>
+            </button>
+            <div id="prefs-panel" class="prefs-panel" role="group" aria-labelledby="prefs-panel-title" hidden>
+              <p id="prefs-panel-title" class="prefs-title">Appearance &amp; interaction</p>
+              <div class="prefs-row">
+                <span class="prefs-label">Theme</span>
+                <button type="button" id="btn-theme-toggle" class="pref-toggle" title="Switch between Terra Atelier and Midnight Grove" aria-label="Switch to Midnight Grove theme" aria-pressed="false">
+                  <i data-lucide="palette" style="width:15px;height:15px;"></i>
+                  <span id="theme-mode-label">Terra Atelier</span>
+                </button>
+              </div>
+              <div class="prefs-row">
+                <span class="prefs-label">Motion</span>
+                <button type="button" id="btn-motion-toggle" class="pref-toggle" title="Switch between full and reduced motion" aria-label="Toggle reduced motion">
+                  <i data-lucide="orbit" style="width:15px;height:15px;"></i>
+                  <span id="motion-mode-label">Full</span>
+                </button>
+              </div>
+              <div class="prefs-row">
+                <span class="prefs-label">Sound</span>
+                <button type="button" id="btn-sound-toggle" class="pref-toggle" title="Interface sounds are off until you turn them on" aria-label="Toggle interface sound" aria-pressed="false">
+                  <i data-lucide="volume-x" style="width:15px;height:15px;"></i>
+                  <span id="sound-toggle-label">Off</span>
+                </button>
+              </div>
+              <div class="prefs-row">
+                <span class="prefs-label" id="prefs-detail-label">3D detail</span>
+                <div class="designhead-controller" role="radiogroup" aria-labelledby="prefs-detail-label">
+                  <button type="button" id="btn-designhead-minimalist" class="designhead-btn" data-mode="minimalist" role="radio" aria-checked="false">Low</button>
+                  <button type="button" id="btn-designhead-maximalist" class="designhead-btn active" data-mode="maximalist" role="radio" aria-checked="true">High</button>
+                </div>
+              </div>
+              <div class="prefs-row">
+                <span class="prefs-label">Engine</span>
+                <button type="button" id="btn-llm-control-hub" class="pref-toggle" title="Show which analysis engine is active" aria-label="Open engine status">
+                  <i data-lucide="cpu" style="width:15px;height:15px;"></i>
+                  <span id="nav-active-llm-label">Checking…</span>
+                </button>
+              </div>
+            </div>
+          </div>
+
+          <a href="#analyzer" class="btn-primary masthead-cta">Analyze a resume</a>
+
+          <button type="button" id="btn-mobile-menu" class="btn-mobile-menu" aria-label="Open navigation menu" aria-expanded="false" aria-controls="nav-links-menu">
+            <i data-lucide="menu" style="width:20px;height:20px;"></i>
+          </button>
+        </div>
       </div>
     </header>
 
@@ -140,418 +143,186 @@
       <!-- =======================================================================
            SECTION 1: HERO & PRODUCT STATEMENT
            ======================================================================= -->
-      <section id="hero" class="hero-section" aria-labelledby="hero-title-id">
+      <section id="hero" class="atlas-hero" aria-labelledby="hero-title-id">
         <div class="container">
-          <div class="hero-grid">
-            
-            <!-- Left: Headline, Value Proposition & Actions -->
-            <div class="hero-content">
-              <div class="hero-badge-pill">
-                <i data-lucide="compass" style="width:16px;height:16px;"></i>
-                <span>Institutional Placement Intelligence</span>
-              </div>
-
-              <h1 id="hero-title-id" class="hero-title">
-                Turn your resume into a <span class="gradient-text">placement strategy</span>.
-              </h1>
-
+          <div class="atlas-hero-copy">
+            <p class="overline">Career intelligence <span aria-hidden="true">/</span> Resume evidence <span aria-hidden="true">/</span> Placement snapshot</p>
+            <h1 id="hero-title-id" class="hero-title">
+              Check your resume against the role you want, and see <span class="gradient-text">where the evidence falls short.</span>
+            </h1>
+            <div class="atlas-hero-lede">
               <p class="hero-subtitle">
-                Compare your resume directly against target job descriptions and, when configured, benchmark against patterns from <strong>a verified corpus of 226 alumni resume records</strong> across five career archetypes. Get actionable diagnostic feedback — the score measures textual alignment, not hiring probability.
+                Upload a resume PDF and paste a job description. Resume Checker compares the two, explains the score component by component and marks the lines worth rewriting. For reference it draws on an indexed corpus of alumni resumes grouped into five career archetypes.
               </p>
-
-              <div class="hero-cta-group">
-                <a href="#analyzer" class="btn-magnetic-glow">
-                  <i data-lucide="sparkles" style="width:18px;height:18px;"></i>
-                  <span>Analyze Resume</span>
-                </a>
-
-                <a href="#placement-snapshot" class="btn-glass-shimmer">
-                  <i data-lucide="bar-chart-3" style="width:18px;height:18px;"></i>
-                  <span>Explore Placement Snapshot</span>
-                </a>
-              </div>
-
-              <!-- Context / Trust Capabilities Strip -->
-              <div class="trust-strip">
-                <div class="trust-item">
-                  <i data-lucide="file-text"></i>
-                  <span>In-Memory PDF Parsing</span>
-                </div>
-                <div class="trust-item">
-                  <i data-lucide="database"></i>
-                  <span>FAISS Vector Search</span>
-                </div>
-                <div class="trust-item">
-                  <i data-lucide="layers"></i>
-                  <span>LangGraph Pipeline</span>
-                </div>
-                <div class="trust-item">
-                  <i data-lucide="shield-check"></i>
-                  <span>Zero Persistent Resume Storage</span>
-                </div>
-              </div>
+              <p class="hero-disclaimer">
+                <i data-lucide="info" style="width:16px;height:16px;"></i>
+                <span>The score measures textual alignment with the job description. It is not a hiring probability.</span>
+              </p>
             </div>
-
-            <!-- Right: 3D Holographic Spatial Stage with WebGL Canvas & Diagnostic Card -->
-            <div class="hero-3d-visual" id="hero-3d-stage">
-              
-              <!-- WebGL Interactive 3D Canvas Stage -->
-              <div class="spatial-canvas-wrapper" id="spatial-canvas-wrapper">
-                <canvas id="spatial-hero-canvas" class="spatial-hero-canvas" aria-label="3D Career Constellation and Skill Genome Canvas"></canvas>
-                
-                <!-- 3D Raycasting Hover Tooltip -->
-                <div id="canvas-3d-tooltip" class="canvas-3d-tooltip" style="display:none;" role="tooltip">
-                  <div class="tooltip-header">
-                    <span class="tooltip-dot"></span>
-                    <strong id="tooltip-node-title">—</strong>
-                  </div>
-                  <div class="tooltip-body">
-                    <span class="tooltip-sub">Illustrative skill map — not a measured match, placement tier or recruiter list.</span>
-                  </div>
-                </div>
-
-                <!-- 3D Visualizer Mode Controller Bar -->
-                <div class="spatial-3d-controls-bar" role="toolbar" aria-label="3D Visualizer Modes">
-                  <button type="button" class="btn-3d-mode active" data-mode="constellation" title="Quantum Constellation & Neural Web">
-                    <i data-lucide="network" style="width:13px;height:13px;"></i>
-                    <span>Constellation</span>
-                  </button>
-                  <button type="button" class="btn-3d-mode" data-mode="globe" title="3D Skill Hologram Globe">
-                    <i data-lucide="globe" style="width:13px;height:13px;"></i>
-                    <span>Skill Globe</span>
-                  </button>
-                  <button type="button" class="btn-3d-mode" data-mode="radar" title="3D Placement Sonar Radar">
-                    <i data-lucide="radar" style="width:13px;height:13px;"></i>
-                    <span>Sonar Radar</span>
-                  </button>
-                  <button type="button" class="btn-3d-mode" data-mode="warp" title="Hyper-Warp Speed Starfield">
-                    <i data-lucide="zap" style="width:13px;height:13px;"></i>
-                    <span>Hyper-Warp</span>
-                  </button>
-                  <button type="button" id="btn-3d-burst" class="btn-3d-burst" title="Trigger Quantum Particle Burst Shockwave">
-                    <i data-lucide="sparkles" style="width:13px;height:13px;"></i>
-                    <span>Burst</span>
-                  </button>
-                  <div class="spatial-zoom-controls">
-                    <button type="button" id="btn-3d-zoom-in" class="btn-3d-icon-sm" title="Zoom In (+)" aria-label="Zoom in 3D camera">
-                      <i data-lucide="zoom-in" style="width:12px;height:12px;"></i>
-                    </button>
-                    <button type="button" id="btn-3d-zoom-out" class="btn-3d-icon-sm" title="Zoom Out (-)" aria-label="Zoom out 3D camera">
-                      <i data-lucide="zoom-out" style="width:12px;height:12px;"></i>
-                    </button>
-                    <button type="button" id="btn-3d-reset-cam-stage" class="btn-3d-icon-sm" title="Reset Camera View" aria-label="Reset camera orientation">
-                      <i data-lucide="rotate-ccw" style="width:12px;height:12px;"></i>
-                    </button>
-                  </div>
-                </div>
-
-                <!-- 3D Drag & Zoom Hint -->
-                <div class="spatial-drag-hint" id="spatial-drag-hint" aria-hidden="true">
-                  <i data-lucide="move" style="width:12px;height:12px;"></i>
-                  <span>Drag 360° to rotate • Scroll to zoom • Click nodes</span>
-                </div>
-
-                <!-- 3D Engine Diagnostics Badge -->
-                <div class="canvas-engine-badge" id="canvas-engine-badge">
-                  <span class="pulse-indicator"></span>
-                  <span id="canvas-engine-text">WebGL Engine • 18 Skill Nodes Active</span>
-                </div>
-              </div>
-
-              <!-- Maximalist HUD Telemetry Strip (dynamically highlighted in Maximalist Mode) -->
-              <div class="maximalist-hud-strip" id="maximalist-hud-strip" aria-label="Backend status from the /health endpoint">
-                <div class="hud-item">
-                  <span class="hud-label">FAISS INDEX</span>
-                  <span class="hud-val glow-cyan" id="hud-faiss-val">—</span>
-                </div>
-                <div class="hud-item">
-                  <span class="hud-label">ALUMNI CORPUS</span>
-                  <span class="hud-val glow-emerald" id="hud-vector-val">—</span>
-                </div>
-                <div class="hud-item">
-                  <span class="hud-label">LLM ENGINE</span>
-                  <span class="hud-val glow-violet" id="hud-llm-engine-val">—</span>
-                </div>
-                <div class="hud-item hud-synth-container" title="Decorative animation — not live data">
-                  <span class="hud-label">VISUALIZER</span>
-                  <div class="audio-synth-bars" aria-hidden="true">
-                    <span class="synth-bar"></span>
-                    <span class="synth-bar"></span>
-                    <span class="synth-bar"></span>
-                    <span class="synth-bar"></span>
-                    <span class="synth-bar"></span>
-                  </div>
-                </div>
-              </div>
-
-              <!-- Floating Orbital Chips -->
-              <div class="orbiting-chip orbit-chip-1">
-                <i data-lucide="cpu" style="width:15px;height:15px;"></i>
-                <span>FAISS L2 Knowledge Genome: Active</span>
-              </div>
-              <div class="orbiting-chip orbit-chip-2">
-                <i data-lucide="check-check" style="width:15px;height:15px;"></i>
-                <span>Cluster #2 Software Dev: 95% Match</span>
-              </div>
-
-              <!-- Parallax 3D Spatial Card -->
-              <div class="card-3d-tilt spatial-tilt-card" id="hero-diagnostic-card">
-                <div class="specular-glare"></div>
-                <div class="card-top-row spatial-layer-1">
-                  <div style="display:flex;align-items:center;gap:8px;">
-                    <span style="width:8px;height:8px;border-radius:50%;background:var(--accent-blue);box-shadow:0 0 8px var(--accent-blue);"></span>
-                    <strong style="font-size:0.85rem;color:var(--text-primary);">Diagnostic Preview</strong>
-                  </div>
-                  <span class="sample-data-badge">Sample diagnostic layout</span>
-                </div>
-
-                <!-- Radial Gauge SVG -->
-                <div class="visual-score-center spatial-layer-2">
-                  <div class="gauge-svg-container">
-                    <svg class="gauge-svg" width="160" height="160" viewBox="0 0 160 160">
-                      <defs>
-                        <linearGradient id="heroGaugeGrad" x1="0%" y1="0%" x2="100%" y2="100%">
-                          <stop offset="0%" stop-color="var(--accent-blue)" />
-                          <stop offset="50%" stop-color="var(--accent-cyan)" />
-                          <stop offset="100%" stop-color="var(--accent-violet)" />
-                        </linearGradient>
-                      </defs>
-                      <circle class="gauge-bg-circle" cx="80" cy="80" r="66" />
-                      <circle id="hero-gauge-ring" class="gauge-progress-circle" cx="80" cy="80" r="66" />
-                    </svg>
-                    <div class="gauge-center-text">
-                      <div class="gauge-score-value">84</div>
-                      <div class="gauge-score-sub">Sample Score</div>
-                    </div>
-                  </div>
-                </div>
-
-                <div class="card-match-metrics spatial-layer-2">
-                  <div class="match-metric-box">
-                    <div class="match-metric-icon icon-emerald">
-                      <i data-lucide="trending-up" style="width:18px;height:18px;"></i>
-                    </div>
-                    <div>
-                      <div class="m-val">₹16.0 LPA</div>
-                      <div class="m-label">Archetype Median</div>
-                    </div>
-                  </div>
-                  <div class="match-metric-box">
-                    <div class="match-metric-icon icon-cyan">
-                      <i data-lucide="git-pull-request" style="width:18px;height:18px;"></i>
-                    </div>
-                    <div>
-                      <div class="m-val">94.8%</div>
-                      <div class="m-label">Skill Alignment</div>
-                    </div>
-                  </div>
-                </div>
-
-                <div class="floating-skills-row spatial-layer-3">
-                  <span class="skill-orbit-badge">Python</span>
-                  <span class="skill-orbit-badge">Distributed Systems</span>
-                  <span class="skill-orbit-badge">FastAPI</span>
-                  <span class="skill-orbit-badge">LangGraph</span>
-                  <span class="skill-orbit-badge">FAISS</span>
-                </div>
-              </div>
-
+            <div class="hero-cta-group">
+              <a href="#analyzer" class="btn-primary btn-lg">
+                <i data-lucide="file-search" style="width:18px;height:18px;"></i>
+                <span>Analyze a resume</span>
+              </a>
+              <a href="#placement-snapshot" class="btn-secondary btn-lg">
+                <i data-lucide="bar-chart-3" style="width:18px;height:18px;"></i>
+                <span>Explore placement data</span>
+              </a>
             </div>
-
           </div>
+
+          <!-- Career Atlas: one wide 3D stage with a DOM legend of the five real archetypes -->
+          <figure class="atlas-stage" id="hero-3d-stage" aria-labelledby="atlas-stage-caption">
+            <div class="spatial-canvas-wrapper" id="spatial-canvas-wrapper">
+              <canvas id="spatial-hero-canvas" class="spatial-hero-canvas" aria-label="3D Career Constellation and Skill Genome Canvas"></canvas>
+              
+              <!-- 3D Raycasting Hover Tooltip -->
+              <div id="canvas-3d-tooltip" class="canvas-3d-tooltip" style="display:none;" role="tooltip">
+                <div class="tooltip-header">
+                  <span class="tooltip-dot"></span>
+                  <strong id="tooltip-node-title">—</strong>
+                </div>
+                <div class="tooltip-body">
+                  <span class="tooltip-sub">Illustrative skill map — not a measured match, placement tier or recruiter list.</span>
+                </div>
+              </div>
+
+              <!-- 3D Visualizer Mode Controller Bar -->
+              <div class="spatial-3d-controls-bar" role="toolbar" aria-label="3D Visualizer Modes">
+                <button type="button" class="btn-3d-mode active" data-mode="constellation" title="Quantum Constellation & Neural Web">
+                  <i data-lucide="network" style="width:13px;height:13px;"></i>
+                  <span>Constellation</span>
+                </button>
+                <button type="button" class="btn-3d-mode" data-mode="globe" title="3D Skill Hologram Globe">
+                  <i data-lucide="globe" style="width:13px;height:13px;"></i>
+                  <span>Skill Globe</span>
+                </button>
+                <button type="button" class="btn-3d-mode" data-mode="radar" title="3D Placement Sonar Radar">
+                  <i data-lucide="radar" style="width:13px;height:13px;"></i>
+                  <span>Sonar Radar</span>
+                </button>
+                <button type="button" class="btn-3d-mode" data-mode="warp" title="Hyper-Warp Speed Starfield">
+                  <i data-lucide="zap" style="width:13px;height:13px;"></i>
+                  <span>Hyper-Warp</span>
+                </button>
+                <button type="button" id="btn-3d-burst" class="btn-3d-burst" title="Trigger Quantum Particle Burst Shockwave">
+                  <i data-lucide="sparkles" style="width:13px;height:13px;"></i>
+                  <span>Burst</span>
+                </button>
+                <div class="spatial-zoom-controls">
+                  <button type="button" id="btn-3d-zoom-in" class="btn-3d-icon-sm" title="Zoom In (+)" aria-label="Zoom in 3D camera">
+                    <i data-lucide="zoom-in" style="width:12px;height:12px;"></i>
+                  </button>
+                  <button type="button" id="btn-3d-zoom-out" class="btn-3d-icon-sm" title="Zoom Out (-)" aria-label="Zoom out 3D camera">
+                    <i data-lucide="zoom-out" style="width:12px;height:12px;"></i>
+                  </button>
+                  <button type="button" id="btn-3d-reset-cam-stage" class="btn-3d-icon-sm" title="Reset Camera View" aria-label="Reset camera orientation">
+                    <i data-lucide="rotate-ccw" style="width:12px;height:12px;"></i>
+                  </button>
+                </div>
+              </div>
+
+              <!-- 3D Drag & Zoom Hint -->
+              <div class="spatial-drag-hint" id="spatial-drag-hint" aria-hidden="true">
+                <i data-lucide="move" style="width:12px;height:12px;"></i>
+                <span>Drag 360° to rotate • Scroll to zoom • Click nodes</span>
+              </div>
+
+              <!-- 3D Engine Diagnostics Badge -->
+              <div class="canvas-engine-badge" id="canvas-engine-badge">
+                <span class="pulse-indicator"></span>
+                <span id="canvas-engine-text">WebGL Engine • 18 Skill Nodes Active</span>
+              </div>
+            </div>
+
+            <figcaption class="atlas-legend" id="atlas-stage-caption">
+              <p class="atlas-legend-title">Career Atlas <span>Five archetypes in the alumni corpus</span></p>
+              <ul class="atlas-legend-list" id="atlas-legend-list">
+                <li>
+                  <a class="atlas-legend-item" href="#genome" data-archetype-id="0">
+                    <span class="legend-swatch" data-arch="0" aria-hidden="true"></span>
+                    <span class="legend-name">Core Engineering &amp; Business</span>
+                    <span class="legend-count" data-count-for="0">—</span>
+                  </a>
+                </li>
+                <li>
+                  <a class="atlas-legend-item" href="#genome" data-archetype-id="1">
+                    <span class="legend-swatch" data-arch="1" aria-hidden="true"></span>
+                    <span class="legend-name">Data Science &amp; AI/ML</span>
+                    <span class="legend-count" data-count-for="1">—</span>
+                  </a>
+                </li>
+                <li>
+                  <a class="atlas-legend-item" href="#genome" data-archetype-id="2">
+                    <span class="legend-swatch" data-arch="2" aria-hidden="true"></span>
+                    <span class="legend-name">General CS &amp; Software Development</span>
+                    <span class="legend-count" data-count-for="2">—</span>
+                  </a>
+                </li>
+                <li>
+                  <a class="atlas-legend-item" href="#genome" data-archetype-id="3">
+                    <span class="legend-swatch" data-arch="3" aria-hidden="true"></span>
+                    <span class="legend-name">Full-Stack Web Development</span>
+                    <span class="legend-count" data-count-for="3">—</span>
+                  </a>
+                </li>
+                <li>
+                  <a class="atlas-legend-item" href="#genome" data-archetype-id="4">
+                    <span class="legend-swatch" data-arch="4" aria-hidden="true"></span>
+                    <span class="legend-name">Core Engineering (Mechanical/Civil)</span>
+                    <span class="legend-count" data-count-for="4">—</span>
+                  </a>
+                </li>
+              </ul>
+              <p class="atlas-provenance">
+                Alumni corpus: <strong data-evidence="source_count">226</strong> indexed records · five K-Means archetypes ·
+                <a href="#faq">Methodology</a>
+              </p>
+            </figcaption>
+          </figure>
+        </div>
+      </section>
+
+      <!-- Evidence strip: two separate data sources, each with its own source line -->
+      <section id="evidence" class="evidence-strip" aria-label="Data sources behind this tool">
+        <div class="container evidence-grid">
+          <article class="evidence-panel evidence-corpus" aria-labelledby="evidence-corpus-title">
+            <header class="evidence-head">
+              <span class="evidence-index">A</span>
+              <div>
+                <h2 id="evidence-corpus-title" class="evidence-title">Alumni resume corpus</h2>
+                <p class="evidence-source">Source: corpus manifest <span data-evidence="dataset_version">v2.0.0</span> · used for reference matching only</p>
+              </div>
+            </header>
+            <dl class="evidence-facts">
+              <div><dt>Indexed records</dt><dd data-evidence="source_count">—</dd></div>
+              <div><dt>Career archetypes</dt><dd data-evidence="archetype_count">—</dd></div>
+              <div><dt>Embedding size</dt><dd><span data-evidence="embedding_dimension">—</span><small>dimensions</small></dd></div>
+              <div><dt>Document quality</dt><dd><span data-evidence="valid_document_count">—</span><small>valid · <span data-evidence="degraded_document_count">—</span> degraded</small></dd></div>
+            </dl>
+          </article>
+
+          <article class="evidence-panel evidence-snapshot" aria-labelledby="evidence-snapshot-title">
+            <header class="evidence-head">
+              <span class="evidence-index">B</span>
+              <div>
+                <h2 id="evidence-snapshot-title" class="evidence-title">2026 placement snapshot</h2>
+                <p class="evidence-source">Source: <span data-evidence="source_name">placement portal</span> · snapshot of <span data-evidence="source_snapshot_date">17 September 2026</span></p>
+              </div>
+            </header>
+            <dl class="evidence-facts">
+              <div><dt>Offers</dt><dd data-evidence="total_offers">—</dd></div>
+              <div><dt>Unique employers</dt><dd data-evidence="unique_employers">—</dd></div>
+              <div><dt>Job profiles</dt><dd data-evidence="job_profiles">—</dd></div>
+              <div><dt>Average / median CTC</dt><dd><span data-evidence="average_ctc_lpa">—</span><small>/ <span data-evidence="median_ctc_lpa">—</span> LPA</small></dd></div>
+            </dl>
+          </article>
+        </div>
       </section>
 
       <!-- =======================================================================
            TOP PLACEMENT RECRUITER LOGO FLY-BY MARQUEE
            ======================================================================= -->
-      <section id="recruiter-marquee" class="recruiters-marquee-section reveal-spatial" aria-label="Top Placement Recruiters Marquee">
-        <div class="container marquee-header-container">
-          <div class="marquee-header-strip">
-            <span class="marquee-badge">
-              <i data-lucide="building-2" style="width:13px;height:13px;"></i>
-              <span>Top Placement Recruiters &amp; Career Destinations</span>
-            </span>
-            <p class="marquee-subtitle">226 verified benchmark profiles across industry leaders</p>
-          </div>
-        </div>
-
-        <div class="marquee-wrapper" tabindex="0" role="region" aria-label="Placement Recruiter Logos Carousel">
-          <div class="marquee-track" id="recruiter-marquee-track">
-            <!-- Set 1 -->
-            <div class="recruiter-chip neu-card" data-company="google">
-              <div class="recruiter-logo-box"><i data-lucide="search" style="color:var(--text-secondary);width:18px;height:18px;"></i></div>
-              <div class="recruiter-info">
-                <strong>Google</strong>
-                <span class="tier-pill super-dream">Super Dream • ₹32–44 LPA</span>
-              </div>
-            </div>
-            <div class="recruiter-chip neu-card" data-company="microsoft">
-              <div class="recruiter-logo-box"><i data-lucide="layout-grid" style="color:var(--text-secondary);width:18px;height:18px;"></i></div>
-              <div class="recruiter-info">
-                <strong>Microsoft</strong>
-                <span class="tier-pill super-dream">Super Dream • ₹28–42 LPA</span>
-              </div>
-            </div>
-            <div class="recruiter-chip neu-card" data-company="amazon">
-              <div class="recruiter-logo-box"><i data-lucide="shopping-cart" style="color:var(--text-secondary);width:18px;height:18px;"></i></div>
-              <div class="recruiter-info">
-                <strong>Amazon</strong>
-                <span class="tier-pill super-dream">Super Dream • ₹28–44 LPA</span>
-              </div>
-            </div>
-            <div class="recruiter-chip neu-card" data-company="cisco">
-              <div class="recruiter-logo-box"><i data-lucide="router" style="color:var(--text-secondary);width:18px;height:18px;"></i></div>
-              <div class="recruiter-info">
-                <strong>Cisco</strong>
-                <span class="tier-pill dream">Dream • ₹15–20 LPA</span>
-              </div>
-            </div>
-            <div class="recruiter-chip neu-card" data-company="goldman">
-              <div class="recruiter-logo-box"><i data-lucide="trending-up" style="color:var(--text-secondary);width:18px;height:18px;"></i></div>
-              <div class="recruiter-info">
-                <strong>Goldman Sachs</strong>
-                <span class="tier-pill super-dream">Super Dream • ₹24–30 LPA</span>
-              </div>
-            </div>
-            <div class="recruiter-chip neu-card" data-company="adobe">
-              <div class="recruiter-logo-box"><i data-lucide="pen-tool" style="color:var(--text-secondary);width:18px;height:18px;"></i></div>
-              <div class="recruiter-info">
-                <strong>Adobe</strong>
-                <span class="tier-pill super-dream">Super Dream • ₹30–40 LPA</span>
-              </div>
-            </div>
-            <div class="recruiter-chip neu-card" data-company="paypal">
-              <div class="recruiter-logo-box"><i data-lucide="credit-card" style="color:var(--text-secondary);width:18px;height:18px;"></i></div>
-              <div class="recruiter-info">
-                <strong>PayPal</strong>
-                <span class="tier-pill super-dream">Super Dream • ₹22–28 LPA</span>
-              </div>
-            </div>
-            <div class="recruiter-chip neu-card" data-company="nvidia">
-              <div class="recruiter-logo-box"><i data-lucide="cpu" style="color:var(--text-secondary);width:18px;height:18px;"></i></div>
-              <div class="recruiter-info">
-                <strong>NVIDIA</strong>
-                <span class="tier-pill super-dream">Super Dream • ₹24–36 LPA</span>
-              </div>
-            </div>
-            <div class="recruiter-chip neu-card" data-company="intel">
-              <div class="recruiter-logo-box"><i data-lucide="microchip" style="color:var(--text-secondary);width:18px;height:18px;"></i></div>
-              <div class="recruiter-info">
-                <strong>Intel</strong>
-                <span class="tier-pill dream">Dream • ₹14–18 LPA</span>
-              </div>
-            </div>
-            <div class="recruiter-chip neu-card" data-company="morgan">
-              <div class="recruiter-logo-box"><i data-lucide="briefcase" style="color:var(--text-secondary);width:18px;height:18px;"></i></div>
-              <div class="recruiter-info">
-                <strong>Morgan Stanley</strong>
-                <span class="tier-pill super-dream">Super Dream • ₹22–28 LPA</span>
-              </div>
-            </div>
-            <div class="recruiter-chip neu-card" data-company="qualcomm">
-              <div class="recruiter-logo-box"><i data-lucide="radio" style="color:var(--text-secondary);width:18px;height:18px;"></i></div>
-              <div class="recruiter-info">
-                <strong>Qualcomm</strong>
-                <span class="tier-pill dream">Dream • ₹16–22 LPA</span>
-              </div>
-            </div>
-            <div class="recruiter-chip neu-card" data-company="oracle">
-              <div class="recruiter-logo-box"><i data-lucide="database" style="color:var(--text-secondary);width:18px;height:18px;"></i></div>
-              <div class="recruiter-info">
-                <strong>Oracle</strong>
-                <span class="tier-pill dream">Dream • ₹14–20 LPA</span>
-              </div>
-            </div>
-
-            <!-- Set 2 (Duplicate for Continuous Seamless Infinite Scroll) -->
-            <div class="recruiter-chip neu-card" data-company="google" aria-hidden="true">
-              <div class="recruiter-logo-box"><i data-lucide="search" style="color:var(--text-secondary);width:18px;height:18px;"></i></div>
-              <div class="recruiter-info">
-                <strong>Google</strong>
-                <span class="tier-pill super-dream">Super Dream • ₹32–44 LPA</span>
-              </div>
-            </div>
-            <div class="recruiter-chip neu-card" data-company="microsoft" aria-hidden="true">
-              <div class="recruiter-logo-box"><i data-lucide="layout-grid" style="color:var(--text-secondary);width:18px;height:18px;"></i></div>
-              <div class="recruiter-info">
-                <strong>Microsoft</strong>
-                <span class="tier-pill super-dream">Super Dream • ₹28–42 LPA</span>
-              </div>
-            </div>
-            <div class="recruiter-chip neu-card" data-company="amazon" aria-hidden="true">
-              <div class="recruiter-logo-box"><i data-lucide="shopping-cart" style="color:var(--text-secondary);width:18px;height:18px;"></i></div>
-              <div class="recruiter-info">
-                <strong>Amazon</strong>
-                <span class="tier-pill super-dream">Super Dream • ₹28–44 LPA</span>
-              </div>
-            </div>
-            <div class="recruiter-chip neu-card" data-company="cisco" aria-hidden="true">
-              <div class="recruiter-logo-box"><i data-lucide="router" style="color:var(--text-secondary);width:18px;height:18px;"></i></div>
-              <div class="recruiter-info">
-                <strong>Cisco</strong>
-                <span class="tier-pill dream">Dream • ₹15–20 LPA</span>
-              </div>
-            </div>
-            <div class="recruiter-chip neu-card" data-company="goldman" aria-hidden="true">
-              <div class="recruiter-logo-box"><i data-lucide="trending-up" style="color:var(--text-secondary);width:18px;height:18px;"></i></div>
-              <div class="recruiter-info">
-                <strong>Goldman Sachs</strong>
-                <span class="tier-pill super-dream">Super Dream • ₹24–30 LPA</span>
-              </div>
-            </div>
-            <div class="recruiter-chip neu-card" data-company="adobe" aria-hidden="true">
-              <div class="recruiter-logo-box"><i data-lucide="pen-tool" style="color:var(--text-secondary);width:18px;height:18px;"></i></div>
-              <div class="recruiter-info">
-                <strong>Adobe</strong>
-                <span class="tier-pill super-dream">Super Dream • ₹30–40 LPA</span>
-              </div>
-            </div>
-            <div class="recruiter-chip neu-card" data-company="paypal" aria-hidden="true">
-              <div class="recruiter-logo-box"><i data-lucide="credit-card" style="color:var(--text-secondary);width:18px;height:18px;"></i></div>
-              <div class="recruiter-info">
-                <strong>PayPal</strong>
-                <span class="tier-pill super-dream">Super Dream • ₹22–28 LPA</span>
-              </div>
-            </div>
-            <div class="recruiter-chip neu-card" data-company="nvidia" aria-hidden="true">
-              <div class="recruiter-logo-box"><i data-lucide="cpu" style="color:var(--text-secondary);width:18px;height:18px;"></i></div>
-              <div class="recruiter-info">
-                <strong>NVIDIA</strong>
-                <span class="tier-pill super-dream">Super Dream • ₹24–36 LPA</span>
-              </div>
-            </div>
-            <div class="recruiter-chip neu-card" data-company="intel" aria-hidden="true">
-              <div class="recruiter-logo-box"><i data-lucide="microchip" style="color:var(--text-secondary);width:18px;height:18px;"></i></div>
-              <div class="recruiter-info">
-                <strong>Intel</strong>
-                <span class="tier-pill dream">Dream • ₹14–18 LPA</span>
-              </div>
-            </div>
-            <div class="recruiter-chip neu-card" data-company="morgan" aria-hidden="true">
-              <div class="recruiter-logo-box"><i data-lucide="briefcase" style="color:var(--text-secondary);width:18px;height:18px;"></i></div>
-              <div class="recruiter-info">
-                <strong>Morgan Stanley</strong>
-                <span class="tier-pill super-dream">Super Dream • ₹22–28 LPA</span>
-              </div>
-            </div>
-            <div class="recruiter-chip neu-card" data-company="qualcomm" aria-hidden="true">
-              <div class="recruiter-logo-box"><i data-lucide="radio" style="color:var(--text-secondary);width:18px;height:18px;"></i></div>
-              <div class="recruiter-info">
-                <strong>Qualcomm</strong>
-                <span class="tier-pill dream">Dream • ₹16–22 LPA</span>
-              </div>
-            </div>
-            <div class="recruiter-chip neu-card" data-company="oracle" aria-hidden="true">
-              <div class="recruiter-logo-box"><i data-lucide="database" style="color:var(--text-secondary);width:18px;height:18px;"></i></div>
-              <div class="recruiter-info">
-                <strong>Oracle</strong>
-                <span class="tier-pill dream">Dream • ₹14–20 LPA</span>
-              </div>
-            </div>
-          </div>
-        </div>
-      </section>
-
       <!-- =======================================================================
            SECTION 2: HOW IT WORKS (SEMANTIC 4-STEP PROCESS)
            ======================================================================= -->

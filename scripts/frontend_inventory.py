@@ -46,7 +46,8 @@ def object_keys(source, anchor):
 
 def build():
     html, js, css, main = read("index.html"), read("app.js"), read("styles.css"), read("main.py")
-    html_ids = re.findall(r'\bid=["\']([^"\']+)["\']', html)
+    # (?<![\w-]) keeps data-*-id attributes out of the ID list
+    html_ids = re.findall(r'(?<![\w-])id=["\']([^"\']+)["\']', html)
     js_ids = set(re.findall(r"getElementById\(\s*['\"]([^'\"]+)['\"]", js))
     js_ids |= set(re.findall(r"querySelector(?:All)?\(\s*['\"]#([\w-]+)", js))
     handlers = set()
