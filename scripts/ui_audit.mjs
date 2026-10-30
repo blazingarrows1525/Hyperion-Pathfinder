@@ -127,10 +127,12 @@ async function load(width, height) {
     await evaluate(`(window.setTheme ? setTheme(${JSON.stringify(THEME)}) : document.documentElement.setAttribute('data-theme', ${JSON.stringify(THEME)}), true)`);
   }
   await sleep(2500);
+  let evalResult = null;
   if (EVAL) {
-    await evaluate(`(async () => { ${EVAL}\n })().then(() => true)`);
+    evalResult = await evaluate(`(async () => { ${EVAL}\n })()`);
     await sleep(800);
   }
+  return evalResult;
 }
 
 const STATIC_CHECKS = `(() => {
@@ -181,8 +183,9 @@ try {
     const height = VIEWPORTS[width] || 900;
     consoleErrors.length = 0;
     failedRequests.length = 0;
-    await load(width, height);
+    const evalResult = await load(width, height);
     const entry = { height, static: await evaluate(STATIC_CHECKS), overflow: await evaluate(OVERFLOW), shots: [] };
+    if (evalResult !== null && evalResult !== undefined) entry.evalResult = evalResult;
     if (SHOTS) {
       mkdirSync(join(OUT, String(width)), { recursive: true });
       for (const id of SECTIONS) {

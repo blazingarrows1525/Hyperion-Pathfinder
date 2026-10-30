@@ -2279,10 +2279,16 @@ function runDemoAnalysis() {
 * **CI/CD Automated Deployment Pipelines (GitHub Actions / Terraform)**
 `;
 
+  // Stops when Cancel aborts the shared controller, like the live stream does.
+  const signal = appState.analyzer.abortController ? appState.analyzer.abortController.signal : null;
   let idx = 0;
   const interval = setInterval(() => {
+    if (signal && signal.aborted) {
+      clearInterval(interval);
+      return;
+    }
     if (idx < demoText.length) {
-      appState.analyzer.streamBuffer += demoText.charAt(idx);
+      appState.analyzer.streamBuffer += demoText.slice(idx, idx + 5);
       markdownArea.textContent = appState.analyzer.streamBuffer + ' ...';
       idx += 5;
     } else {
