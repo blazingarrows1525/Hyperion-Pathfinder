@@ -5108,6 +5108,22 @@ main section[id] {
   gap: 12px;
 }
 
+/* Phones: the annotation detail opens as a bottom sheet instead of beside the span. */
+@media (max-width: 640px) {
+  .markup-popover-card {
+    position: fixed;
+    top: auto !important;
+    left: 12px !important;
+    right: 12px;
+    bottom: 12px;
+    width: auto;
+    max-width: none;
+    max-height: 70vh;
+    overflow-y: auto;
+    z-index: 960;
+  }
+}
+
 .popover-header {
   display: flex;
   justify-content: space-between;
