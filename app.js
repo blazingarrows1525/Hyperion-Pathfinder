@@ -2706,30 +2706,32 @@ function renderSafeMarkdown(rawText, isDemo) {
 }
 
 // Client-side DOM Sanitizer against scripts, iframes, inline event handlers, and data/javascript URIs
+// Markdown output only needs these. Forms, inputs and buttons (phishing),
+// images (tracking pixels) and SVG/MathML (mutation-XSS surface) are excluded.
+const SAFE_MARKDOWN_CONFIG = {
+  ALLOWED_TAGS: ['p', 'h1', 'h2', 'h3', 'h4', 'h5', 'h6', 'ul', 'ol', 'li', 'strong', 'em', 'b', 'i',
+                 'code', 'pre', 'blockquote', 'a', 'br', 'hr', 'table', 'thead', 'tbody', 'tr', 'th',
+                 'td', 'del', 'span', 'div', 'sup', 'sub'],
+  ALLOWED_ATTR: ['href', 'title', 'align', 'class']
+};
+
+function escapeHtml(text) {
+  const div = document.createElement('div');
+  div.textContent = text;
+  return div.innerHTML;
+}
+
+// Sanitize model/report HTML before it reaches innerHTML. DOMPurify is an
+// allowlist sanitizer: it normalizes URLs before checking them, which defeats
+// tab/newline-split "java\tscript:" links that the old blocklist let through.
+// If DOMPurify failed to load (CDN blocked, SRI mismatch) the content is shown
+// as plain text: a weaker filter is never used instead.
 function sanitizeHtmlSafe(dirtyHtml) {
   if (!dirtyHtml) return '';
-  const parser = new DOMParser();
-  const doc = parser.parseFromString(dirtyHtml, 'text/html');
-
-  // Strip dangerous executable elements
-  const dangerousTags = ['script', 'style', 'object', 'embed', 'iframe', 'frame', 'link', 'meta'];
-  dangerousTags.forEach(tag => {
-    doc.querySelectorAll(tag).forEach(el => el.remove());
-  });
-
-  // Strip on* event attributes and javascript: URLs
-  const allElements = doc.querySelectorAll('*');
-  allElements.forEach(el => {
-    Array.from(el.attributes).forEach(attr => {
-      const name = attr.name.toLowerCase();
-      const val = attr.value.toLowerCase();
-      if (name.startsWith('on') || val.includes('javascript:') || val.includes('vbscript:') || val.includes('data:text/html')) {
-        el.removeAttribute(attr.name);
-      }
-    });
-  });
-
-  return doc.body.innerHTML;
+  if (window.DOMPurify && typeof window.DOMPurify.sanitize === 'function') {
+    return window.DOMPurify.sanitize(dirtyHtml, SAFE_MARKDOWN_CONFIG);
+  }
+  return escapeHtml(dirtyHtml);
 }
 
 function updateScoreRing(text) {
