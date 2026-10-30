@@ -1,0 +1,57 @@
+{
+  "url": "http://127.0.0.1:8000/",
+  "browser": "C:/Program Files/Google/Chrome/Application/chrome.exe",
+  "theme": "ceramic",
+  "reducedMotion": false,
+  "viewports": {
+    "1440": {
+      "height": 900,
+      "static": {
+        "duplicateIds": [],
+        "untypedButtons": 0,
+        "missingHandlers": [],
+        "sections": [
+          "hero",
+          "recruiter-marquee",
+          "how-it-works",
+          "placement-snapshot",
+          "analyzer",
+          "genome",
+          "company-intel",
+          "prompt-studio",
+          "buttons-lab",
+          "faq"
+        ],
+        "theme": "ceramic",
+        "canvases": 2
+      },
+      "overflow": {
+        "scrollWidth": 2087,
+        "clientWidth": 1440,
+        "overflow": true,
+        "offenders": [
+          "div.aurora-blur [933..1526]",
+          "div.nav-actions [1167..2087]",
+          "div.designhead-controller [1293..1520]",
+          "button#btn-designhead-maximalist.designhead-btn [1406..1516]",
+          "span [1437..1504]",
+          "button#btn-llm-control-hub.btn-llm-hub [1532..1641]",
+          "svg.lucide [1547..1554]",
+          "span#nav-active-llm-label [1561..1626]",
+          "button#btn-theme-toggle.btn-theme-toggle [1653..1769]",
+          "svg.lucide [1668..1675]",
+          "span#theme-mode-label [1683..1754]",
+          "button#btn-sound-toggle.btn-sound-toggle [1781..1869]"
+        ]
+      },
+      "shots": [
+        "1440/hero.jpg",
+        "1440/analyzer.jpg"
+      ],
+      "consoleErrors": [],
+      "failedRequests": [
+        "404 http://127.0.0.1:8000/favicon.ico"
+      ]
+    }
+  }
+}

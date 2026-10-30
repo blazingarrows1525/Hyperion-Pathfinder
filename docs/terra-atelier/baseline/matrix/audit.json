@@ -1,0 +1,469 @@
+{
+  "url": "http://127.0.0.1:8000/",
+  "browser": "C:/Program Files/Google/Chrome/Application/chrome.exe",
+  "theme": "default",
+  "reducedMotion": false,
+  "viewports": {
+    "360": {
+      "height": 780,
+      "static": {
+        "duplicateIds": [],
+        "untypedButtons": 0,
+        "missingHandlers": [],
+        "sections": [
+          "hero",
+          "recruiter-marquee",
+          "how-it-works",
+          "placement-snapshot",
+          "analyzer",
+          "genome",
+          "company-intel",
+          "prompt-studio",
+          "buttons-lab",
+          "faq"
+        ],
+        "theme": "(none)",
+        "canvases": 2
+      },
+      "overflow": {
+        "scrollWidth": 1149,
+        "clientWidth": 360,
+        "overflow": true,
+        "offenders": [
+          "div.aurora-blur [67..729]",
+          "div.aurora-blur [638..1228]",
+          "div.aurora-blur [293..848]",
+          "div.nav-actions [179..1149]",
+          "div.designhead-controller [306..532]",
+          "button#btn-designhead-minimalist.designhead-btn [310..416]",
+          "span [341..404]",
+          "button#btn-designhead-maximalist.designhead-btn [418..528]",
+          "svg.lucide [430..443]",
+          "span [449..516]",
+          "button#btn-llm-control-hub.btn-llm-hub [544..653]",
+          "svg.lucide [559..566]"
+        ]
+      },
+      "shots": [
+        "360/hero.jpg"
+      ],
+      "consoleErrors": [],
+      "failedRequests": [
+        "404 http://127.0.0.1:8000/favicon.ico"
+      ]
+    },
+    "390": {
+      "height": 844,
+      "static": {
+        "duplicateIds": [],
+        "untypedButtons": 0,
+        "missingHandlers": [],
+        "sections": [
+          "hero",
+          "recruiter-marquee",
+          "how-it-works",
+          "placement-snapshot",
+          "analyzer",
+          "genome",
+          "company-intel",
+          "prompt-studio",
+          "buttons-lab",
+          "faq"
+        ],
+        "theme": "(none)",
+        "canvases": 2
+      },
+      "overflow": {
+        "scrollWidth": 1149,
+        "clientWidth": 390,
+        "overflow": true,
+        "offenders": [
+          "div.aurora-blur [64..722]",
+          "div.aurora-blur [634..1219]",
+          "div.aurora-blur [291..845]",
+          "div.nav-actions [179..1149]",
+          "div.designhead-controller [306..532]",
+          "button#btn-designhead-minimalist.designhead-btn [310..416]",
+          "span [341..404]",
+          "button#btn-designhead-maximalist.designhead-btn [418..528]",
+          "svg.lucide [430..443]",
+          "span [449..516]",
+          "button#btn-llm-control-hub.btn-llm-hub [544..653]",
+          "svg.lucide [559..566]"
+        ]
+      },
+      "shots": [
+        "390/hero.jpg"
+      ],
+      "consoleErrors": [],
+      "failedRequests": []
+    },
+    "414": {
+      "height": 896,
+      "static": {
+        "duplicateIds": [],
+        "untypedButtons": 0,
+        "missingHandlers": [],
+        "sections": [
+          "hero",
+          "recruiter-marquee",
+          "how-it-works",
+          "placement-snapshot",
+          "analyzer",
+          "genome",
+          "company-intel",
+          "prompt-studio",
+          "buttons-lab",
+          "faq"
+        ],
+        "theme": "(none)",
+        "canvases": 2
+      },
+      "overflow": {
+        "scrollWidth": 1149,
+        "clientWidth": 414,
+        "overflow": true,
+        "offenders": [
+          "div.aurora-blur [63..721]",
+          "div.aurora-blur [633..1218]",
+          "div.aurora-blur [291..844]",
+          "div.nav-actions [179..1149]",
+          "div.designhead-controller [306..532]",
+          "button#btn-designhead-minimalist.designhead-btn [310..416]",
+          "button#btn-designhead-maximalist.designhead-btn [418..528]",
+          "svg.lucide [430..443]",
+          "span [449..516]",
+          "button#btn-llm-control-hub.btn-llm-hub [544..653]",
+          "svg.lucide [559..566]",
+          "span#nav-active-llm-label [573..638]"
+        ]
+      },
+      "shots": [
+        "414/hero.jpg"
+      ],
+      "consoleErrors": [],
+      "failedRequests": []
+    },
+    "430": {
+      "height": 932,
+      "static": {
+        "duplicateIds": [],
+        "untypedButtons": 0,
+        "missingHandlers": [],
+        "sections": [
+          "hero",
+          "recruiter-marquee",
+          "how-it-works",
+          "placement-snapshot",
+          "analyzer",
+          "genome",
+          "company-intel",
+          "prompt-studio",
+          "buttons-lab",
+          "faq"
+        ],
+        "theme": "(none)",
+        "canvases": 2
+      },
+      "overflow": {
+        "scrollWidth": 1149,
+        "clientWidth": 430,
+        "overflow": true,
+        "offenders": [
+          "div.aurora-blur [64..722]",
+          "div.aurora-blur [634..1220]",
+          "div.aurora-blur [291..845]",
+          "div.nav-actions [179..1149]",
+          "div.designhead-controller [306..532]",
+          "button#btn-designhead-maximalist.designhead-btn [418..528]",
+          "svg.lucide [430..443]",
+          "span [449..516]",
+          "button#btn-llm-control-hub.btn-llm-hub [544..653]",
+          "svg.lucide [559..566]",
+          "span#nav-active-llm-label [573..638]",
+          "button#btn-theme-toggle.btn-theme-toggle [665..781]"
+        ]
+      },
+      "shots": [
+        "430/hero.jpg"
+      ],
+      "consoleErrors": [],
+      "failedRequests": []
+    },
+    "768": {
+      "height": 1024,
+      "static": {
+        "duplicateIds": [],
+        "untypedButtons": 0,
+        "missingHandlers": [],
+        "sections": [
+          "hero",
+          "recruiter-marquee",
+          "how-it-works",
+          "placement-snapshot",
+          "analyzer",
+          "genome",
+          "company-intel",
+          "prompt-studio",
+          "buttons-lab",
+          "faq"
+        ],
+        "theme": "(none)",
+        "canvases": 2
+      },
+      "overflow": {
+        "scrollWidth": 1149,
+        "clientWidth": 768,
+        "overflow": true,
+        "offenders": [
+          "div.aurora-blur [254..840]",
+          "div.nav-actions [179..1149]",
+          "button#btn-theme-toggle.btn-theme-toggle [665..781]",
+          "button#btn-sound-toggle.btn-sound-toggle [793..881]",
+          "svg.lucide [806..817]",
+          "span#sound-toggle-label [823..868]",
+          "button#btn-motion-toggle.btn-motion-toggle [893..984]",
+          "svg.lucide [906..916]",
+          "span#motion-mode-label [922..971]",
+          "a.btn-magnetic-glow [996..1099]",
+          "button#btn-mobile-menu.btn-mobile-menu [1111..1149]",
+          "svg.lucide [1120..1140]"
+        ]
+      },
+      "shots": [
+        "768/hero.jpg"
+      ],
+      "consoleErrors": [],
+      "failedRequests": []
+    },
+    "800": {
+      "height": 900,
+      "static": {
+        "duplicateIds": [],
+        "untypedButtons": 0,
+        "missingHandlers": [],
+        "sections": [
+          "hero",
+          "recruiter-marquee",
+          "how-it-works",
+          "placement-snapshot",
+          "analyzer",
+          "genome",
+          "company-intel",
+          "prompt-studio",
+          "buttons-lab",
+          "faq"
+        ],
+        "theme": "(none)",
+        "canvases": 2
+      },
+      "overflow": {
+        "scrollWidth": 2063,
+        "clientWidth": 800,
+        "overflow": true,
+        "offenders": [
+          "div.aurora-blur [286..872]",
+          "nav [187..1143]",
+          "ul#nav-links-menu.nav-links [187..1143]",
+          "li [737..852]",
+          "a.nav-link-btn [737..852]",
+          "li [858..958]",
+          "a.nav-link-btn [858..958]",
+          "svg.lucide [872..881]",
+          "li [964..1059]",
+          "a.nav-link-btn [964..1059]",
+          "svg.lucide [978..988]",
+          "li [1065..1143]"
+        ]
+      },
+      "shots": [
+        "800/hero.jpg"
+      ],
+      "consoleErrors": [],
+      "failedRequests": []
+    },
+    "980": {
+      "height": 900,
+      "static": {
+        "duplicateIds": [],
+        "untypedButtons": 0,
+        "missingHandlers": [],
+        "sections": [
+          "hero",
+          "recruiter-marquee",
+          "how-it-works",
+          "placement-snapshot",
+          "analyzer",
+          "genome",
+          "company-intel",
+          "prompt-studio",
+          "buttons-lab",
+          "faq"
+        ],
+        "theme": "(none)",
+        "canvases": 2
+      },
+      "overflow": {
+        "scrollWidth": 2063,
+        "clientWidth": 980,
+        "overflow": true,
+        "offenders": [
+          "div.aurora-blur [466..1053]",
+          "nav [187..1143]",
+          "ul#nav-links-menu.nav-links [187..1143]",
+          "li [964..1059]",
+          "a.nav-link-btn [964..1059]",
+          "svg.lucide [978..988]",
+          "li [1065..1143]",
+          "a.nav-link-btn [1065..1143]",
+          "svg.lucide [1079..1094]",
+          "div.nav-actions [1143..2063]",
+          "div#engine-status-badge.engine-status-badge [1143..1257]",
+          "span.status-dot [1158..1162]"
+        ]
+      },
+      "shots": [
+        "980/hero.jpg"
+      ],
+      "consoleErrors": [],
+      "failedRequests": []
+    },
+    "1024": {
+      "height": 768,
+      "static": {
+        "duplicateIds": [],
+        "untypedButtons": 0,
+        "missingHandlers": [],
+        "sections": [
+          "hero",
+          "recruiter-marquee",
+          "how-it-works",
+          "placement-snapshot",
+          "analyzer",
+          "genome",
+          "company-intel",
+          "prompt-studio",
+          "buttons-lab",
+          "faq"
+        ],
+        "theme": "(none)",
+        "canvases": 2
+      },
+      "overflow": {
+        "scrollWidth": 2063,
+        "clientWidth": 1024,
+        "overflow": true,
+        "offenders": [
+          "div.aurora-blur [511..1097]",
+          "nav [187..1143]",
+          "ul#nav-links-menu.nav-links [187..1143]",
+          "li [964..1059]",
+          "a.nav-link-btn [964..1059]",
+          "li [1065..1143]",
+          "a.nav-link-btn [1065..1143]",
+          "svg.lucide [1079..1094]",
+          "div.nav-actions [1143..2063]",
+          "div#engine-status-badge.engine-status-badge [1143..1257]",
+          "span.status-dot [1158..1162]",
+          "span#status-label-text [1170..1242]"
+        ]
+      },
+      "shots": [
+        "1024/hero.jpg"
+      ],
+      "consoleErrors": [],
+      "failedRequests": []
+    },
+    "1280": {
+      "height": 800,
+      "static": {
+        "duplicateIds": [],
+        "untypedButtons": 0,
+        "missingHandlers": [],
+        "sections": [
+          "hero",
+          "recruiter-marquee",
+          "how-it-works",
+          "placement-snapshot",
+          "analyzer",
+          "genome",
+          "company-intel",
+          "prompt-studio",
+          "buttons-lab",
+          "faq"
+        ],
+        "theme": "(none)",
+        "canvases": 2
+      },
+      "overflow": {
+        "scrollWidth": 2063,
+        "clientWidth": 1280,
+        "overflow": true,
+        "offenders": [
+          "div.aurora-blur [761..1341]",
+          "div.nav-actions [1143..2063]",
+          "div.designhead-controller [1269..1496]",
+          "button#btn-designhead-minimalist.designhead-btn [1273..1380]",
+          "svg.lucide [1285..1298]",
+          "span [1304..1368]",
+          "button#btn-designhead-maximalist.designhead-btn [1382..1492]",
+          "svg.lucide [1394..1407]",
+          "span [1413..1480]",
+          "button#btn-llm-control-hub.btn-llm-hub [1508..1617]",
+          "svg.lucide [1523..1530]",
+          "span#nav-active-llm-label [1537..1602]"
+        ]
+      },
+      "shots": [
+        "1280/hero.jpg"
+      ],
+      "consoleErrors": [],
+      "failedRequests": []
+    },
+    "1920": {
+      "height": 1080,
+      "static": {
+        "duplicateIds": [],
+        "untypedButtons": 0,
+        "missingHandlers": [],
+        "sections": [
+          "hero",
+          "recruiter-marquee",
+          "how-it-works",
+          "placement-snapshot",
+          "analyzer",
+          "genome",
+          "company-intel",
+          "prompt-studio",
+          "buttons-lab",
+          "faq"
+        ],
+        "theme": "(none)",
+        "canvases": 2
+      },
+      "overflow": {
+        "scrollWidth": 2327,
+        "clientWidth": 1920,
+        "overflow": true,
+        "offenders": [
+          "div.aurora-blur [1401..1981]",
+          "div.nav-actions [1407..2327]",
+          "button#btn-theme-toggle.btn-theme-toggle [1893..2009]",
+          "span#theme-mode-label [1923..1994]",
+          "button#btn-sound-toggle.btn-sound-toggle [2021..2109]",
+          "svg.lucide [2034..2044]",
+          "span#sound-toggle-label [2050..2096]",
+          "button#btn-motion-toggle.btn-motion-toggle [2121..2212]",
+          "svg.lucide [2134..2144]",
+          "span#motion-mode-label [2150..2199]",
+          "a.btn-magnetic-glow [2224..2327]"
+        ]
+      },
+      "shots": [
+        "1920/hero.jpg"
+      ],
+      "consoleErrors": [],
+      "failedRequests": []
+    }
+  }
+}
