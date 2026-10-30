@@ -4916,6 +4916,16 @@ Distributed RAG & Embedding Search Engine
     }
   ];
 
+  // Derive offsets from the demo text itself. The hard-coded values drifted when
+  // the first line was shortened, so every demo "Apply" failed its span check.
+  demoMarkups.forEach(m => {
+    const start = demoResumeText.indexOf(m.original_text);
+    if (start >= 0) {
+      m.start_char = start;
+      m.end_char = start + m.original_text.length;
+    }
+  });
+
   const demoReview = {
     persona_id: 'director_ai_research',
     persona_title: 'Director of AI & Research',
