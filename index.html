@@ -4,7 +4,7 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Resume Checker — Placement Intelligence & 3D Interactive Genome</title>
-  <meta name="description" content="Turn your resume into an institutional placement strategy. Benchmark against 226 verified benchmark profiles across 5 neural career archetypes using FAISS and LangGraph.">
+  <meta name="description" content="Compare your resume evidence with a target job description and explore patterns in a verified corpus of 226 alumni resume records across five career archetypes.">
   
   <!-- Modern Stylesheet -->
   <link rel="stylesheet" href="styles.css">
@@ -82,7 +82,7 @@
         <!-- LLM Service & Model Control Hub Button -->
         <button type="button" id="btn-llm-control-hub" class="btn-llm-hub" title="Configure LLM Service Providers & Model Engine" aria-label="Open LLM Control Hub">
           <i data-lucide="cpu" style="width:14px;height:14px;color:var(--accent-cyan);"></i>
-          <span id="nav-active-llm-label">LLM: Neural Engine</span>
+          <span id="nav-active-llm-label">LLM: Checking…</span>
         </button>
 
         <!-- Neumorphic Theme Toggle: Cyber Dark <-> Soft Ceramic -->
@@ -136,7 +136,7 @@
               </h1>
 
               <p class="hero-subtitle">
-                Compare your resume directly against target job descriptions and, when configured, benchmark against patterns from <strong>226 verified benchmark alumni profiles</strong> across five neural career archetypes. Get actionable diagnostic feedback grounded in real hiring outcomes.
+                Compare your resume directly against target job descriptions and, when configured, benchmark against patterns from <strong>a verified corpus of 226 alumni resume records</strong> across five career archetypes. Get actionable diagnostic feedback — the score measures textual alignment, not hiring probability.
               </p>
 
               <div class="hero-cta-group">
@@ -159,11 +159,11 @@
                 </div>
                 <div class="trust-item">
                   <i data-lucide="database"></i>
-                  <span>FAISS Neural Indexing</span>
+                  <span>FAISS Vector Search</span>
                 </div>
                 <div class="trust-item">
                   <i data-lucide="layers"></i>
-                  <span>LangGraph Agent Reasoning</span>
+                  <span>LangGraph Pipeline</span>
                 </div>
                 <div class="trust-item">
                   <i data-lucide="shield-check"></i>
@@ -183,21 +183,10 @@
                 <div id="canvas-3d-tooltip" class="canvas-3d-tooltip" style="display:none;" role="tooltip">
                   <div class="tooltip-header">
                     <span class="tooltip-dot"></span>
-                    <strong id="tooltip-node-title">Distributed Systems</strong>
+                    <strong id="tooltip-node-title">—</strong>
                   </div>
                   <div class="tooltip-body">
-                    <div class="tooltip-row">
-                      <span>Placement Tier:</span>
-                      <strong id="tooltip-node-tier" class="badge-tier">Super Dream</strong>
-                    </div>
-                    <div class="tooltip-row">
-                      <span>Alignment:</span>
-                      <strong id="tooltip-node-match">96.4% Match</strong>
-                    </div>
-                    <div class="tooltip-row">
-                      <span>Top Recruiters:</span>
-                      <span id="tooltip-node-companies" class="tooltip-sub">Google, Microsoft, Amazon</span>
-                    </div>
+                    <span class="tooltip-sub">Illustrative skill map — not a measured match, placement tier or recruiter list.</span>
                   </div>
                 </div>
 
@@ -250,21 +239,21 @@
               </div>
 
               <!-- Maximalist HUD Telemetry Strip (dynamically highlighted in Maximalist Mode) -->
-              <div class="maximalist-hud-strip" id="maximalist-hud-strip" aria-label="Maximalist Placement HUD Telemetry">
+              <div class="maximalist-hud-strip" id="maximalist-hud-strip" aria-label="Backend status from the /health endpoint">
                 <div class="hud-item">
-                  <span class="hud-label">FAISS LATENCY</span>
-                  <span class="hud-val glow-cyan">0.2ms</span>
+                  <span class="hud-label">FAISS INDEX</span>
+                  <span class="hud-val glow-cyan" id="hud-faiss-val">—</span>
                 </div>
                 <div class="hud-item">
-                  <span class="hud-label">ALUMNI GENOME</span>
-                  <span class="hud-val glow-emerald">226 VECTORS</span>
+                  <span class="hud-label">ALUMNI CORPUS</span>
+                  <span class="hud-val glow-emerald" id="hud-vector-val">—</span>
                 </div>
                 <div class="hud-item">
                   <span class="hud-label">LLM ENGINE</span>
-                  <span class="hud-val glow-violet" id="hud-llm-engine-val">NEURAL V2</span>
+                  <span class="hud-val glow-violet" id="hud-llm-engine-val">—</span>
                 </div>
-                <div class="hud-item hud-synth-container" title="Real-time Placement Frequency Synthesizer">
-                  <span class="hud-label">QUANTUM SYNTH</span>
+                <div class="hud-item hud-synth-container" title="Decorative animation — not live data">
+                  <span class="hud-label">VISUALIZER</span>
                   <div class="audio-synth-bars" aria-hidden="true">
                     <span class="synth-bar"></span>
                     <span class="synth-bar"></span>
@@ -1349,7 +1338,7 @@
               Company Recruitment Benchmarks
             </h2>
             <p style="color:var(--text-secondary);font-size:1rem;line-height:1.6;">
-              Review verified placement tiers, interview round breakdowns, and alumni advice. Click <strong>"Match My Resume"</strong> to test your fit against any company's real Job Description.
+              Offer counts and highest CTC come from the 2026 placement report; role notes, sample job descriptions and interview rounds are unverified practice material. Click <strong>"Match My Resume"</strong> to test your resume against a company's sample job description.
             </p>
           </div>
 
@@ -1372,7 +1361,7 @@
             <div style="display:flex;align-items:center;gap:8px;">
               <label for="company-sort-select" style="font-size:0.75rem;color:var(--text-muted);">Sort By:</label>
               <select id="company-sort-select" class="sort-select" aria-label="Sort companies">
-                <option value="alumni">Placed Alumni Count</option>
+                <option value="alumni">Offers (2026 report)</option>
                 <option value="name">Company Name (A–Z)</option>
                 <option value="tier">Placement Tier</option>
               </select>
@@ -1968,7 +1957,7 @@
           </div>
           <div>
             <h3 id="llm-modal-title" style="margin:0;font-size:1.15rem;font-weight:700;color:#fff;">LLM Engine & Model Control Hub</h3>
-            <p style="margin:0;font-size:0.78rem;color:var(--text-muted);">Multi-provider runtime configuration: Gemini, OpenAI, Groq, Ollama, or Grounded Neural Engine</p>
+            <p style="margin:0;font-size:0.78rem;color:var(--text-muted);">Multi-provider runtime configuration: Gemini, OpenAI, Groq, Ollama, or the local deterministic engine (no LLM)</p>
           </div>
         </div>
         <button type="button" id="btn-close-llm-modal" class="btn-icon-circle" aria-label="Close LLM modal">
@@ -1982,14 +1971,14 @@
           <div style="display:flex;align-items:center;gap:8px;">
             <span class="status-dot-pulse"></span>
             <span style="font-size:0.8rem;color:var(--text-secondary);">Current Active Engine:</span>
-            <strong id="llm-active-name" style="color:var(--accent-cyan);">Intelligent Neural Engine (Local Grounded)</strong>
+            <strong id="llm-active-name" style="color:var(--accent-cyan);">Checking…</strong>
           </div>
-          <span id="llm-active-model-tag" class="llm-model-tag">resume-checker-neural-v2</span>
+          <span id="llm-active-model-tag" class="llm-model-tag">—</span>
         </div>
 
         <!-- Provider Selection Tabs -->
         <div class="llm-provider-tabs" role="tablist">
-          <button type="button" class="llm-tab-btn active" data-provider="neural_local">🧠 Neural Local</button>
+          <button type="button" class="llm-tab-btn active" data-provider="neural_local">⚙️ Local (no LLM)</button>
           <button type="button" class="llm-tab-btn" data-provider="gemini">⚡ Google Gemini</button>
           <button type="button" class="llm-tab-btn" data-provider="openai">🤖 OpenAI</button>
           <button type="button" class="llm-tab-btn" data-provider="groq">🚀 Groq LPU</button>
@@ -2015,7 +2004,7 @@
 
           <div class="form-group" id="group-llm-model">
             <label for="llm-select-model">Model ID</label>
-            <input type="text" id="llm-select-model" class="neu-textarea" value="resume-checker-neural-v2" placeholder="e.g. gemini-2.0-flash, gpt-4o-mini, llama-3.3-70b-versatile">
+            <input type="text" id="llm-select-model" class="neu-textarea" value="deterministic-fallback" placeholder="e.g. gemini-2.0-flash, gpt-4o-mini, llama-3.3-70b-versatile">
           </div>
 
           <div class="form-group" id="group-llm-endpoint" style="display:none;">

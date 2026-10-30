@@ -196,9 +196,16 @@ const appState = {
   companies: {
     searchQuery: '',
     activeFilter: 'all',
-    sortBy: 'alumni', // 'alumni' | 'name' | 'tier'
+    sortBy: 'alumni', // 'alumni' (ranks by 2026 report offers) | 'name' | 'tier'
     selectedCompanyId: null
   },
+
+  // 2026 placement report (placement_snapshot_2026.json), shared by the
+  // snapshot section and the company directory once loaded.
+  placementSnapshot: null,
+
+  // data_manifest.json: source of truth for the alumni corpus cluster sizes.
+  dataManifest: null,
 
   // Prompt Studio State (All 18 Frameworks)
   promptStudio: {
@@ -688,8 +695,6 @@ const archetypesDatabase = [
     name: 'Core Engineering & Business',
     clusterLabel: 'CLUSTER #0',
     accentColor: 'var(--arch-0-color)',
-    medianCtc: '₹9.8 LPA',
-    placementRate: '88%',
     sampleAlumniCount: '17 verified profiles',
     summary: 'Focuses on analytical modeling, business operations, tech consulting, and supply chain management. Profiles showcase cross-functional data synthesis and enterprise tooling.',
     keySkills: ['Business Analytics', 'SQL / PowerBI', 'Operations Research', 'Financial Modeling', 'Excel / VBA', 'Strategic Consulting', 'ERP Systems', 'Scrum / Agile'],
@@ -709,8 +714,6 @@ Requirements:
     name: 'Data Science & AI/ML',
     clusterLabel: 'CLUSTER #1',
     accentColor: 'var(--arch-1-color)',
-    medianCtc: '₹18.5 LPA',
-    placementRate: '94%',
     sampleAlumniCount: '53 verified profiles',
     summary: 'Heavy focus on machine learning algorithms, deep neural architectures, natural language processing, computer vision, and mathematical modeling.',
     keySkills: ['Python', 'PyTorch / TensorFlow', 'HuggingFace Transformers', 'Scikit-Learn', 'Vector DBs (FAISS)', 'Computer Vision (OpenCV)', 'Data Pipelines (Pandas)', 'MLOps / Docker'],
@@ -730,8 +733,6 @@ Requirements:
     name: 'General CS & Software Dev',
     clusterLabel: 'CLUSTER #2',
     accentColor: 'var(--arch-2-color)',
-    medianCtc: '₹16.0 LPA',
-    placementRate: '95%',
     sampleAlumniCount: '88 verified profiles',
     summary: 'The classical software engineering archetype. Grounded in solid Data Structures, Algorithms, Object-Oriented Design, operating systems internals, and distributed databases.',
     keySkills: ['Data Structures & Algorithms', 'C++ / Java', 'Object-Oriented Design', 'Operating Systems', 'DBMS & Indexing', 'Multithreading', 'Linux Internals', 'Git'],
@@ -751,8 +752,6 @@ Requirements:
     name: 'Full-Stack Web Development',
     clusterLabel: 'CLUSTER #3',
     accentColor: 'var(--arch-3-color)',
-    medianCtc: '₹14.2 LPA',
-    placementRate: '96%',
     sampleAlumniCount: '31 verified profiles',
     summary: 'End-to-end product engineering spanning modern responsive frontend architectures, REST/GraphQL APIs, relational and NoSQL databases, and cloud deployment.',
     keySkills: ['React / Next.js', 'Node.js / Express', 'TypeScript', 'FastAPI / Python', 'PostgreSQL / MongoDB', 'Redis Caching', 'Docker / CI/CD', 'Tailwind CSS'],
@@ -771,8 +770,6 @@ Requirements:
     name: 'Core Systems (Mech / Civil)',
     clusterLabel: 'CLUSTER #4',
     accentColor: 'var(--arch-4-color)',
-    medianCtc: '₹8.2 LPA',
-    placementRate: '84%',
     sampleAlumniCount: '37 verified profiles',
     summary: 'Physical engineering systems, embedded hardware integration, CAD/CAM design, finite element modeling, IoT sensor networks, and mechatronics.',
     keySkills: ['Embedded C', 'AutoCAD / SolidWorks', 'MATLAB / Simulink', 'Microcontrollers (ARM/ESP32)', 'IoT Protocols (MQTT)', 'FEA / ANSYS', 'Robotics', 'Mechatronics'],
@@ -800,10 +797,6 @@ const companyDatabase = [
     category: 'Product & Tech',
     tier: 'super-dream',
     tierLabel: 'Super Dream',
-    highestCtc: '₹54.8 LPA',
-    medianCtc: '₹32.0 LPA',
-    alumniCount: 42,
-    difficulty: '4.8 / 5.0',
     logoChar: 'G',
     logoColor: '#4285F4',
     provenance: 'Project-curated sample data — unverified',
@@ -831,10 +824,6 @@ Qualifications:
     category: 'Product & Tech',
     tier: 'super-dream',
     tierLabel: 'Super Dream',
-    highestCtc: '₹51.0 LPA',
-    medianCtc: '₹28.5 LPA',
-    alumniCount: 68,
-    difficulty: '4.5 / 5.0',
     logoChar: 'M',
     logoColor: '#00A4EF',
     provenance: 'Project-curated sample data — unverified',
@@ -861,10 +850,6 @@ Qualifications:
     category: 'Product & Tech',
     tier: 'super-dream',
     tierLabel: 'Super Dream',
-    highestCtc: '₹45.0 LPA',
-    medianCtc: '₹26.0 LPA',
-    alumniCount: 114,
-    difficulty: '4.4 / 5.0',
     logoChar: 'A',
     logoColor: '#FF9900',
     provenance: 'Project-curated sample data — unverified',
@@ -892,10 +877,6 @@ Qualifications:
     category: 'Product & Tech',
     tier: 'dream',
     tierLabel: 'Dream',
-    highestCtc: '₹24.0 LPA',
-    medianCtc: '₹17.5 LPA',
-    alumniCount: 53,
-    difficulty: '3.9 / 5.0',
     logoChar: 'C',
     logoColor: '#1BA0D7',
     provenance: 'Project-curated sample data — unverified',
@@ -920,10 +901,6 @@ Qualifications:
     category: 'FinTech',
     tier: 'super-dream',
     tierLabel: 'Super Dream',
-    highestCtc: '₹34.0 LPA',
-    medianCtc: '₹22.0 LPA',
-    alumniCount: 39,
-    difficulty: '4.6 / 5.0',
     logoChar: 'GS',
     logoColor: '#7399C6',
     provenance: 'Project-curated sample data — unverified',
@@ -949,10 +926,6 @@ Qualifications:
     category: 'IT Services',
     tier: 'marquee',
     tierLabel: 'Digital / Prime',
-    highestCtc: '₹11.5 LPA',
-    medianCtc: '₹8.0 LPA',
-    alumniCount: 420,
-    difficulty: '3.4 / 5.0',
     logoChar: 'TCS',
     logoColor: '#8B5CF6',
     provenance: 'Project-curated sample data — unverified',
@@ -976,10 +949,6 @@ Qualifications:
     category: 'IT Services',
     tier: 'dream',
     tierLabel: 'Dream',
-    highestCtc: '₹14.0 LPA',
-    medianCtc: '₹8.5 LPA',
-    alumniCount: 165,
-    difficulty: '3.6 / 5.0',
     logoChar: 'D',
     logoColor: '#86BC25',
     provenance: 'Project-curated sample data — unverified',
@@ -1002,10 +971,6 @@ Qualifications:
     category: 'FinTech',
     tier: 'super-dream',
     tierLabel: 'Super Dream',
-    highestCtc: '₹36.0 LPA',
-    medianCtc: '₹24.0 LPA',
-    alumniCount: 31,
-    difficulty: '4.4 / 5.0',
     logoChar: 'PP',
     logoColor: '#003087',
     provenance: 'Project-curated sample data — unverified',
@@ -1028,10 +993,6 @@ Responsibilities:
     category: 'Product & Tech',
     tier: 'super-dream',
     tierLabel: 'Super Dream',
-    highestCtc: '₹48.0 LPA',
-    medianCtc: '₹30.0 LPA',
-    alumniCount: 18,
-    difficulty: '4.7 / 5.0',
     logoChar: 'U',
     logoColor: '#000000',
     provenance: 'Project-curated sample data — unverified',
@@ -1054,10 +1015,6 @@ Responsibilities:
     category: 'Automotive & Core',
     tier: 'dream',
     tierLabel: 'Dream',
-    highestCtc: '₹12.0 LPA',
-    medianCtc: '₹7.5 LPA',
-    alumniCount: 94,
-    difficulty: '3.8 / 5.0',
     logoChar: 'B',
     logoColor: '#EA1D2D',
     provenance: 'Project-curated sample data — unverified',
@@ -1101,41 +1058,44 @@ let orbitRotation = { x: 0, y: 0 };
 let orbitVelocity = { x: 0, y: 0 };
 
 // Curated 25 High-Value Placement Skills organized across 5 Career Archetypes
+// Illustrative 3D skill constellation: name, color, radius and position
+// drive the scene only. These nodes carry no measured match, placement tier
+// or recruiter data, and their grouping is not the five K-Means archetypes.
 const PLACEMENT_SKILLS_3D = [
   // Cluster 0: Software Architecture (0x00F2FE - Electric Cyan)
-  { name: "Distributed Systems", tier: "Super Dream", match: "97.8%", companies: "Google, Microsoft, Amazon", archetypeId: 0, archetype: "Software Architecture", color: 0x00F2FE, radius: 24, pos: [-180, 80, -30] },
-  { name: "System Design & Scalability", tier: "Super Dream", match: "99.1%", companies: "Google, Amazon, Goldman Sachs", archetypeId: 0, archetype: "Software Architecture", color: 0x00F2FE, radius: 28, pos: [-150, -110, 30] },
-  { name: "Redis Distributed Cache", tier: "Super Dream", match: "96.9%", companies: "Amazon, PayPal, Google", archetypeId: 0, archetype: "Software Architecture", color: 0x00F2FE, radius: 20, pos: [-240, -20, 50] },
-  { name: "Kafka Event Streams", tier: "Super Dream", match: "97.2%", companies: "Goldman Sachs, Cisco, Amazon", archetypeId: 0, archetype: "Software Architecture", color: 0x00F2FE, radius: 22, pos: [-160, 160, -50] },
-  { name: "High-Concurrency Go", tier: "Super Dream", match: "96.4%", companies: "Google, Cisco, Uber", archetypeId: 0, archetype: "Software Architecture", color: 0x00F2FE, radius: 21, pos: [-120, -50, -80] },
+  { name: "Distributed Systems", archetypeId: 0, archetype: "Software Architecture", color: 0x00F2FE, radius: 24, pos: [-180, 80, -30] },
+  { name: "System Design & Scalability", archetypeId: 0, archetype: "Software Architecture", color: 0x00F2FE, radius: 28, pos: [-150, -110, 30] },
+  { name: "Redis Distributed Cache", archetypeId: 0, archetype: "Software Architecture", color: 0x00F2FE, radius: 20, pos: [-240, -20, 50] },
+  { name: "Kafka Event Streams", archetypeId: 0, archetype: "Software Architecture", color: 0x00F2FE, radius: 22, pos: [-160, 160, -50] },
+  { name: "High-Concurrency Go", archetypeId: 0, archetype: "Software Architecture", color: 0x00F2FE, radius: 21, pos: [-120, -50, -80] },
 
   // Cluster 1: AI/ML Systems (0x9D4EDD - Neon Violet)
-  { name: "PyTorch & Transformers", tier: "Super Dream", match: "98.4%", companies: "NVIDIA, Google DeepMind, Adobe", archetypeId: 1, archetype: "AI/ML Systems", color: 0x9D4EDD, radius: 26, pos: [190, 110, 40] },
-  { name: "LangGraph Agent Workflows", tier: "Super Dream", match: "98.6%", companies: "Microsoft, Adobe, Google", archetypeId: 1, archetype: "AI/ML Systems", color: 0x9D4EDD, radius: 24, pos: [80, -150, 40] },
-  { name: "FAISS Neural Indexing", tier: "Super Dream", match: "98.0%", companies: "Google, Adobe, Microsoft", archetypeId: 1, archetype: "AI/ML Systems", color: 0x9D4EDD, radius: 22, pos: [50, 60, 90] },
-  { name: "RAG Pipeline Engineering", tier: "Super Dream", match: "97.6%", companies: "Microsoft, Amazon, Adobe", archetypeId: 1, archetype: "AI/ML Systems", color: 0x9D4EDD, radius: 23, pos: [150, 190, 20] },
-  { name: "MLOps & Model Deployment", tier: "Super Dream", match: "97.5%", companies: "NVIDIA, Google, Cisco", archetypeId: 1, archetype: "AI/ML Systems", color: 0x9D4EDD, radius: 22, pos: [-30, 110, 60] },
+  { name: "PyTorch & Transformers", archetypeId: 1, archetype: "AI/ML Systems", color: 0x9D4EDD, radius: 26, pos: [190, 110, 40] },
+  { name: "LangGraph Agent Workflows", archetypeId: 1, archetype: "AI/ML Systems", color: 0x9D4EDD, radius: 24, pos: [80, -150, 40] },
+  { name: "FAISS Vector Search", archetypeId: 1, archetype: "AI/ML Systems", color: 0x9D4EDD, radius: 22, pos: [50, 60, 90] },
+  { name: "RAG Pipeline Engineering", archetypeId: 1, archetype: "AI/ML Systems", color: 0x9D4EDD, radius: 23, pos: [150, 190, 20] },
+  { name: "MLOps & Model Deployment", archetypeId: 1, archetype: "AI/ML Systems", color: 0x9D4EDD, radius: 22, pos: [-30, 110, 60] },
 
   // Cluster 2: Cloud & DevOps (0x00F5D4 - Mint Emerald)
-  { name: "Kubernetes & Cloud Native", tier: "Super Dream", match: "96.2%", companies: "Cisco, Microsoft, Amazon", archetypeId: 2, archetype: "Cloud & DevOps", color: 0x00F5D4, radius: 24, pos: [0, -40, 70] },
-  { name: "Docker & Containerization", tier: "Dream", match: "93.8%", companies: "Microsoft, Intel, PayPal", archetypeId: 2, archetype: "Cloud & DevOps", color: 0x00F5D4, radius: 18, pos: [100, 160, -20] },
-  { name: "Terraform & AWS Infra", tier: "Super Dream", match: "95.5%", companies: "Amazon, Cisco, Intel", archetypeId: 2, archetype: "Cloud & DevOps", color: 0x00F5D4, radius: 20, pos: [0, 190, -40] },
-  { name: "CI/CD & GitHub Actions", tier: "Dream", match: "93.1%", companies: "Cisco, Microsoft, Oracle", archetypeId: 2, archetype: "Cloud & DevOps", color: 0x00F5D4, radius: 18, pos: [220, 180, 30] },
-  { name: "Linux Observability & eBPF", tier: "Super Dream", match: "95.9%", companies: "Google, Cisco, Intel", archetypeId: 2, archetype: "Cloud & DevOps", color: 0x00F5D4, radius: 19, pos: [90, 40, -70] },
+  { name: "Kubernetes & Cloud Native", archetypeId: 2, archetype: "Cloud & DevOps", color: 0x00F5D4, radius: 24, pos: [0, -40, 70] },
+  { name: "Docker & Containerization", archetypeId: 2, archetype: "Cloud & DevOps", color: 0x00F5D4, radius: 18, pos: [100, 160, -20] },
+  { name: "Terraform & AWS Infra", archetypeId: 2, archetype: "Cloud & DevOps", color: 0x00F5D4, radius: 20, pos: [0, 190, -40] },
+  { name: "CI/CD & GitHub Actions", archetypeId: 2, archetype: "Cloud & DevOps", color: 0x00F5D4, radius: 18, pos: [220, 180, 30] },
+  { name: "Linux Observability & eBPF", archetypeId: 2, archetype: "Cloud & DevOps", color: 0x00F5D4, radius: 19, pos: [90, 40, -70] },
 
   // Cluster 3: Product Strategy & FinTech (0xFFB703 - Solar Amber)
-  { name: "Low-Latency C++ Engine", tier: "Super Dream", match: "95.7%", companies: "Goldman Sachs, Morgan Stanley, Qualcomm", archetypeId: 3, archetype: "Core Engineering", color: 0xFFB703, radius: 24, pos: [180, -90, -40] },
-  { name: "Quantitative Risk Modeling", tier: "Super Dream", match: "96.5%", companies: "Goldman Sachs, JP Morgan, Morgan Stanley", archetypeId: 3, archetype: "Core Engineering", color: 0xFFB703, radius: 22, pos: [240, -40, 20] },
-  { name: "High-Frequency Algorithmic Systems", tier: "Super Dream", match: "97.1%", companies: "Tower Research, DE Shaw, Graviton", archetypeId: 3, archetype: "Core Engineering", color: 0xFFB703, radius: 25, pos: [150, -180, -20] },
-  { name: "Product Growth & Unit Economics", tier: "Dream", match: "94.2%", companies: "PayPal, Amazon, Flipkart", archetypeId: 3, archetype: "Core Engineering", color: 0xFFB703, radius: 18, pos: [200, 50, -60] },
-  { name: "Financial Derivatives Architecture", tier: "Super Dream", match: "96.0%", companies: "Morgan Stanley, Barclays, Citi", archetypeId: 3, archetype: "Core Engineering", color: 0xFFB703, radius: 21, pos: [260, -120, 10] },
+  { name: "Low-Latency C++ Engine", archetypeId: 3, archetype: "Core Engineering", color: 0xFFB703, radius: 24, pos: [180, -90, -40] },
+  { name: "Quantitative Risk Modeling", archetypeId: 3, archetype: "Core Engineering", color: 0xFFB703, radius: 22, pos: [240, -40, 20] },
+  { name: "High-Frequency Algorithmic Systems", archetypeId: 3, archetype: "Core Engineering", color: 0xFFB703, radius: 25, pos: [150, -180, -20] },
+  { name: "Product Growth & Unit Economics", archetypeId: 3, archetype: "Core Engineering", color: 0xFFB703, radius: 18, pos: [200, 50, -60] },
+  { name: "Financial Derivatives Architecture", archetypeId: 3, archetype: "Core Engineering", color: 0xFFB703, radius: 21, pos: [260, -120, 10] },
 
   // Cluster 4: Cybersecurity & Zero-Trust (0xFF007F - Vibrant Coral)
-  { name: "Zero-Trust IAM & OAuth2", tier: "Super Dream", match: "96.8%", companies: "Cisco, Microsoft, Palo Alto Networks", archetypeId: 4, archetype: "Cyber & Security", color: 0xFF007F, radius: 23, pos: [-80, -90, 80] },
-  { name: "Penetration Testing & Red Team", tier: "Super Dream", match: "95.4%", companies: "Palo Alto Networks, CrowdStrike, Cisco", archetypeId: 4, archetype: "Cyber & Security", color: 0xFF007F, radius: 22, pos: [-190, -160, 40] },
-  { name: "Cloud Security Posture (CSPM)", tier: "Super Dream", match: "96.1%", companies: "Amazon, Microsoft, Google", archetypeId: 4, archetype: "Cyber & Security", color: 0xFF007F, radius: 21, pos: [-110, 40, 100] },
-  { name: "Cryptographic Protocols & TLS", tier: "Super Dream", match: "97.0%", companies: "Qualcomm, Apple, Google", archetypeId: 4, archetype: "Cyber & Security", color: 0xFF007F, radius: 20, pos: [-70, 200, -20] },
-  { name: "Threat Modeling & SIEM", tier: "Dream", match: "93.9%", companies: "Cisco, Fortinet, Oracle", archetypeId: 4, archetype: "Cyber & Security", color: 0xFF007F, radius: 19, pos: [-170, -70, -60] }
+  { name: "Zero-Trust IAM & OAuth2", archetypeId: 4, archetype: "Cyber & Security", color: 0xFF007F, radius: 23, pos: [-80, -90, 80] },
+  { name: "Penetration Testing & Red Team", archetypeId: 4, archetype: "Cyber & Security", color: 0xFF007F, radius: 22, pos: [-190, -160, 40] },
+  { name: "Cloud Security Posture (CSPM)", archetypeId: 4, archetype: "Cyber & Security", color: 0xFF007F, radius: 21, pos: [-110, 40, 100] },
+  { name: "Cryptographic Protocols & TLS", archetypeId: 4, archetype: "Cyber & Security", color: 0xFF007F, radius: 20, pos: [-70, 200, -20] },
+  { name: "Threat Modeling & SIEM", archetypeId: 4, archetype: "Cyber & Security", color: 0xFF007F, radius: 19, pos: [-170, -70, -60] }
 ];
 
 // Central Three.js Scene Controller Contract
@@ -1734,7 +1694,7 @@ function onCanvasClick(e) {
         }
 
         if (window.spatialAudio) window.spatialAudio.nodeSelect();
-        showToast(`Targeted Cluster Node: ${skill.name} (${skill.tier})`);
+        showToast(`Skill node: ${skill.name} (illustrative)`);
         return;
       }
     }
@@ -1750,14 +1710,7 @@ function show3DNodeTooltip(skill, hitPoint) {
   if (!tooltip || !wrapper) return;
 
   const titleEl = document.getElementById('tooltip-node-title');
-  const tierEl = document.getElementById('tooltip-node-tier');
-  const matchEl = document.getElementById('tooltip-node-match');
-  const compEl = document.getElementById('tooltip-node-companies');
-
   if (titleEl) titleEl.textContent = skill.name;
-  if (tierEl) tierEl.textContent = skill.tier;
-  if (matchEl) matchEl.textContent = skill.match;
-  if (compEl) compEl.textContent = skill.companies;
 
   tooltip.style.display = 'block';
 
@@ -2329,6 +2282,7 @@ async function checkBackendHealth() {
       appState.apiStatus = 'connected';
       badge.className = 'engine-status-badge status-connected';
       label.textContent = 'API Connected (FastAPI)';
+      updateHudFromHealth(data);
     } else {
       throw new Error(`HTTP ${response.status}`);
     }
@@ -2336,6 +2290,22 @@ async function checkBackendHealth() {
     appState.apiStatus = 'offline';
     badge.className = 'engine-status-badge status-offline';
     label.textContent = 'API Offline (Demo Available)';
+    updateHudFromHealth(null);
+  }
+}
+
+// The maximalist HUD shows only values reported by GET /health; without a
+// live response it shows a dash rather than a plausible-looking number.
+function updateHudFromHealth(health) {
+  const faissVal = document.getElementById('hud-faiss-val');
+  const vectorVal = document.getElementById('hud-vector-val');
+  if (faissVal) {
+    faissVal.textContent = !health ? '—' : (health.faiss_ready ? 'READY' : 'NOT READY');
+  }
+  if (vectorVal) {
+    vectorVal.textContent = health && typeof health.vector_count === 'number'
+      ? `${health.vector_count} RECORDS`
+      : '—';
   }
 }
 
@@ -2427,7 +2397,7 @@ function initResumeAnalyzer() {
         appState.analyzer.jobDescription = company.sampleJd;
         charCounter.textContent = `${company.sampleJd.length.toLocaleString()} characters`;
         hideFieldError('jd-error-msg');
-        showToast(`Loaded ${company.name} job description.`);
+        showToast(`Loaded the sample job description for ${company.name}.`);
       }
     });
   });
@@ -2549,7 +2519,7 @@ async function executeAnalysis() {
   if (markdownArea) markdownArea.textContent = 'Connecting to inference engine...';
 
   analyzeBtn.disabled = true;
-  btnText.textContent = 'Comparing with Placed Alumni...';
+  btnText.textContent = 'Comparing with the alumni corpus…';
   if (cancelBtn) cancelBtn.style.display = 'block';
 
   // 3. Demo Mode Route
@@ -2714,7 +2684,7 @@ function renderSafeMarkdown(rawText, isDemo) {
       provenanceTag.textContent = 'Illustrative Demo Output — Not Generated from Live Resume';
     } else {
       provenanceTag.className = 'provenance-tag provenance-live';
-      provenanceTag.textContent = 'Live Session Analysis — Verified with Placed Alumni FAISS Store';
+      provenanceTag.textContent = 'Live analysis — compared with the alumni reference corpus';
     }
   }
 
@@ -2819,18 +2789,61 @@ function updateScoreRingFromNumber(score) {
 // ==============================================================================
 // 10. CAREER GENOME & CROSS-ARCHETYPE COMPARISON
 // ==============================================================================
+// archetypesDatabase ids are the K-Means cluster ids; these are the matching
+// keys of data_manifest.json's archetype_distribution. The corpus holds resumes
+// only, so there is no per-archetype salary or placement-rate data to show.
+const ARCHETYPE_MANIFEST_KEYS = {
+  0: 'Core Engineering & Business',
+  1: 'Data Science & AI/ML',
+  2: 'General CS & Software Development',
+  3: 'Full-Stack Web Development',
+  4: 'Core Engineering (Mechanical/Civil)'
+};
+
+function getArchetypeCorpusCount(arch) {
+  const m = appState.dataManifest;
+  const count = m && m.archetype_distribution
+    ? m.archetype_distribution[ARCHETYPE_MANIFEST_KEYS[arch.id]]
+    : undefined;
+  if (typeof count !== 'number') return null;
+  const total = m.source_count;
+  return { count, total, pct: total ? ((count / total) * 100).toFixed(1) : null };
+}
+
+function formatCorpusCount(arch, long) {
+  const c = getArchetypeCorpusCount(arch);
+  if (!c) return '—';
+  return long ? `${c.count} of ${c.total} records (${c.pct}%)` : `${c.count} corpus records`;
+}
+
+let dataManifestRequested = false;
+
 function initCareerGenome() {
   const selectorContainer = document.getElementById('archetypes-selector-grid');
   if (!selectorContainer) return;
 
+  // Fetch once; re-render when the cluster sizes arrive.
+  if (!dataManifestRequested) {
+    dataManifestRequested = true;
+    fetch('/data_manifest.json')
+      .then(res => (res.ok ? res.json() : null))
+      .then(manifest => {
+        if (manifest) {
+          appState.dataManifest = manifest;
+          initCareerGenome();
+        }
+      })
+      .catch(() => {});
+  }
+
   selectorContainer.innerHTML = archetypesDatabase.map(arch => `
-    <div class="archetype-chip-card ${arch.id === appState.genome.selectedArchetypeId ? 'active' : ''}" 
+    <div class="archetype-chip-card ${arch.id === appState.genome.selectedArchetypeId ? 'active' : ''}"
          data-arch-id="${arch.id}" onclick="selectArchetype(${arch.id})">
       <div class="archetype-chip-header">
         <span class="arch-id-pill" style="color:${arch.accentColor};">${arch.clusterLabel}</span>
       </div>
       <h4 class="arch-title">${arch.name}</h4>
-      <div class="arch-stats-row">Avg ${arch.medianCtc} • ${arch.placementRate} Placed</div>
+      <div class="arch-stats-row">${formatCorpusCount(arch)}</div>
     </div>
   `).join('');
 
@@ -2876,25 +2889,24 @@ function renderArchetypeDetail(id) {
       </div>
 
       <div style="background:rgba(255,255,255,0.03);border:var(--border-subtle);border-radius:var(--radius-lg);padding:24px;">
-        <h4 style="font-family:var(--font-display);font-size:1.15rem;color:#fff;margin-bottom:16px;">Verified Placement Benchmarks</h4>
-        
-        <div style="margin-bottom:14px;">
-          <span style="font-size:0.75rem;color:var(--text-muted);display:block;">Median Compensation</span>
-          <strong style="font-size:1.3rem;color:var(--accent-emerald);">${arch.medianCtc}</strong>
-        </div>
+        <h4 style="font-family:var(--font-display);font-size:1.15rem;color:#fff;margin-bottom:16px;">Reference Corpus</h4>
 
         <div style="margin-bottom:14px;">
-          <span style="font-size:0.75rem;color:var(--text-muted);display:block;">Placement Conversion</span>
-          <strong style="font-size:1.3rem;color:var(--accent-cyan);">${arch.placementRate}</strong>
+          <span style="font-size:0.75rem;color:var(--text-muted);display:block;">Records in this archetype</span>
+          <strong style="font-size:1.3rem;color:var(--accent-emerald);">${formatCorpusCount(arch, true)}</strong>
         </div>
+
+        <p style="font-size:0.78rem;color:var(--text-muted);margin:0 0 14px;line-height:1.5;">
+          The corpus contains resumes only, so there is no salary or placement-rate figure for an archetype. For batch-level offers and CTC, see Placement 2026.
+        </p>
 
         <div style="margin-bottom:16px;">
-          <span style="font-size:0.75rem;color:var(--text-muted);display:block;">Representative Placements</span>
+          <span style="font-size:0.75rem;color:var(--text-muted);display:block;">Typical roles (illustrative)</span>
           <p style="font-size:0.86rem;color:var(--text-secondary);margin-top:4px;">${arch.typicalRoles.join(' • ')}</p>
         </div>
 
         <div>
-          <span style="font-size:0.75rem;color:var(--text-muted);display:block;">High-Conversion Capstone Themes</span>
+          <span style="font-size:0.75rem;color:var(--text-muted);display:block;">Suggested capstone themes</span>
           <ul style="font-size:0.82rem;color:var(--text-secondary);margin-top:6px;padding-left:18px;">
             ${arch.projectThemes.map(t => `<li>${t}</li>`).join('')}
           </ul>
@@ -2975,14 +2987,9 @@ function renderComparisonModalContent() {
       </thead>
       <tbody>
         <tr>
-          <td><strong>Median CTC</strong></td>
-          <td>${archA.medianCtc}</td>
-          <td>${archB.medianCtc}</td>
-        </tr>
-        <tr>
-          <td><strong>Placement Rate</strong></td>
-          <td>${archA.placementRate}</td>
-          <td>${archB.placementRate}</td>
+          <td><strong>Records in corpus</strong></td>
+          <td>${formatCorpusCount(archA, true)}</td>
+          <td>${formatCorpusCount(archB, true)}</td>
         </tr>
         <tr>
           <td><strong>Core Tech Stack</strong></td>
@@ -3043,6 +3050,19 @@ function initCompanyIntelligence() {
   renderCompanyDirectory();
 }
 
+// Figures from the 2026 placement report for a curated company, or null when
+// the company is not in the report excerpt (top recruiters + notable high-CTC).
+// Matches on the leading word ("TCS (Digital / Prime)" -> "tcs"). The report
+// counts offers, not distinct students.
+function getReportFiguresFor(company) {
+  const snap = appState.placementSnapshot;
+  if (!snap) return null;
+  const lead = name => name.toLowerCase().split(/[\s(]/)[0];
+  const rows = [...(snap.top_recruiters || []), ...(snap.notable_high_ctc || [])];
+  const row = rows.find(r => lead(r.company) === lead(company.name));
+  return row ? { offers: row.offers, profiles: row.profiles, highestCtcLpa: row.highest_ctc_lpa } : null;
+}
+
 function renderCompanyDirectory() {
   const container = document.getElementById('companies-grid-container');
   if (!container) return;
@@ -3065,7 +3085,10 @@ function renderCompanyDirectory() {
   // Sorting
   filtered.sort((a, b) => {
     if (sortBy === 'name') return a.name.localeCompare(b.name);
-    if (sortBy === 'alumni') return b.alumniCount - a.alumniCount;
+    if (sortBy === 'alumni') {
+      const offers = c => { const f = getReportFiguresFor(c); return f ? f.offers : -1; };
+      return offers(b) - offers(a); // companies absent from the report sort last
+    }
     if (sortBy === 'tier') return a.tier.localeCompare(b.tier);
     return 0;
   });
@@ -3083,7 +3106,9 @@ function renderCompanyDirectory() {
     return;
   }
 
-  container.innerHTML = filtered.map(c => `
+  container.innerHTML = filtered.map(c => {
+    const fig = getReportFiguresFor(c);
+    return `
     <div class="company-card" data-company-id="${c.id}">
       <div class="company-header">
         <div class="company-identity">
@@ -3098,13 +3123,16 @@ function renderCompanyDirectory() {
 
       <div class="company-stats-box">
         <div>
-          <div class="c-stat-val">${c.highestCtc}</div>
-          <div class="c-stat-label">Highest Package</div>
+          <div class="c-stat-val">${fig ? `₹${fig.highestCtcLpa} LPA` : '—'}</div>
+          <div class="c-stat-label">Highest CTC</div>
         </div>
         <div>
-          <div class="c-stat-val">${c.alumniCount} Placed</div>
-          <div class="c-stat-label">Placed Alumni</div>
+          <div class="c-stat-val">${fig ? fig.offers : '—'}</div>
+          <div class="c-stat-label">Offers</div>
         </div>
+      </div>
+      <div style="font-size:0.7rem;color:var(--text-muted);margin:-4px 0 10px;">
+        ${fig ? '2026 placement report · offers, not students' : 'Not in the 2026 report excerpt'}
       </div>
 
       <div class="company-skills-tags">
@@ -3120,7 +3148,8 @@ function renderCompanyDirectory() {
         </button>
       </div>
     </div>
-  `).join('');
+  `;
+  }).join('');
 
   if (window.lucide) window.lucide.createIcons();
   init3DCardTilt();
@@ -3150,7 +3179,7 @@ function loadCompanyJd(companyId) {
     appState.analyzer.jobDescription = company.sampleJd;
     const charCounter = document.getElementById('jd-char-count');
     if (charCounter) charCounter.textContent = `${company.sampleJd.length.toLocaleString()} characters`;
-    showToast(`Loaded ${company.name} job description.`);
+    showToast(`Loaded the sample job description for ${company.name}.`);
 
     const analyzerSection = document.getElementById('analyzer');
     if (analyzerSection) analyzerSection.scrollIntoView({ behavior: 'smooth' });
@@ -3162,6 +3191,12 @@ function openCompanyModal(companyId) {
   const modal = document.getElementById('company-modal-backdrop');
   const body = document.getElementById('company-modal-body');
   if (!company || !modal || !body) return;
+
+  const fig = getReportFiguresFor(company);
+  const snap = appState.placementSnapshot;
+  const figureSource = fig && snap
+    ? `Figures: ${snap.source_name}, ${snap.batch} batch, snapshot ${snap.source_snapshot_date} — offers, not distinct students.`
+    : 'This company is not in the 2026 placement report excerpt, so no figures are shown.';
 
   body.innerHTML = `
     <div style="display:flex;align-items:center;gap:16px;margin-bottom:20px;">
@@ -3176,24 +3211,24 @@ function openCompanyModal(companyId) {
 
     <div style="display:grid;grid-template-columns:repeat(3, 1fr);gap:12px;margin-bottom:20px;background:rgba(255,255,255,0.03);padding:14px;border-radius:var(--radius-md);">
       <div>
-        <span style="font-size:0.75rem;color:var(--text-muted);display:block;">Highest Package</span>
-        <strong style="color:var(--accent-cyan);font-size:1.15rem;">${company.highestCtc}</strong>
+        <span style="font-size:0.75rem;color:var(--text-muted);display:block;">Highest CTC</span>
+        <strong style="color:var(--accent-cyan);font-size:1.15rem;">${fig ? `₹${fig.highestCtcLpa} LPA` : '—'}</strong>
       </div>
       <div>
-        <span style="font-size:0.75rem;color:var(--text-muted);display:block;">Median CTC</span>
-        <strong style="color:var(--accent-emerald);font-size:1.15rem;">${company.medianCtc}</strong>
+        <span style="font-size:0.75rem;color:var(--text-muted);display:block;">Offers</span>
+        <strong style="color:var(--accent-emerald);font-size:1.15rem;">${fig ? fig.offers : '—'}</strong>
       </div>
       <div>
-        <span style="font-size:0.75rem;color:var(--text-muted);display:block;">Interview Rating</span>
-        <strong style="color:var(--accent-amber);font-size:1.15rem;">${company.difficulty}</strong>
+        <span style="font-size:0.75rem;color:var(--text-muted);display:block;">Job profiles</span>
+        <strong style="color:var(--accent-amber);font-size:1.15rem;">${fig && fig.profiles ? fig.profiles : '—'}</strong>
       </div>
     </div>
 
     <div style="font-size:0.78rem;color:var(--text-dim);margin-bottom:18px;font-style:italic;">
-      Provenance: ${company.provenance}
+      ${figureSource} Role, skills, sample JD and interview rounds are ${company.provenance.toLowerCase()}.
     </div>
 
-    <h4 style="font-family:var(--font-display);font-size:1.15rem;color:#fff;margin-bottom:12px;">Verified Interview Rounds</h4>
+    <h4 style="font-family:var(--font-display);font-size:1.15rem;color:#fff;margin-bottom:12px;">Sample Interview Rounds (unverified)</h4>
     <div style="display:flex;flex-direction:column;gap:10px;margin-bottom:24px;">
       ${company.interviewRounds.map((r, i) => `
         <div style="background:rgba(255,255,255,0.04);border:var(--border-subtle);border-radius:var(--radius-sm);padding:12px 14px;">
@@ -5144,9 +5179,12 @@ async function refreshLLMProvidersList() {
     const activeName = document.getElementById('llm-active-name');
     const activeModel = document.getElementById('llm-active-model-tag');
 
-    const shortName = data.active_provider.includes('Neural') ? 'Neural Engine' : data.active_provider;
-    if (navLabel) navLabel.textContent = `LLM: ${shortName}`;
-    if (hudVal) hudVal.textContent = (data.active_model || 'NEURAL V2').toUpperCase();
+    // The local provider is deterministic template synthesis, not a language
+    // model; say so instead of showing a model name. Detect it by its stable
+    // model id rather than by a display string.
+    const isLocalEngine = data.active_model === 'deterministic-fallback';
+    if (navLabel) navLabel.textContent = isLocalEngine ? 'LLM: Off (local engine)' : `LLM: ${data.active_provider}`;
+    if (hudVal) hudVal.textContent = isLocalEngine ? 'LOCAL · NO LLM' : (data.active_model || '—').toUpperCase();
     if (activeName) activeName.textContent = data.active_provider;
     if (activeModel) activeModel.textContent = data.active_model;
 
@@ -5167,8 +5205,8 @@ function updateLLMProviderFormView(providerId) {
   if (providerId === 'neural_local') {
     if (keyGroup) keyGroup.style.display = 'none';
     if (endpointGroup) endpointGroup.style.display = 'none';
-    if (modelInput) modelInput.value = 'resume-checker-neural-v2';
-    if (descEl) descEl.textContent = 'Zero-latency, zero-cost deterministic synthesis with all 18 prompt engineering frameworks. 100% offline & privacy-safe.';
+    if (modelInput) modelInput.value = 'deterministic-fallback';
+    if (descEl) descEl.textContent = 'No language model: deterministic, template-based responses built from the 18 prompt frameworks. Runs offline with no external API calls and no API key.';
   } else if (providerId === 'gemini') {
     if (keyGroup) keyGroup.style.display = 'block';
     if (endpointGroup) endpointGroup.style.display = 'none';
@@ -5312,6 +5350,9 @@ function initPlacementSnapshot() {
     })
     .then(data => {
       if (!data || !data.top_recruiters) return;
+
+      appState.placementSnapshot = data;
+      renderCompanyDirectory(); // swap the directory's dashes for report figures
 
       const totalOffersEl = document.getElementById('kpi-total-offers');
       if (totalOffersEl && data.total_offers) totalOffersEl.textContent = Number(data.total_offers).toLocaleString();
