@@ -22,7 +22,7 @@ html[data-theme="terra"] {
   --color-surface-lilac: #ECE7F3;
   --color-ink: #262438;
   --color-ink-soft: #484457;
-  --color-muted: #6A6571;
+  --color-muted: #625D69; /* ≥4.5:1 on canvas, alternate canvas and inset wells */
   --color-border: #D5CDBF;
   --color-border-strong: #B7AD9D;
   --color-forest: #1E6655;
@@ -384,6 +384,16 @@ body {
   padding: 0 24px;
 }
 
+/* A word longer than its line breaks instead of widening the page (200% text,
+   identifiers like placement_stats_batch_wise). Tables scroll instead. */
+body {
+  overflow-wrap: anywhere;
+}
+
+table {
+  overflow-wrap: normal;
+}
+
 /* Anchor targets land below the sticky masthead. */
 main section[id] {
   scroll-margin-top: 76px;
@@ -422,7 +432,8 @@ main section[id] {
   display: flex;
   align-items: center;
   gap: 11px;
-  flex-shrink: 0;
+  flex-shrink: 1;
+  min-width: 0;
   color: var(--color-ink);
   text-decoration: none;
 }
@@ -441,7 +452,14 @@ main section[id] {
 .wordmark-text {
   display: flex;
   flex-direction: column;
+  min-width: 0;
   line-height: 1.05;
+}
+
+.wordmark-text > span {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 .brand-name {
@@ -1144,6 +1162,7 @@ main section[id] {
   .wordmark-mark { width: 32px; height: 32px; }
   .prefs-panel { position: fixed; top: 70px; left: 12px; right: 12px; width: auto; }
   .hero-cta-group .btn-lg { width: 100%; }
+  .btn-primary, .btn-secondary { white-space: normal; text-align: center; }
   .atlas-stage { margin-top: 36px; border-radius: var(--radius-xl); }
   .spatial-canvas-wrapper { height: 320px; }
   .atlas-legend { padding: 20px 18px; }
@@ -1261,7 +1280,7 @@ main section[id] {
   letter-spacing: 0;
   padding-right: 12px;
   border-right: 1px solid var(--color-border-strong);
-  color: var(--color-terracotta);
+  color: var(--color-terracotta-ink); /* small text: the darker ink keeps 4.5:1 */
 }
 
 .section-title {
@@ -1349,7 +1368,7 @@ main section[id] {
   font-weight: 700;
   letter-spacing: 0.14em;
   text-transform: uppercase;
-  color: var(--color-terracotta);
+  color: var(--color-terracotta-ink);
 }
 
 .process-title {
@@ -1737,7 +1756,7 @@ main section[id] {
     grid-template-columns: 1fr;
     grid-template-areas: "bands" "recruiters" "categories";
   }
-  .caveats-list { grid-template-columns: 1fr; }
+  .caveats-list { grid-template-columns: minmax(0, 1fr); }
   .process-rail { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 36px 0; }
   .process-step:nth-child(2)::before { display: none; }
   .section-head-split { grid-template-columns: 1fr; }
@@ -1936,7 +1955,7 @@ main section[id] {
 }
 
 .req {
-  color: var(--color-terracotta);
+  color: var(--color-terracotta-ink);
 }
 
 .optional {
@@ -2603,7 +2622,8 @@ main section[id] {
 
 .field-map {
   display: grid;
-  grid-template-columns: repeat(5, minmax(0, 1fr));
+  /* rem-based tracks reflow when text is enlarged (WCAG 1.4.4) */
+  grid-template-columns: repeat(auto-fit, minmax(11rem, 1fr));
   gap: 10px;
   margin-bottom: 20px;
 }
@@ -2650,6 +2670,7 @@ main section[id] {
 
 .archetype-tab-name {
   grid-column: 1 / -1;
+  overflow-wrap: anywhere;
   font-family: var(--font-display);
   font-size: 1.08rem;
   line-height: 1.2;
@@ -2824,6 +2845,7 @@ main section[id] {
 }
 
 .sort-select {
+  max-width: 100%;
   min-height: 38px;
   padding: 0 34px 0 12px;
   border: 1px solid var(--color-border);
@@ -2876,8 +2898,7 @@ main section[id] {
 }
 
 @media (max-width: 1024px) {
-  .field-map { grid-template-columns: repeat(3, minmax(0, 1fr)); }
-  .detail-panel-grid { grid-template-columns: 1fr; gap: 20px; }
+  .detail-panel-grid { grid-template-columns: minmax(0, 1fr); gap: 20px; }
 }
 
 @media (max-width: 640px) {
@@ -2944,7 +2965,9 @@ main section[id] {
 .sort-control {
   display: inline-flex;
   align-items: center;
+  flex-wrap: wrap;
   gap: 8px;
+  max-width: 100%;
   margin-left: auto;
   font-size: 0.8rem;
   font-weight: 600;
@@ -3214,6 +3237,7 @@ main section[id] {
 
 @media (max-width: 760px) {
   .sort-control { margin-left: 0; }
+  .source-chip { white-space: normal; }
   /* The table becomes stacked recruiter cards */
   .company-directory { border: 0; background: transparent; overflow: visible; }
   .company-table thead { display: none; }
@@ -3221,7 +3245,8 @@ main section[id] {
   .company-table tbody { display: block; }
   .company-table tbody tr {
     display: grid;
-    grid-template-columns: repeat(3, minmax(0, 1fr));
+    /* rem tracks: three stats side by side normally, stacked when text is enlarged */
+    grid-template-columns: repeat(auto-fit, minmax(5.75rem, 1fr));
     gap: 10px 12px;
     margin-bottom: 12px;
     padding: 16px;
@@ -3234,7 +3259,7 @@ main section[id] {
   .company-table tbody th,
   .company-table td[data-label="Source"],
   .company-table .row-actions { grid-column: 1 / -1; }
-  .company-table td.num { text-align: left; }
+  .company-table td.num { text-align: left; white-space: normal; }
   .company-table td[data-label]::before {
     content: attr(data-label);
     display: block;
@@ -3247,7 +3272,8 @@ main section[id] {
     color: var(--color-muted);
   }
   .company-table td[data-label="Source"]::before { display: none; }
-  .row-actions { display: flex; justify-content: space-between; }
+  .row-actions { display: flex; flex-wrap: wrap; justify-content: space-between; gap: 8px; white-space: normal; }
+  .company-table { overflow-wrap: anywhere; }
   .fact-grid { grid-template-columns: repeat(3, minmax(0, 1fr)); }
   .fact-grid dd { font-size: 1.3rem; }
 }
@@ -4052,6 +4078,7 @@ main section[id] {
   position: fixed;
   bottom: 24px;
   right: 24px;
+  max-width: calc(100vw - 32px);
   padding: 14px 20px;
   background: var(--bg-elevated);
   backdrop-filter: blur(16px);
@@ -4693,7 +4720,7 @@ main section[id] {
 
 .verdict-insufficient {
   background: rgba(var(--terracotta-rgb), 0.16);
-  color: var(--color-terracotta);
+  color: var(--color-terracotta-ink);
   border: 1px solid var(--color-terracotta);
 }
 
