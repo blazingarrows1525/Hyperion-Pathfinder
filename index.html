@@ -1,12 +1,27 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="en" data-theme="terra">
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Resume Checker — Placement Intelligence & 3D Interactive Genome</title>
   <meta name="description" content="Compare your resume evidence with a target job description and explore patterns in a verified corpus of 226 alumni resume records across five career archetypes.">
   
-  <!-- Modern Stylesheet -->
+  <!-- Theme before first paint: only a display preference is read from storage. -->
+  <script>
+    (function () {
+      try {
+        var theme = localStorage.getItem('career_ui_theme_v2');
+        if (!theme && localStorage.getItem('resume_checker_theme') === 'cyber') theme = 'grove';
+        if (theme === 'grove') document.documentElement.setAttribute('data-theme', 'grove');
+      } catch (e) { /* storage blocked: keep Terra Atelier */ }
+    })();
+  </script>
+
+  <!-- Type: DM Serif Display (headings), DM Sans (body), JetBrains Mono (data) -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,400;0,9..40,500;0,9..40,600;0,9..40,700;1,9..40,400&family=DM+Serif+Display:ital@0;1&family=JetBrains+Mono:wght@400;500;600&display=swap">
+
   <link rel="stylesheet" href="styles.css">
   
   <!-- External Libraries: Three.js for 3D WebGL, Lucide for Icons, Marked for Safe Markdown, Canvas Confetti -->
@@ -43,7 +58,7 @@
     <header class="top-nav" role="banner">
       <a href="#hero" class="nav-brand" aria-label="Resume Checker Home">
         <div class="brand-icon-box">
-          <i data-lucide="sparkles" style="color:#fff;width:22px;height:22px;"></i>
+          <i data-lucide="sparkles" style="color:var(--color-on-accent);width:22px;height:22px;"></i>
         </div>
         <div>
           <span class="brand-name">Resume Checker</span>
@@ -90,10 +105,10 @@
           <span id="nav-active-llm-label">LLM: Checking…</span>
         </button>
 
-        <!-- Neumorphic Theme Toggle: Cyber Dark <-> Soft Ceramic -->
-        <button type="button" id="btn-theme-toggle" class="btn-theme-toggle" title="Toggle Dark Neumorphic / Soft Ceramic Mode" aria-label="Toggle visual theme">
+        <!-- Theme toggle: Terra Atelier (light) <-> Midnight Grove (dark) -->
+        <button type="button" id="btn-theme-toggle" class="btn-theme-toggle" title="Switch between Terra Atelier and Midnight Grove" aria-label="Switch to Midnight Grove theme" aria-pressed="false">
           <i data-lucide="palette" style="width:14px;height:14px;"></i>
-          <span id="theme-mode-label">Theme: Dark Soft</span>
+          <span id="theme-mode-label">Terra Atelier</span>
         </button>
 
         <!-- Motion Preference Toggle -->
@@ -285,7 +300,7 @@
                 <div class="card-top-row spatial-layer-1">
                   <div style="display:flex;align-items:center;gap:8px;">
                     <span style="width:8px;height:8px;border-radius:50%;background:var(--accent-blue);box-shadow:0 0 8px var(--accent-blue);"></span>
-                    <strong style="font-size:0.85rem;color:#fff;">Diagnostic Preview</strong>
+                    <strong style="font-size:0.85rem;color:var(--text-primary);">Diagnostic Preview</strong>
                   </div>
                   <span class="sample-data-badge">Sample diagnostic layout</span>
                 </div>
@@ -364,84 +379,84 @@
           <div class="marquee-track" id="recruiter-marquee-track">
             <!-- Set 1 -->
             <div class="recruiter-chip neu-card" data-company="google">
-              <div class="recruiter-logo-box"><i data-lucide="search" style="color:#4285F4;width:18px;height:18px;"></i></div>
+              <div class="recruiter-logo-box"><i data-lucide="search" style="color:var(--text-secondary);width:18px;height:18px;"></i></div>
               <div class="recruiter-info">
                 <strong>Google</strong>
                 <span class="tier-pill super-dream">Super Dream • ₹32–44 LPA</span>
               </div>
             </div>
             <div class="recruiter-chip neu-card" data-company="microsoft">
-              <div class="recruiter-logo-box"><i data-lucide="layout-grid" style="color:#00A4EF;width:18px;height:18px;"></i></div>
+              <div class="recruiter-logo-box"><i data-lucide="layout-grid" style="color:var(--text-secondary);width:18px;height:18px;"></i></div>
               <div class="recruiter-info">
                 <strong>Microsoft</strong>
                 <span class="tier-pill super-dream">Super Dream • ₹28–42 LPA</span>
               </div>
             </div>
             <div class="recruiter-chip neu-card" data-company="amazon">
-              <div class="recruiter-logo-box"><i data-lucide="shopping-cart" style="color:#FF9900;width:18px;height:18px;"></i></div>
+              <div class="recruiter-logo-box"><i data-lucide="shopping-cart" style="color:var(--text-secondary);width:18px;height:18px;"></i></div>
               <div class="recruiter-info">
                 <strong>Amazon</strong>
                 <span class="tier-pill super-dream">Super Dream • ₹28–44 LPA</span>
               </div>
             </div>
             <div class="recruiter-chip neu-card" data-company="cisco">
-              <div class="recruiter-logo-box"><i data-lucide="router" style="color:#1BA0D7;width:18px;height:18px;"></i></div>
+              <div class="recruiter-logo-box"><i data-lucide="router" style="color:var(--text-secondary);width:18px;height:18px;"></i></div>
               <div class="recruiter-info">
                 <strong>Cisco</strong>
                 <span class="tier-pill dream">Dream • ₹15–20 LPA</span>
               </div>
             </div>
             <div class="recruiter-chip neu-card" data-company="goldman">
-              <div class="recruiter-logo-box"><i data-lucide="trending-up" style="color:#729FCF;width:18px;height:18px;"></i></div>
+              <div class="recruiter-logo-box"><i data-lucide="trending-up" style="color:var(--text-secondary);width:18px;height:18px;"></i></div>
               <div class="recruiter-info">
                 <strong>Goldman Sachs</strong>
                 <span class="tier-pill super-dream">Super Dream • ₹24–30 LPA</span>
               </div>
             </div>
             <div class="recruiter-chip neu-card" data-company="adobe">
-              <div class="recruiter-logo-box"><i data-lucide="pen-tool" style="color:#FA0F00;width:18px;height:18px;"></i></div>
+              <div class="recruiter-logo-box"><i data-lucide="pen-tool" style="color:var(--text-secondary);width:18px;height:18px;"></i></div>
               <div class="recruiter-info">
                 <strong>Adobe</strong>
                 <span class="tier-pill super-dream">Super Dream • ₹30–40 LPA</span>
               </div>
             </div>
             <div class="recruiter-chip neu-card" data-company="paypal">
-              <div class="recruiter-logo-box"><i data-lucide="credit-card" style="color:#0079C1;width:18px;height:18px;"></i></div>
+              <div class="recruiter-logo-box"><i data-lucide="credit-card" style="color:var(--text-secondary);width:18px;height:18px;"></i></div>
               <div class="recruiter-info">
                 <strong>PayPal</strong>
                 <span class="tier-pill super-dream">Super Dream • ₹22–28 LPA</span>
               </div>
             </div>
             <div class="recruiter-chip neu-card" data-company="nvidia">
-              <div class="recruiter-logo-box"><i data-lucide="cpu" style="color:#76B900;width:18px;height:18px;"></i></div>
+              <div class="recruiter-logo-box"><i data-lucide="cpu" style="color:var(--text-secondary);width:18px;height:18px;"></i></div>
               <div class="recruiter-info">
                 <strong>NVIDIA</strong>
                 <span class="tier-pill super-dream">Super Dream • ₹24–36 LPA</span>
               </div>
             </div>
             <div class="recruiter-chip neu-card" data-company="intel">
-              <div class="recruiter-logo-box"><i data-lucide="microchip" style="color:#0071C5;width:18px;height:18px;"></i></div>
+              <div class="recruiter-logo-box"><i data-lucide="microchip" style="color:var(--text-secondary);width:18px;height:18px;"></i></div>
               <div class="recruiter-info">
                 <strong>Intel</strong>
                 <span class="tier-pill dream">Dream • ₹14–18 LPA</span>
               </div>
             </div>
             <div class="recruiter-chip neu-card" data-company="morgan">
-              <div class="recruiter-logo-box"><i data-lucide="briefcase" style="color:#337AB7;width:18px;height:18px;"></i></div>
+              <div class="recruiter-logo-box"><i data-lucide="briefcase" style="color:var(--text-secondary);width:18px;height:18px;"></i></div>
               <div class="recruiter-info">
                 <strong>Morgan Stanley</strong>
                 <span class="tier-pill super-dream">Super Dream • ₹22–28 LPA</span>
               </div>
             </div>
             <div class="recruiter-chip neu-card" data-company="qualcomm">
-              <div class="recruiter-logo-box"><i data-lucide="radio" style="color:#D8232A;width:18px;height:18px;"></i></div>
+              <div class="recruiter-logo-box"><i data-lucide="radio" style="color:var(--text-secondary);width:18px;height:18px;"></i></div>
               <div class="recruiter-info">
                 <strong>Qualcomm</strong>
                 <span class="tier-pill dream">Dream • ₹16–22 LPA</span>
               </div>
             </div>
             <div class="recruiter-chip neu-card" data-company="oracle">
-              <div class="recruiter-logo-box"><i data-lucide="database" style="color:#F80000;width:18px;height:18px;"></i></div>
+              <div class="recruiter-logo-box"><i data-lucide="database" style="color:var(--text-secondary);width:18px;height:18px;"></i></div>
               <div class="recruiter-info">
                 <strong>Oracle</strong>
                 <span class="tier-pill dream">Dream • ₹14–20 LPA</span>
@@ -450,84 +465,84 @@
 
             <!-- Set 2 (Duplicate for Continuous Seamless Infinite Scroll) -->
             <div class="recruiter-chip neu-card" data-company="google" aria-hidden="true">
-              <div class="recruiter-logo-box"><i data-lucide="search" style="color:#4285F4;width:18px;height:18px;"></i></div>
+              <div class="recruiter-logo-box"><i data-lucide="search" style="color:var(--text-secondary);width:18px;height:18px;"></i></div>
               <div class="recruiter-info">
                 <strong>Google</strong>
                 <span class="tier-pill super-dream">Super Dream • ₹32–44 LPA</span>
               </div>
             </div>
             <div class="recruiter-chip neu-card" data-company="microsoft" aria-hidden="true">
-              <div class="recruiter-logo-box"><i data-lucide="layout-grid" style="color:#00A4EF;width:18px;height:18px;"></i></div>
+              <div class="recruiter-logo-box"><i data-lucide="layout-grid" style="color:var(--text-secondary);width:18px;height:18px;"></i></div>
               <div class="recruiter-info">
                 <strong>Microsoft</strong>
                 <span class="tier-pill super-dream">Super Dream • ₹28–42 LPA</span>
               </div>
             </div>
             <div class="recruiter-chip neu-card" data-company="amazon" aria-hidden="true">
-              <div class="recruiter-logo-box"><i data-lucide="shopping-cart" style="color:#FF9900;width:18px;height:18px;"></i></div>
+              <div class="recruiter-logo-box"><i data-lucide="shopping-cart" style="color:var(--text-secondary);width:18px;height:18px;"></i></div>
               <div class="recruiter-info">
                 <strong>Amazon</strong>
                 <span class="tier-pill super-dream">Super Dream • ₹28–44 LPA</span>
               </div>
             </div>
             <div class="recruiter-chip neu-card" data-company="cisco" aria-hidden="true">
-              <div class="recruiter-logo-box"><i data-lucide="router" style="color:#1BA0D7;width:18px;height:18px;"></i></div>
+              <div class="recruiter-logo-box"><i data-lucide="router" style="color:var(--text-secondary);width:18px;height:18px;"></i></div>
               <div class="recruiter-info">
                 <strong>Cisco</strong>
                 <span class="tier-pill dream">Dream • ₹15–20 LPA</span>
               </div>
             </div>
             <div class="recruiter-chip neu-card" data-company="goldman" aria-hidden="true">
-              <div class="recruiter-logo-box"><i data-lucide="trending-up" style="color:#729FCF;width:18px;height:18px;"></i></div>
+              <div class="recruiter-logo-box"><i data-lucide="trending-up" style="color:var(--text-secondary);width:18px;height:18px;"></i></div>
               <div class="recruiter-info">
                 <strong>Goldman Sachs</strong>
                 <span class="tier-pill super-dream">Super Dream • ₹24–30 LPA</span>
               </div>
             </div>
             <div class="recruiter-chip neu-card" data-company="adobe" aria-hidden="true">
-              <div class="recruiter-logo-box"><i data-lucide="pen-tool" style="color:#FA0F00;width:18px;height:18px;"></i></div>
+              <div class="recruiter-logo-box"><i data-lucide="pen-tool" style="color:var(--text-secondary);width:18px;height:18px;"></i></div>
               <div class="recruiter-info">
                 <strong>Adobe</strong>
                 <span class="tier-pill super-dream">Super Dream • ₹30–40 LPA</span>
               </div>
             </div>
             <div class="recruiter-chip neu-card" data-company="paypal" aria-hidden="true">
-              <div class="recruiter-logo-box"><i data-lucide="credit-card" style="color:#0079C1;width:18px;height:18px;"></i></div>
+              <div class="recruiter-logo-box"><i data-lucide="credit-card" style="color:var(--text-secondary);width:18px;height:18px;"></i></div>
               <div class="recruiter-info">
                 <strong>PayPal</strong>
                 <span class="tier-pill super-dream">Super Dream • ₹22–28 LPA</span>
               </div>
             </div>
             <div class="recruiter-chip neu-card" data-company="nvidia" aria-hidden="true">
-              <div class="recruiter-logo-box"><i data-lucide="cpu" style="color:#76B900;width:18px;height:18px;"></i></div>
+              <div class="recruiter-logo-box"><i data-lucide="cpu" style="color:var(--text-secondary);width:18px;height:18px;"></i></div>
               <div class="recruiter-info">
                 <strong>NVIDIA</strong>
                 <span class="tier-pill super-dream">Super Dream • ₹24–36 LPA</span>
               </div>
             </div>
             <div class="recruiter-chip neu-card" data-company="intel" aria-hidden="true">
-              <div class="recruiter-logo-box"><i data-lucide="microchip" style="color:#0071C5;width:18px;height:18px;"></i></div>
+              <div class="recruiter-logo-box"><i data-lucide="microchip" style="color:var(--text-secondary);width:18px;height:18px;"></i></div>
               <div class="recruiter-info">
                 <strong>Intel</strong>
                 <span class="tier-pill dream">Dream • ₹14–18 LPA</span>
               </div>
             </div>
             <div class="recruiter-chip neu-card" data-company="morgan" aria-hidden="true">
-              <div class="recruiter-logo-box"><i data-lucide="briefcase" style="color:#337AB7;width:18px;height:18px;"></i></div>
+              <div class="recruiter-logo-box"><i data-lucide="briefcase" style="color:var(--text-secondary);width:18px;height:18px;"></i></div>
               <div class="recruiter-info">
                 <strong>Morgan Stanley</strong>
                 <span class="tier-pill super-dream">Super Dream • ₹22–28 LPA</span>
               </div>
             </div>
             <div class="recruiter-chip neu-card" data-company="qualcomm" aria-hidden="true">
-              <div class="recruiter-logo-box"><i data-lucide="radio" style="color:#D8232A;width:18px;height:18px;"></i></div>
+              <div class="recruiter-logo-box"><i data-lucide="radio" style="color:var(--text-secondary);width:18px;height:18px;"></i></div>
               <div class="recruiter-info">
                 <strong>Qualcomm</strong>
                 <span class="tier-pill dream">Dream • ₹16–22 LPA</span>
               </div>
             </div>
             <div class="recruiter-chip neu-card" data-company="oracle" aria-hidden="true">
-              <div class="recruiter-logo-box"><i data-lucide="database" style="color:#F80000;width:18px;height:18px;"></i></div>
+              <div class="recruiter-logo-box"><i data-lucide="database" style="color:var(--text-secondary);width:18px;height:18px;"></i></div>
               <div class="recruiter-info">
                 <strong>Oracle</strong>
                 <span class="tier-pill dream">Dream • ₹14–20 LPA</span>
@@ -547,7 +562,7 @@
             <span style="font-size:0.78rem;font-weight:700;text-transform:uppercase;letter-spacing:0.12em;color:var(--accent-cyan);margin-bottom:12px;display:inline-block;">
               Grounded Methodology
             </span>
-            <h2 id="how-it-works-heading" style="font-family:var(--font-display);font-size:clamp(2rem, 3.5vw, 2.6rem);font-weight:800;color:#fff;margin-bottom:12px;">
+            <h2 id="how-it-works-heading" style="font-family:var(--font-display);font-size:clamp(2rem, 3.5vw, 2.6rem);font-weight:800;color:var(--text-primary);margin-bottom:12px;">
               How Resume Checker Works
             </h2>
             <p style="color:var(--text-secondary);font-size:1rem;line-height:1.6;">
@@ -667,7 +682,7 @@
             <div class="snapshot-kpi-card kpi-highest">
               <div class="kpi-label">
                 <span>Highest CTC</span>
-                <i data-lucide="sparkles" style="width:15px;height:15px;color:#F59E0B;"></i>
+                <i data-lucide="sparkles" style="width:15px;height:15px;color:var(--color-ochre);"></i>
               </div>
               <div class="kpi-value" id="kpi-highest-ctc">₹60.0 <span style="font-size:1rem;font-weight:600;">LPA</span></div>
               <div class="kpi-subtext">Google (Highest package recorded across all listed profiles)</div>
@@ -810,7 +825,7 @@
             <span style="font-size:0.78rem;font-weight:700;text-transform:uppercase;letter-spacing:0.12em;color:var(--accent-blue-light);margin-bottom:12px;display:inline-block;">
               Inference Workspace
             </span>
-            <h2 id="analyzer-heading" style="font-family:var(--font-display);font-size:clamp(2rem, 3.5vw, 2.6rem);font-weight:800;color:#fff;margin-bottom:12px;">
+            <h2 id="analyzer-heading" style="font-family:var(--font-display);font-size:clamp(2rem, 3.5vw, 2.6rem);font-weight:800;color:var(--text-primary);margin-bottom:12px;">
               Live Resume vs Placed Alumni Analyzer
             </h2>
             <p style="color:var(--text-secondary);font-size:1rem;line-height:1.6;">
@@ -851,7 +866,7 @@
                     <button type="button" class="btn-preset-chip neu-btn" data-preset="amazon">Amazon Cloud</button>
                     <button type="button" class="btn-preset-chip neu-btn" data-preset="goldman">Goldman Analyst</button>
                   </div>
-                  <button type="button" id="btn-quick-dictate-jd" class="neu-btn" style="padding:4px 10px;font-size:0.74rem;gap:5px;border-color:rgba(255,255,255,0.2);" title="Dictate Job Description with microphone">
+                  <button type="button" id="btn-quick-dictate-jd" class="neu-btn" style="padding:4px 10px;font-size:0.74rem;gap:5px;border-color:rgba(var(--tint-rgb),0.2);" title="Dictate Job Description with microphone">
                     <i data-lucide="mic" style="width:13px;height:13px;color:var(--accent-cyan);"></i>
                     <span>Dictate JD</span>
                   </button>
@@ -912,7 +927,7 @@
                   <label class="persona-chip neu-card" data-persona="director_ai_research">
                     <input type="radio" name="executive_persona" value="director_ai_research" class="sr-only">
                     <div class="persona-chip-head">
-                      <i data-lucide="brain-circuit" style="width:15px;height:15px;color:#a78bfa;"></i>
+                      <i data-lucide="brain-circuit" style="width:15px;height:15px;color:var(--color-orchid);"></i>
                       <strong>Director of AI &amp; Research</strong>
                     </div>
                     <p class="persona-chip-desc">Scrutinizes ML problem framing, data leakage, and metrics.</p>
@@ -921,7 +936,7 @@
                   <label class="persona-chip neu-card" data-persona="principal_sde">
                     <input type="radio" name="executive_persona" value="principal_sde" class="sr-only">
                     <div class="persona-chip-head">
-                      <i data-lucide="terminal" style="width:15px;height:15px;color:#38bdf8;"></i>
+                      <i data-lucide="terminal" style="width:15px;height:15px;color:var(--color-lagoon);"></i>
                       <strong>Principal SDE / VP Eng</strong>
                     </div>
                     <p class="persona-chip-desc">Audits API contracts, concurrency, error semantics, and scale.</p>
@@ -930,7 +945,7 @@
                   <label class="persona-chip neu-card" data-persona="cloud_infrastructure_director">
                     <input type="radio" name="executive_persona" value="cloud_infrastructure_director" class="sr-only">
                     <div class="persona-chip-head">
-                      <i data-lucide="server" style="width:15px;height:15px;color:#34d399;"></i>
+                      <i data-lucide="server" style="width:15px;height:15px;color:var(--color-forest);"></i>
                       <strong>Cloud Infrastructure Dir.</strong>
                     </div>
                     <p class="persona-chip-desc">Audits cloud targets, CI/CD, Kubernetes, and reliability.</p>
@@ -1013,7 +1028,7 @@
                   <div class="score-banner-left">
                     <div class="mini-score-ring">
                       <svg width="86" height="86" viewBox="0 0 86 86" style="transform:rotate(-90deg);">
-                        <circle cx="43" cy="43" r="38" fill="none" stroke="rgba(255,255,255,0.08)" stroke-width="8" />
+                        <circle cx="43" cy="43" r="38" fill="none" stroke="rgba(var(--tint-rgb),0.08)" stroke-width="8" />
                         <circle id="mini-progress-ring" cx="43" cy="43" r="38" fill="none" stroke="var(--accent-emerald)" stroke-width="8" stroke-linecap="round" style="transition: stroke-dashoffset 1.2s ease;" />
                       </svg>
                       <div id="mini-score-val" class="mini-score-val">--</div>
@@ -1146,7 +1161,7 @@
                     <!-- Side-by-Side Diff Drawer (Collapsible) -->
                     <div id="draft-diff-drawer" class="diff-drawer neu-card" style="display:none;">
                       <div class="diff-header-row">
-                        <div style="font-size:0.8rem;font-weight:700;color:#fff;">
+                        <div style="font-size:0.8rem;font-weight:700;color:var(--text-primary);">
                           <i data-lucide="git-compare" style="width:14px;height:14px;margin-right:6px;"></i>
                           Revision Diff (Original vs Current In-Memory Draft)
                         </div>
@@ -1308,7 +1323,7 @@
             <span style="font-size:0.78rem;font-weight:700;text-transform:uppercase;letter-spacing:0.12em;color:var(--accent-cyan);margin-bottom:12px;display:inline-block;">
               Unsupervised Knowledge Discovery
             </span>
-            <h2 id="genome-heading" style="font-family:var(--font-display);font-size:clamp(2rem, 3.5vw, 2.6rem);font-weight:800;color:#fff;margin-bottom:12px;">
+            <h2 id="genome-heading" style="font-family:var(--font-display);font-size:clamp(2rem, 3.5vw, 2.6rem);font-weight:800;color:var(--text-primary);margin-bottom:12px;">
               The 5 Alumni Career Archetypes
             </h2>
             <p style="color:var(--text-secondary);font-size:1rem;line-height:1.6;">
@@ -1339,7 +1354,7 @@
             <span style="font-size:0.78rem;font-weight:700;text-transform:uppercase;letter-spacing:0.12em;color:var(--accent-amber);margin-bottom:12px;display:inline-block;">
               Glassdoor-Style Placement Intelligence
             </span>
-            <h2 id="company-heading" style="font-family:var(--font-display);font-size:clamp(2rem, 3.5vw, 2.6rem);font-weight:800;color:#fff;margin-bottom:12px;">
+            <h2 id="company-heading" style="font-family:var(--font-display);font-size:clamp(2rem, 3.5vw, 2.6rem);font-weight:800;color:var(--text-primary);margin-bottom:12px;">
               Company Recruitment Benchmarks
             </h2>
             <p style="color:var(--text-secondary);font-size:1rem;line-height:1.6;">
@@ -1391,7 +1406,7 @@
             <span style="font-size:0.78rem;font-weight:700;text-transform:uppercase;letter-spacing:0.12em;color:var(--accent-cyan);margin-bottom:12px;display:inline-block;">
               Interactive Prompt Engineering Workbench
             </span>
-            <h2 id="prompt-studio-heading" style="font-family:var(--font-display);font-size:clamp(2rem, 3.5vw, 2.6rem);font-weight:800;color:#fff;margin-bottom:12px;">
+            <h2 id="prompt-studio-heading" style="font-family:var(--font-display);font-size:clamp(2rem, 3.5vw, 2.6rem);font-weight:800;color:var(--text-primary);margin-bottom:12px;">
               Prompt Studio: All 18 Frameworks
             </h2>
             <p style="color:var(--text-secondary);font-size:1rem;line-height:1.6;">
@@ -1402,7 +1417,7 @@
           <!-- Deterministic Recommender Banner -->
           <div class="studio-recommender-banner">
             <div>
-              <strong style="color:#fff;font-size:1.05rem;display:block;">Task Scenario Recommender</strong>
+              <strong style="color:var(--text-primary);font-size:1.05rem;display:block;">Task Scenario Recommender</strong>
               <span style="font-size:0.82rem;color:var(--text-secondary);">Select what you are trying to achieve for a transparent, rule-grounded framework match:</span>
               
               <div class="scenario-buttons-row">
@@ -1443,7 +1458,7 @@
             <!-- Column 2: Acronym Form Builder -->
             <div class="framework-builder-card">
               <div class="builder-header">
-                <h4 id="builder-fw-title" style="font-family:var(--font-display);font-size:1.25rem;color:#fff;">CLEAR Framework</h4>
+                <h4 id="builder-fw-title" style="font-family:var(--font-display);font-size:1.25rem;color:var(--text-primary);">CLEAR Framework</h4>
                 <p id="builder-fw-desc" style="font-size:0.82rem;color:var(--text-muted);margin-top:4px;">Context, Logic, Expectations, Action, Restriction</p>
               </div>
 
@@ -1463,7 +1478,7 @@
               <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px;">
                 <div style="display:flex;align-items:center;gap:8px;">
                   <i data-lucide="code" style="color:var(--accent-cyan);width:16px;height:16px;"></i>
-                  <strong style="color:#fff;font-size:0.95rem;">Live Formatted Preview</strong>
+                  <strong style="color:var(--text-primary);font-size:0.95rem;">Live Formatted Preview</strong>
                 </div>
                 <span id="prompt-char-count" style="font-size:0.75rem;color:var(--text-muted);">0 characters</span>
               </div>
@@ -1495,7 +1510,7 @@
             <span style="font-size:0.78rem;font-weight:700;text-transform:uppercase;letter-spacing:0.12em;color:var(--accent-magenta);margin-bottom:12px;display:inline-block;">
               Micro-Interactions Showcase
             </span>
-            <h2 id="lab-heading" style="font-family:var(--font-display);font-size:clamp(2rem, 3.5vw, 2.6rem);font-weight:800;color:#fff;margin-bottom:12px;">
+            <h2 id="lab-heading" style="font-family:var(--font-display);font-size:clamp(2rem, 3.5vw, 2.6rem);font-weight:800;color:var(--text-primary);margin-bottom:12px;">
               All Possible Hover Buttons Laboratory
             </h2>
             <p style="color:var(--text-secondary);font-size:1rem;line-height:1.6;">
@@ -1580,7 +1595,7 @@
           <div class="neu-card spatial-tilt-card reveal-spatial" style="margin-top: 48px;">
             <div class="specular-glare"></div>
             
-            <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:16px;margin-bottom:24px;border-bottom:1px solid rgba(255,255,255,0.06);padding-bottom:16px;">
+            <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:16px;margin-bottom:24px;border-bottom:1px solid rgba(var(--tint-rgb),0.06);padding-bottom:16px;">
               <div>
                 <span class="neu-badge">
                   <i data-lucide="layers" style="width:14px;height:14px;"></i>
@@ -1703,7 +1718,7 @@
             <span style="font-size:0.78rem;font-weight:700;text-transform:uppercase;letter-spacing:0.12em;color:var(--accent-emerald);margin-bottom:12px;display:inline-block;">
               Integrity & FAQ
             </span>
-            <h2 id="faq-heading" style="font-family:var(--font-display);font-size:clamp(2rem, 3.5vw, 2.6rem);font-weight:800;color:#fff;margin-bottom:12px;">
+            <h2 id="faq-heading" style="font-family:var(--font-display);font-size:clamp(2rem, 3.5vw, 2.6rem);font-weight:800;color:var(--text-primary);margin-bottom:12px;">
               Frequently Asked Questions & Disclaimers
             </h2>
             <p style="color:var(--text-secondary);font-size:1rem;line-height:1.6;">
@@ -1838,7 +1853,7 @@
     <button type="button" id="voice-orb-btn" class="voice-orb-btn" aria-label="Open Voice Assistant &amp; Dictation" aria-expanded="false" title="Click to open Hands-Free Voice Assistant">
       <div class="voice-orb-pulse" id="voice-orb-pulse-ring" aria-hidden="true"></div>
       <div class="voice-orb-inner">
-        <i data-lucide="mic" id="voice-orb-icon" style="width:22px;height:22px;color:#fff;"></i>
+        <i data-lucide="mic" id="voice-orb-icon" style="width:22px;height:22px;color:var(--color-on-accent);"></i>
       </div>
       <span class="voice-orb-badge" id="voice-orb-badge-text">Voice</span>
     </button>
@@ -1848,7 +1863,7 @@
       <div class="voice-drawer-header">
         <div style="display:flex;align-items:center;gap:8px;">
           <div class="voice-status-dot idle" id="voice-status-dot"></div>
-          <h4 id="voice-drawer-title" style="font-family:var(--font-display);font-size:0.95rem;color:#fff;margin:0;">Voice Assistant</h4>
+          <h4 id="voice-drawer-title" style="font-family:var(--font-display);font-size:0.95rem;color:var(--text-primary);margin:0;">Voice Assistant</h4>
         </div>
         <div style="display:flex;align-items:center;gap:6px;">
           <span id="voice-status-badge" class="voice-status-pill">Idle</span>
@@ -1917,7 +1932,7 @@
           <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px;">
             <div style="display:flex;align-items:center;gap:6px;">
               <i data-lucide="volume-2" style="width:14px;height:14px;color:var(--accent-cyan);"></i>
-              <strong style="font-size:0.78rem;color:#fff;">Diagnostic Audio Briefing</strong>
+              <strong style="font-size:0.78rem;color:var(--text-primary);">Diagnostic Audio Briefing</strong>
             </div>
             <div class="tts-speed-controls">
               <button type="button" class="btn-tts-speed active" data-rate="1.0">1.0x</button>
@@ -1961,7 +1976,7 @@
             <i data-lucide="cpu" style="color:var(--accent-cyan);width:20px;height:20px;"></i>
           </div>
           <div>
-            <h3 id="llm-modal-title" style="margin:0;font-size:1.15rem;font-weight:700;color:#fff;">LLM Engine & Model Control Hub</h3>
+            <h3 id="llm-modal-title" style="margin:0;font-size:1.15rem;font-weight:700;color:var(--text-primary);">LLM Engine & Model Control Hub</h3>
             <p style="margin:0;font-size:0.78rem;color:var(--text-muted);">Multi-provider runtime configuration: Gemini, OpenAI, Groq, Ollama, or the local deterministic engine (no LLM)</p>
           </div>
         </div>

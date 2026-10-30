@@ -1,0 +1,57 @@
+{
+  "url": "http://127.0.0.1:8000/",
+  "browser": "C:/Program Files/Google/Chrome/Application/chrome.exe",
+  "theme": "grove",
+  "reducedMotion": false,
+  "viewports": {
+    "1440": {
+      "height": 900,
+      "static": {
+        "duplicateIds": [],
+        "untypedButtons": 0,
+        "missingHandlers": [],
+        "sections": [
+          "hero",
+          "recruiter-marquee",
+          "how-it-works",
+          "placement-snapshot",
+          "analyzer",
+          "genome",
+          "company-intel",
+          "prompt-studio",
+          "buttons-lab",
+          "faq"
+        ],
+        "theme": "grove",
+        "canvases": 2
+      },
+      "overflow": {
+        "scrollWidth": 2107,
+        "clientWidth": 1440,
+        "overflow": true,
+        "offenders": [
+          "div.aurora-blur [950..1562]",
+          "div.nav-actions [1190..2107]",
+          "div.designhead-controller [1316..1546]",
+          "button#btn-designhead-maximalist.designhead-btn [1430..1542]",
+          "svg.lucide [1442..1455]",
+          "span [1461..1530]",
+          "button#btn-llm-control-hub.btn-llm-hub [1558..1666]",
+          "svg.lucide [1573..1579]",
+          "span#nav-active-llm-label [1586..1651]",
+          "button#btn-theme-toggle.btn-theme-toggle [1678..1785]",
+          "svg.lucide [1693..1702]",
+          "span#theme-mode-label [1710..1770]"
+        ]
+      },
+      "shots": [
+        "1440/hero.jpg",
+        "1440/placement-snapshot.jpg"
+      ],
+      "consoleErrors": [],
+      "failedRequests": [
+        "404 http://127.0.0.1:8000/favicon.ico"
+      ]
+    }
+  }
+}

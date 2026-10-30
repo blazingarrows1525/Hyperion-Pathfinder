@@ -83,6 +83,39 @@ function initSpatialAudioController() {
 }
 
 // Full-Page Ambient Spatial Canvas with Cosmic Dust Parallax
+// ==============================================================================
+// THEME PALETTE — the single colour source for canvases, charts and Three.js.
+// Reads the active theme's CSS tokens, so a theme switch only needs a re-read.
+// ==============================================================================
+const PALETTE_TOKENS = {
+  canvas: '--color-canvas',
+  surface: '--color-surface',
+  ink: '--color-ink',
+  inkSoft: '--color-ink-soft',
+  muted: '--color-muted',
+  border: '--color-border',
+  borderStrong: '--color-border-strong',
+  forest: '--color-forest',
+  terracotta: '--color-terracotta',
+  ochre: '--color-ochre',
+  lagoon: '--color-lagoon',
+  orchid: '--color-orchid',
+  danger: '--color-danger'
+};
+
+function getThemePalette() {
+  const styles = getComputedStyle(document.documentElement);
+  const read = (token) => styles.getPropertyValue(token).trim();
+  const palette = {};
+  Object.entries(PALETTE_TOKENS).forEach(([key, token]) => {
+    palette[key] = read(token) || '#777777';
+  });
+  // Indexed by K-Means cluster id (0-4), matching --arch-N-color.
+  palette.archetypes = [0, 1, 2, 3, 4].map(id => read(`--arch-${id}-color`) || palette.forest);
+  palette.isDark = document.documentElement.getAttribute('data-theme') === 'grove';
+  return palette;
+}
+
 function initAmbientSpatialCanvas() {
   const canvas = document.getElementById('ambient-spatial-canvas');
   if (!canvas) return;
@@ -99,7 +132,7 @@ function initAmbientSpatialCanvas() {
 
   const particleCount = 65;
   const stars = [];
-  const colors = ['#00F2FE', '#9D4EDD', '#00F5D4', '#FFB703', '#FFFFFF'];
+  const colors = getThemePalette().archetypes;
 
   for (let i = 0; i < particleCount; i++) {
     stars.push({
@@ -1223,13 +1256,14 @@ function init3DScene() {
   if (!raycaster) raycaster = new THREE.Raycaster();
   if (!mouseVec) mouseVec = new THREE.Vector2(-999, -999);
 
-  const isCeramicTheme = document.documentElement.getAttribute('data-theme') === 'ceramic';
+  const pal = getThemePalette();
+  const isLightTheme = !pal.isDark;
   const isMinimalist = document.body.classList.contains('designhead-minimalist');
   const width = wrapper.clientWidth || 600;
   const height = wrapper.clientHeight || 520;
 
   scene = new THREE.Scene();
-  const fogColor = isCeramicTheme ? 0xF8F9FA : (isMinimalist ? 0x0A0B10 : 0x07080E);
+  const fogColor = pal.canvas;
   scene.fog = new THREE.FogExp2(fogColor, 0.0011);
 
   camera = new THREE.PerspectiveCamera(52, width / height, 1, 3000);
@@ -1250,24 +1284,24 @@ function init3DScene() {
 
   renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 1.5));
   renderer.setSize(width, height);
-  renderer.setClearColor(fogColor, isCeramicTheme ? 0.2 : 0.0);
+  renderer.setClearColor(fogColor, 0.0);
 
   // 1. Central Holographic Quantum Core (Dual Icosahedron + Octahedron + Gimbal Rings)
   centralCoreGroup = new THREE.Group();
 
   const coreWireGeo = new THREE.IcosahedronGeometry(42, 1);
   const coreWireMat = new THREE.MeshBasicMaterial({
-    color: isCeramicTheme ? 0x2563EB : 0x00F2FE,
+    color: pal.forest,
     wireframe: true,
     transparent: true,
-    opacity: isCeramicTheme ? 0.35 : 0.65
+    opacity: isLightTheme ? 0.45 : 0.65
   });
   const coreWireMesh = new THREE.Mesh(coreWireGeo, coreWireMat);
   centralCoreGroup.add(coreWireMesh);
 
   const coreInnerGeo = new THREE.OctahedronGeometry(22, 0);
   const coreInnerMat = new THREE.MeshBasicMaterial({
-    color: isCeramicTheme ? 0x3B82F6 : 0xFF007F,
+    color: pal.terracotta,
     transparent: true,
     opacity: 0.85
   });
@@ -1277,7 +1311,7 @@ function init3DScene() {
   // Gimbal Torus Ring 1 (Cyan)
   const ring1Geo = new THREE.TorusGeometry(72, 1.4, 16, 64);
   const ring1Mat = new THREE.MeshBasicMaterial({
-    color: isCeramicTheme ? 0x0284C7 : 0x00F2FE,
+    color: pal.lagoon,
     transparent: true,
     opacity: 0.45
   });
@@ -1288,7 +1322,7 @@ function init3DScene() {
   // Gimbal Torus Ring 2 (Magenta / Violet)
   const ring2Geo = new THREE.TorusGeometry(84, 1.4, 16, 64);
   const ring2Mat = new THREE.MeshBasicMaterial({
-    color: isCeramicTheme ? 0x7C3AED : 0x9D4EDD,
+    color: pal.orchid,
     transparent: true,
     opacity: 0.35
   });
@@ -1303,21 +1337,7 @@ function init3DScene() {
   const positions = new Float32Array(particleCount * 3);
   const colors = new Float32Array(particleCount * 3);
 
-  const neonColors = [
-    new THREE.Color(0x00F2FE), // Electric Cyan
-    new THREE.Color(0x9D4EDD), // Neon Violet
-    new THREE.Color(0x00F5D4), // Mint Emerald
-    new THREE.Color(0xFFB703), // Solar Amber
-    new THREE.Color(0xFF007F)  // Vibrant Coral
-  ];
-  const ceramicColors = [
-    new THREE.Color(0x2563EB),
-    new THREE.Color(0x7C3AED),
-    new THREE.Color(0x059669),
-    new THREE.Color(0xD97706),
-    new THREE.Color(0xDC2626)
-  ];
-  const activePalette = isCeramicTheme ? ceramicColors : neonColors;
+  const activePalette = pal.archetypes.map(c => new THREE.Color(c));
 
   for (let i = 0; i < particleCount; i++) {
     positions[i * 3] = (Math.random() - 0.5) * 1250;
@@ -1341,7 +1361,7 @@ function init3DScene() {
   const grad = sCtx.createRadialGradient(16, 16, 0, 16, 16, 16);
   grad.addColorStop(0, 'rgba(255,255,255,1)');
   grad.addColorStop(0.35, 'rgba(255,255,255,0.85)');
-  grad.addColorStop(0.7, 'rgba(0,242,254,0.35)');
+  grad.addColorStop(0.7, 'rgba(255,255,255,0.35)');
   grad.addColorStop(1, 'rgba(0,0,0,0)');
   sCtx.fillStyle = grad;
   sCtx.fillRect(0, 0, 32, 32);
@@ -1352,7 +1372,7 @@ function init3DScene() {
     vertexColors: true,
     map: spriteTex,
     transparent: true,
-    blending: isCeramicTheme ? THREE.NormalBlending : THREE.AdditiveBlending,
+    blending: isLightTheme ? THREE.NormalBlending : THREE.AdditiveBlending,
     depthWrite: false
   });
 
@@ -1361,10 +1381,10 @@ function init3DScene() {
 
   // 3. Synaptic Neural Connecting Lines
   const lineMat = new THREE.LineBasicMaterial({
-    color: isCeramicTheme ? 0x94A3B8 : (isMinimalist ? 0x64748B : 0x00F2FE),
+    color: pal.borderStrong,
     transparent: true,
     opacity: isMinimalist ? 0.15 : 0.32,
-    blending: isCeramicTheme ? THREE.NormalBlending : THREE.AdditiveBlending
+    blending: isLightTheme ? THREE.NormalBlending : THREE.AdditiveBlending
   });
 
   const lineGeo = new THREE.BufferGeometry();
@@ -1392,7 +1412,7 @@ function init3DScene() {
     const group = new THREE.Group();
     group.position.set(skill.pos[0], skill.pos[1], skill.pos[2]);
 
-    const nodeColor = isMinimalist ? 0xFFFFFF : skill.color;
+    const nodeColor = pal.archetypes[skill.archetypeId] || pal.forest;
 
     const wireGeo = new THREE.IcosahedronGeometry(skill.radius * 0.9, 1);
     const wireMat = new THREE.MeshBasicMaterial({
@@ -1790,7 +1810,7 @@ function set3DVisualizerMode(mode) {
   }
 }
 
-function trigger3DShockwave(cx = 0, cy = 0, cz = 0, colorHex = 0x00F2FE) {
+function trigger3DShockwave(cx = 0, cy = 0, cz = 0, colorHex = getThemePalette().lagoon) {
   if (appState.motionMode === 'reduced' || !scene) return;
 
   const count = 42;
@@ -1827,7 +1847,7 @@ function create3DModeOverlays(targetScene, isMinimalist) {
   const globeGroup = new THREE.Group();
   const sphereGeo = new THREE.SphereGeometry(210, 24, 24);
   const sphereMat = new THREE.MeshBasicMaterial({
-    color: isMinimalist ? 0x94A3B8 : 0x00F2FE,
+    color: getThemePalette().lagoon,
     wireframe: true,
     transparent: true,
     opacity: 0.16
@@ -1835,7 +1855,7 @@ function create3DModeOverlays(targetScene, isMinimalist) {
   globeGroup.add(new THREE.Mesh(sphereGeo, sphereMat));
 
   const eqGeo = new THREE.RingGeometry(212, 214, 48);
-  const eqMat = new THREE.MeshBasicMaterial({ color: 0x9D4EDD, side: THREE.DoubleSide, transparent: true, opacity: 0.35 });
+  const eqMat = new THREE.MeshBasicMaterial({ color: getThemePalette().orchid, side: THREE.DoubleSide, transparent: true, opacity: 0.35 });
   const eqMesh = new THREE.Mesh(eqGeo, eqMat);
   eqMesh.rotation.x = Math.PI / 2;
   globeGroup.add(eqMesh);
@@ -1850,7 +1870,7 @@ function create3DModeOverlays(targetScene, isMinimalist) {
   const ringGeo3 = new THREE.RingGeometry(183, 185, 48);
   const ringGeo4 = new THREE.RingGeometry(228, 230, 48);
   const rMat = new THREE.MeshBasicMaterial({
-    color: isMinimalist ? 0xCBD5E1 : 0x00F5D4,
+    color: getThemePalette().forest,
     side: THREE.DoubleSide,
     transparent: true,
     opacity: 0.26
@@ -1862,7 +1882,7 @@ function create3DModeOverlays(targetScene, isMinimalist) {
 
   const sweepGeo = new THREE.RingGeometry(0, 230, 36, 1, 0, Math.PI / 3.5);
   const sweepMat = new THREE.MeshBasicMaterial({
-    color: isMinimalist ? 0xE2E8F0 : 0x00F5D4,
+    color: getThemePalette().forest,
     side: THREE.DoubleSide,
     transparent: true,
     opacity: 0.28
@@ -2061,8 +2081,9 @@ function init2DFallbackConstellation(canvas, wrapper) {
 
   function render2D() {
     ctx.clearRect(0, 0, w, h);
-    ctx.strokeStyle = 'rgba(0, 242, 254, 0.15)';
-    ctx.fillStyle = '#00F2FE';
+    const pal = getThemePalette();
+    ctx.strokeStyle = pal.borderStrong;
+    ctx.fillStyle = pal.forest;
 
     for (let i = 0; i < dots.length; i++) {
       for (let j = i + 1; j < dots.length; j++) {
@@ -2131,7 +2152,7 @@ function init3DCardTilt() {
       const percentX = (x / rect.width) * 100;
       const percentY = (y / rect.height) * 100;
       glare.style.opacity = '1';
-      glare.style.background = `radial-gradient(circle at ${percentX}% ${percentY}%, rgba(255, 255, 255, 0.22) 0%, rgba(255, 255, 255, 0) 65%)`;
+      glare.style.background = `radial-gradient(circle at ${percentX}% ${percentY}%, rgba(255, 255, 255, 0.16) 0%, rgba(255, 255, 255, 0) 65%)`;
     });
 
     card.addEventListener('mouseleave', () => {
@@ -2587,7 +2608,7 @@ async function executeAnalysis() {
     }
     // Offer demo option in results area
     markdownArea.innerHTML = `
-      <div style="padding:16px;background:rgba(251,113,133,0.1);border-radius:8px;border:1px solid rgba(251,113,133,0.3);">
+      <div style="padding:16px;background:rgba(var(--terracotta-rgb),0.1);border-radius:8px;border:1px solid rgba(var(--terracotta-rgb),0.3);">
         <strong style="color:var(--accent-coral);">Connection to Backend Failed</strong>
         <p style="margin-top:6px;font-size:0.88rem;">Ensure the backend is running at <code>http://127.0.0.1:8000</code> or toggle <strong>Demo Mode</strong> to preview the report layout.</p>
         <button type="button" class="btn-preset-chip" style="margin-top:10px;" onclick="enableDemoAndRun()">Run Illustrative Demo Analysis</button>
@@ -2872,7 +2893,7 @@ function renderArchetypeDetail(id) {
         <div style="font-family:var(--font-mono);font-size:0.75rem;color:${arch.accentColor};margin-bottom:6px;font-weight:700;">
           ${arch.clusterLabel} ARCHETYPE PROFILE
         </div>
-        <h3 style="font-family:var(--font-display);font-size:1.8rem;color:#fff;margin-bottom:12px;">${arch.name}</h3>
+        <h3 style="font-family:var(--font-display);font-size:1.8rem;color:var(--text-primary);margin-bottom:12px;">${arch.name}</h3>
         <p style="color:var(--text-secondary);font-size:0.95rem;line-height:1.7;margin-bottom:20px;">${arch.summary}</p>
         
         <strong style="font-size:0.85rem;color:var(--text-primary);display:block;margin-bottom:8px;">Distinguishing Technical Competencies (TF-IDF Grounded):</strong>
@@ -2890,8 +2911,8 @@ function renderArchetypeDetail(id) {
         </div>
       </div>
 
-      <div style="background:rgba(255,255,255,0.03);border:var(--border-subtle);border-radius:var(--radius-lg);padding:24px;">
-        <h4 style="font-family:var(--font-display);font-size:1.15rem;color:#fff;margin-bottom:16px;">Reference Corpus</h4>
+      <div style="background:rgba(var(--tint-rgb),0.03);border:var(--border-subtle);border-radius:var(--radius-lg);padding:24px;">
+        <h4 style="font-family:var(--font-display);font-size:1.15rem;color:var(--text-primary);margin-bottom:16px;">Reference Corpus</h4>
 
         <div style="margin-bottom:14px;">
           <span style="font-size:0.75rem;color:var(--text-muted);display:block;">Records in this archetype</span>
@@ -2960,7 +2981,7 @@ function renderComparisonModalContent() {
 
   body.innerHTML = `
     <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:20px;">
-      <h3 style="font-family:var(--font-display);font-size:1.4rem;color:#fff;">Archetype Head-to-Head Comparison</h3>
+      <h3 style="font-family:var(--font-display);font-size:1.4rem;color:var(--text-primary);">Archetype Head-to-Head Comparison</h3>
       <div style="font-size:0.8rem;color:var(--text-muted);">TF-IDF Grounded Analysis</div>
     </div>
 
@@ -3099,7 +3120,7 @@ function renderCompanyDirectory() {
     container.innerHTML = `
       <div style="grid-column: 1 / -1; padding: 48px; text-align: center; background: var(--bg-card); border-radius: var(--radius-lg); border: var(--border-subtle);">
         <i data-lucide="search-x" style="width: 42px; height: 42px; color: var(--text-muted); margin-bottom: 12px;"></i>
-        <h4 style="font-family: var(--font-display); font-size: 1.2rem; color: #fff; margin-bottom: 6px;">No Matching Companies Found</h4>
+        <h4 style="font-family: var(--font-display); font-size: 1.2rem; color:var(--text-primary); margin-bottom: 6px;">No Matching Companies Found</h4>
         <p style="font-size: 0.88rem; color: var(--text-muted); margin-bottom: 16px;">Try adjusting your search query or tier filters.</p>
         <button type="button" class="btn-preset-chip" onclick="resetCompanyFilters()">Reset Filters</button>
       </div>
@@ -3114,9 +3135,9 @@ function renderCompanyDirectory() {
     <div class="company-card" data-company-id="${c.id}">
       <div class="company-header">
         <div class="company-identity">
-          <div class="company-avatar-logo" style="background:${c.logoColor};">${c.logoChar}</div>
+          <div class="company-avatar-logo" aria-hidden="true">${c.logoChar}</div>
           <div>
-            <h4 style="font-family:var(--font-display);font-size:1.15rem;font-weight:700;color:#fff;">${c.name}</h4>
+            <h4 style="font-family:var(--font-display);font-size:1.15rem;font-weight:700;color:var(--text-primary);">${c.name}</h4>
             <span style="font-size:0.75rem;color:var(--text-muted);">${c.category}</span>
           </div>
         </div>
@@ -3202,16 +3223,16 @@ function openCompanyModal(companyId) {
 
   body.innerHTML = `
     <div style="display:flex;align-items:center;gap:16px;margin-bottom:20px;">
-      <div class="company-avatar-logo" style="background:${company.logoColor};width:54px;height:54px;font-size:1.3rem;">
+      <div class="company-avatar-logo" aria-hidden="true" style="width:54px;height:54px;font-size:1.3rem;">
         ${company.logoChar}
       </div>
       <div>
-        <h3 style="font-family:var(--font-display);font-size:1.6rem;color:#fff;">${company.name}</h3>
+        <h3 style="font-family:var(--font-display);font-size:1.6rem;color:var(--text-primary);">${company.name}</h3>
         <p style="font-size:0.86rem;color:var(--text-muted);">${company.role} • ${company.tierLabel} Tier</p>
       </div>
     </div>
 
-    <div style="display:grid;grid-template-columns:repeat(3, 1fr);gap:12px;margin-bottom:20px;background:rgba(255,255,255,0.03);padding:14px;border-radius:var(--radius-md);">
+    <div style="display:grid;grid-template-columns:repeat(3, 1fr);gap:12px;margin-bottom:20px;background:rgba(var(--tint-rgb),0.03);padding:14px;border-radius:var(--radius-md);">
       <div>
         <span style="font-size:0.75rem;color:var(--text-muted);display:block;">Highest CTC</span>
         <strong style="color:var(--accent-cyan);font-size:1.15rem;">${fig ? `₹${fig.highestCtcLpa} LPA` : '—'}</strong>
@@ -3230,10 +3251,10 @@ function openCompanyModal(companyId) {
       ${figureSource} Role, skills, sample JD and interview rounds are ${company.provenance.toLowerCase()}.
     </div>
 
-    <h4 style="font-family:var(--font-display);font-size:1.15rem;color:#fff;margin-bottom:12px;">Sample Interview Rounds (unverified)</h4>
+    <h4 style="font-family:var(--font-display);font-size:1.15rem;color:var(--text-primary);margin-bottom:12px;">Sample Interview Rounds (unverified)</h4>
     <div style="display:flex;flex-direction:column;gap:10px;margin-bottom:24px;">
       ${company.interviewRounds.map((r, i) => `
-        <div style="background:rgba(255,255,255,0.04);border:var(--border-subtle);border-radius:var(--radius-sm);padding:12px 14px;">
+        <div style="background:rgba(var(--tint-rgb),0.04);border:var(--border-subtle);border-radius:var(--radius-sm);padding:12px 14px;">
           <strong style="color:var(--accent-blue-light);font-size:0.88rem;">Round ${i + 1}: ${r.name}</strong>
           <p style="font-size:0.82rem;color:var(--text-secondary);margin-top:4px;">${r.detail}</p>
         </div>
@@ -3324,7 +3345,7 @@ function renderFrameworksList() {
             onclick="selectFramework('${fw.id}')">
       <div style="display:flex;justify-content:space-between;align-items:center;">
         <span class="fw-acronym">${fw.acronym}</span>
-        <span style="font-size:0.68rem;padding:2px 6px;border-radius:4px;background:rgba(255,255,255,0.06);color:var(--text-muted);text-transform:uppercase;">
+        <span style="font-size:0.68rem;padding:2px 6px;border-radius:4px;background:rgba(var(--tint-rgb),0.06);color:var(--text-muted);text-transform:uppercase;">
           ${fw.category}
         </span>
       </div>
@@ -3512,7 +3533,7 @@ function triggerFrameworkRecommendation(scenarioKey) {
   box.innerHTML = `
     <div style="display:flex;align-items:center;gap:10px;margin-bottom:6px;">
       <i data-lucide="check-circle" style="width:16px;height:16px;color:var(--accent-emerald);"></i>
-      <strong style="color:#fff;">Recommended: ${rec.primaryId} (Alternative: ${rec.altId})</strong>
+      <strong style="color:var(--text-primary);">Recommended: ${rec.primaryId} (Alternative: ${rec.altId})</strong>
     </div>
     <p style="color:var(--text-secondary);font-size:0.85rem;line-height:1.6;">${rec.reason}</p>
     <div style="margin-top:8px;">
@@ -3568,7 +3589,7 @@ function triggerConfetti() {
       particleCount: 75,
       spread: 60,
       origin: { y: 0.65 },
-      colors: ['#FFFFFF', '#F4F4F5', '#E4E4E7', '#D4D4D8', '#A1A1AA']
+      colors: getThemePalette().archetypes
     });
   }
 }
@@ -3579,39 +3600,59 @@ function triggerConfetti() {
 // ==============================================================================
 // 14. ACCESSIBILITY, THEME SWITCHER & MOTION PREFERENCES
 // ==============================================================================
+const THEME_STORAGE_KEY = 'career_ui_theme_v2';
+const THEME_LABELS = { terra: 'Terra Atelier', grove: 'Midnight Grove' };
+
+// Resolve the saved theme, migrating the pre-redesign key once:
+// ceramic -> terra, cyber -> grove. New visitors get Terra Atelier.
+function getSavedTheme() {
+  try {
+    const saved = localStorage.getItem(THEME_STORAGE_KEY);
+    if (saved === 'terra' || saved === 'grove') return saved;
+    const legacy = localStorage.getItem('resume_checker_theme');
+    if (legacy) {
+      const migrated = legacy === 'cyber' ? 'grove' : 'terra';
+      localStorage.setItem(THEME_STORAGE_KEY, migrated);
+      localStorage.removeItem('resume_checker_theme');
+      return migrated;
+    }
+  } catch (err) { /* storage unavailable: fall through to the default */ }
+  return 'terra';
+}
+
 function initThemeSwitcher() {
   const themeBtn = document.getElementById('btn-theme-toggle');
-  const savedTheme = localStorage.getItem('resume_checker_theme') || 'cyber';
-  setTheme(savedTheme);
+  setTheme(getSavedTheme(), { persist: false });
 
   if (themeBtn) {
     themeBtn.addEventListener('click', () => {
-      const current = document.documentElement.getAttribute('data-theme') || 'cyber';
-      const next = current === 'ceramic' ? 'cyber' : 'ceramic';
+      const next = document.documentElement.getAttribute('data-theme') === 'grove' ? 'terra' : 'grove';
       setTheme(next);
-      showToast(next === 'ceramic' ? 'Activated Soft Ceramic Neumorphism' : 'Activated Dark Velvet Neumorphism');
+      showToast(`Theme: ${THEME_LABELS[next]}`);
     });
   }
 }
 
-function setTheme(theme) {
+function setTheme(theme, { persist = true } = {}) {
+  const next = theme === 'grove' ? 'grove' : 'terra';
+  const changed = document.documentElement.getAttribute('data-theme') !== next;
+  document.documentElement.setAttribute('data-theme', next);
+
   const themeLabel = document.getElementById('theme-mode-label');
-  if (theme === 'ceramic') {
-    document.documentElement.setAttribute('data-theme', 'ceramic');
-    if (themeLabel) themeLabel.textContent = 'Theme: Minimalist Light';
-    localStorage.setItem('resume_checker_theme', 'ceramic');
-  } else {
-    document.documentElement.removeAttribute('data-theme');
-    if (themeLabel) themeLabel.textContent = 'Theme: Minimalist Dark';
-    localStorage.setItem('resume_checker_theme', 'cyber');
+  if (themeLabel) themeLabel.textContent = THEME_LABELS[next];
+  const themeBtn = document.getElementById('btn-theme-toggle');
+  if (themeBtn) {
+    const other = next === 'grove' ? 'terra' : 'grove';
+    themeBtn.setAttribute('aria-label', `Switch to ${THEME_LABELS[other]} theme`);
+    themeBtn.setAttribute('aria-pressed', String(next === 'grove'));
+  }
+  if (persist) {
+    try { localStorage.setItem(THEME_STORAGE_KEY, next); } catch (err) { /* preference only */ }
   }
 
-  // Re-sync Three.js scene fog and clear colors if active
-  if (scene && renderer) {
-    const isCeramic = theme === 'ceramic';
-    const fogColor = isCeramic ? 0xF8F9FA : 0x060608;
-    if (scene.fog) scene.fog.color.setHex(fogColor);
-    renderer.setClearColor(fogColor, isCeramic ? 0.35 : 0.0);
+  // Canvas and WebGL colours come from the palette, so rebuild them on a real change.
+  if (changed && scene && renderer && typeof update3DSceneAesthetic === 'function') {
+    update3DSceneAesthetic();
   }
 }
 
@@ -5263,12 +5304,12 @@ async function handleTestLLMConnection() {
     const data = await res.json();
     if (data.success) {
       pingStatus.textContent = 'Connection Verified (Success)';
-      pingStatus.style.color = '#10B981';
+      pingStatus.style.color = 'var(--color-forest)';
       pingLatency.textContent = `${data.latency_ms} ms`;
       pingReply.textContent = `Provider reply: "${data.reply}"`;
     } else {
       pingStatus.textContent = 'Probe Failed';
-      pingStatus.style.color = '#EF4444';
+      pingStatus.style.color = 'var(--color-danger)';
       pingLatency.textContent = `${data.latency_ms || 0} ms`;
       pingReply.textContent = data.error || 'Check your credentials or network connectivity.';
     }
