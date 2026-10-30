@@ -88,3 +88,14 @@ All analyzer IDs used by `app.js` are kept; the changes are structural.
 | `onclick="copyPromptAndOpenAnalyzer()"` "Copy & Jump to Resume Matcher" | replaced | `#btn-prompt-to-coach` "Use as Career Coach lens": sets `#coach-framework-select`, opens the Career Coach tab and scrolls to it, a defined destination for a framework (pasting a prompt into the JD field was not) |
 | Recommendation box inline `onclick` buttons | replaced | `data-load-framework` delegation; the text names the expansion and the alternative's "best for" from the registry |
 | `div#prompt-preview-code[role=textbox]` | replaced | `pre#prompt-preview-code` (focusable, labelled) |
+
+## Interaction section, FAQ and footer
+
+| Removed / changed | Status | Replacement |
+|---|---|---|
+| "All Possible Hover Buttons Laboratory" full section (8 large samples + studio always visible) | compacted | "07 Interaction": a pointer to Preferences (`#btn-open-prefs` opens `#prefs-panel` and focuses its first control) plus the samples inside a collapsed `details.showcase-details`. All sample and studio IDs are kept. Sample texts no longer use the old cyber vocabulary or show a salary tier ("Super Dream (₹20+ LPA)"). |
+| `.neu-card.spatial-tilt-card.reveal-spatial` studio wrapper + `.specular-glare` | replaced | `.neu-card.showcase-studio` (no tilt or reveal effect) |
+| FAQ `.faq-question-btn` + JS accordion (no `aria-expanded`) | replaced | Native `details.faq-item > summary.faq-summary`; the accordion JS is removed |
+| FAQ copy ("226 verified benchmark alumni resumes", "proven career archetypes", "placement alignment score") | rewritten | Five plain answers; the privacy answer discloses that the JD travels as a URL parameter and can reach access logs |
+| — | added | `dl.method-notes`: corpus, snapshot, scoring and curated material, with figures filled from `[data-evidence]` / `[data-snapshot]` |
+| Footer links (Home, Button Lab, …) | replaced | Wordmark line plus links matching the new navigation |

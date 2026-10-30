@@ -52,6 +52,7 @@ def build():
     js_ids |= set(re.findall(r"querySelector(?:All)?\(\s*['\"]#([\w-]+)", js))
     handlers = set()
     for code in re.findall(r'\son[a-z]+="([^"]*)"', html):
+        code = re.sub(r"'[^']*'", "''", code)  # words inside string arguments are not calls
         handlers |= set(re.findall(r"([A-Za-z_$][\w$]*)\s*\(", code))
     handlers -= {"event", "this", "if", "return"}
     defined = set(re.findall(r"function\s+([A-Za-z_$][\w$]*)\s*\(", js))

@@ -1104,283 +1104,285 @@
       <!-- =======================================================================
            SECTION 7: INTERACTION LAB (8 BUTTON STYLES)
            ======================================================================= -->
-      <section id="buttons-lab" class="button-lab-section" aria-labelledby="lab-heading">
+      <section id="buttons-lab" class="button-lab-section band-paper" aria-labelledby="lab-heading">
         <div class="container">
-          
-          <div style="text-align:center;max-width:760px;margin:0 auto 48px;">
-            <span style="font-size:0.78rem;font-weight:700;text-transform:uppercase;letter-spacing:0.12em;color:var(--accent-magenta);margin-bottom:12px;display:inline-block;">
-              Micro-Interactions Showcase
-            </span>
-            <h2 id="lab-heading" style="font-family:var(--font-display);font-size:clamp(2rem, 3.5vw, 2.6rem);font-weight:800;color:var(--text-primary);margin-bottom:12px;">
-              All Possible Hover Buttons Laboratory
-            </h2>
-            <p style="color:var(--text-secondary);font-size:1rem;line-height:1.6;">
-              Test every tactile micro-interaction crafted for this experience: magnetic cursor pulling, high-speed glass shimmers, 3D press depths, and cyber outlines.
-            </p>
-          </div>
+          <header class="section-head section-head-split">
+            <div>
+              <p class="section-kicker"><span class="section-index">07</span> Interaction</p>
+              <h2 id="lab-heading" class="section-title">Preferences and control samples</h2>
+            </div>
+            <div>
+              <p class="section-lede">Theme, motion, sound and 3D detail live in Preferences at the top of the page. The control samples below are a reference for the tactile buttons, toggles and sliders used across the product.</p>
+              <button type="button" id="btn-open-prefs" class="btn-secondary showcase-prefs-btn">
+                <i data-lucide="sliders-horizontal" style="width:16px;height:16px;"></i> Open preferences
+              </button>
+            </div>
+          </header>
 
-          <div class="buttons-grid">
+          <details class="showcase-details">
+            <summary class="showcase-summary">
+              <span>Show the control samples</span>
+              <i data-lucide="chevron-down" style="width:18px;height:18px;" aria-hidden="true"></i>
+            </summary>
+            <div class="showcase-body">
+            <div class="buttons-grid">
             
-            <!-- 1. Magnetic Glow Primary -->
-            <div class="btn-lab-item">
-              <span class="btn-lab-label">1. Magnetic Glow</span>
-              <button type="button" class="btn-magnetic-glow" onclick="showToast('Magnetic Glow Button clicked!')">
-                <i data-lucide="sparkles" style="width:16px;height:16px;"></i> Magnetic Glow
-              </button>
-            </div>
-
-            <!-- 2. Glass Shimmer Pill -->
-            <div class="btn-lab-item">
-              <span class="btn-lab-label">2. Glass Shimmer</span>
-              <button type="button" class="btn-glass-shimmer" onclick="showToast('Glass Shimmer Pill clicked!')">
-                <i data-lucide="sun" style="width:16px;height:16px;"></i> Glass Shimmer
-              </button>
-            </div>
-
-            <!-- 3. Cyber Border Trace -->
-            <div class="btn-lab-item">
-              <span class="btn-lab-label">3. Cyber Trace</span>
-              <button type="button" class="btn-cyber-border" onclick="showToast('Cyber Border clicked!')">
-                <i data-lucide="terminal" style="width:16px;height:16px;"></i> [CYBER_TRACE]
-              </button>
-            </div>
-
-            <!-- 4. 3D Isometric Physical Push -->
-            <div class="btn-lab-item">
-              <span class="btn-lab-label">4. 3D Physical Push</span>
-              <button type="button" class="btn-3d-push" onclick="showToast('Physical 3D Button pressed!')">
-                <i data-lucide="disc" style="width:16px;height:16px;"></i> 3D Push Depth
-              </button>
-            </div>
-
-            <!-- 5. Liquid Emerald -->
-            <div class="btn-lab-item">
-              <span class="btn-lab-label">5. Liquid Emerald</span>
-              <button type="button" class="btn-emerald-liquid" onclick="showToast('Liquid Emerald Button clicked!')">
-                <i data-lucide="check" style="width:16px;height:16px;"></i> Liquid Pulse
-              </button>
-            </div>
-
-            <!-- 6. Magnetic Icon Action Circle -->
-            <div class="btn-lab-item">
-              <span class="btn-lab-label">6. Icon Actions</span>
-              <div style="display:flex;gap:10px;">
-                <button type="button" class="btn-icon-circle" onclick="showToast('Bookmark icon button clicked — style demo, nothing is saved.')" title="Bookmark (style demo)">
-                  <i data-lucide="bookmark" style="width:16px;height:16px;"></i>
-                </button>
-                <button type="button" class="btn-icon-circle" onclick="triggerConfetti()" title="Trigger Celebration">
-                  <i data-lucide="party-popper" style="width:16px;height:16px;"></i>
+              <!-- Primary Primary -->
+              <div class="btn-lab-item">
+                <span class="btn-lab-label">Primary</span>
+                <button type="button" class="btn-magnetic-glow" onclick="showToast('Primary button pressed (sample)')">
+                  <i data-lucide="sparkles" style="width:16px;height:16px;"></i> Analyze
                 </button>
               </div>
-            </div>
 
-            <!-- 7. Filter Pill Chip -->
-            <div class="btn-lab-item">
-              <span class="btn-lab-label">7. Interactive Filter</span>
-              <button type="button" id="lab-filter-pill" class="btn-filter-pill active">
-                Super Dream (₹20+ LPA)
-              </button>
-            </div>
-
-            <!-- 8. Preset Auto-Fill -->
-            <div class="btn-lab-item">
-              <span class="btn-lab-label">8. Preset Template</span>
-              <button type="button" id="lab-preset-chip" class="btn-preset-chip" style="padding:10px 16px;">
-                <i data-lucide="file-plus" style="width:14px;height:14px;"></i> Inject Sample JD
-              </button>
-            </div>
-
-          </div>
-
-          <!-- Neumorphic & Spatial UI Interactive Workbench -->
-          <div class="neu-card spatial-tilt-card reveal-spatial" style="margin-top: 48px;">
-            <div class="specular-glare"></div>
-            
-            <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:16px;margin-bottom:24px;border-bottom:1px solid rgba(var(--tint-rgb),0.06);padding-bottom:16px;">
-              <div>
-                <span class="neu-badge">
-                  <i data-lucide="layers" style="width:14px;height:14px;"></i>
-                  <span>Spatial UI & Soft Neumorphism Studio</span>
-                </span>
-                <h3 style="font-family:var(--font-display);font-size:1.4rem;font-weight:700;color:var(--text-primary);margin-top:8px;">
-                  Tactile Shading, Depth Sliders & 3D WebGL Camera Controls
-                </h3>
+              <!-- Secondary Pill -->
+              <div class="btn-lab-item">
+                <span class="btn-lab-label">Secondary</span>
+                <button type="button" class="btn-glass-shimmer" onclick="showToast('Secondary button pressed (sample)')">
+                  <i data-lucide="sun" style="width:16px;height:16px;"></i> Explore
+                </button>
               </div>
-              
-              <div class="neu-segmented">
-                <button type="button" class="neu-segmented-btn active" id="btn-neu-shape-raised" onclick="setNeuPreviewShape('raised')">Raised Pill</button>
-                <button type="button" class="neu-segmented-btn" id="btn-neu-shape-inset" onclick="setNeuPreviewShape('inset')">Sunken Recessed</button>
-                <button type="button" class="neu-segmented-btn" id="btn-neu-shape-convex" onclick="setNeuPreviewShape('convex')">Convex Surface</button>
-              </div>
-            </div>
 
-            <div style="display:grid;grid-template-columns:repeat(auto-fit, minmax(280px, 1fr));gap:24px;align-items:center;">
-              
-              <!-- Control 1: Real-Time Shadow Depth & 3D Perspective -->
-              <div class="neu-inset-panel">
-                <div style="display:flex;justify-content:space-between;margin-bottom:8px;">
-                  <label for="neu-depth-range" style="font-size:0.85rem;font-weight:600;color:var(--text-primary);">
-                    Dynamic Shadow Depth: <span id="neu-depth-val" style="color:var(--accent-cyan);">8px</span>
-                  </label>
-                  <span style="font-size:0.75rem;color:var(--text-muted);">Real-time CSS Shadow</span>
-                </div>
-                <input type="range" id="neu-depth-range" class="neu-slider" min="2" max="20" value="8" aria-label="Dynamic shadow depth">
-                <div style="display:flex;justify-content:space-between;font-size:0.7rem;color:var(--text-dim);margin-top:6px;">
-                  <span>Subtle (2px)</span>
-                  <span>Balanced (8px)</span>
-                  <span>Deep Extrusion (20px)</span>
+              <!-- Outline Trace -->
+              <div class="btn-lab-item">
+                <span class="btn-lab-label">Outline</span>
+                <button type="button" class="btn-cyber-border" onclick="showToast('Outline button pressed (sample)')">
+                  <i data-lucide="terminal" style="width:16px;height:16px;"></i> View details
+                </button>
+              </div>
+
+              <!-- 4. 3D Isometric Physical Push -->
+              <div class="btn-lab-item">
+                <span class="btn-lab-label">Pressable</span>
+                <button type="button" class="btn-3d-push" onclick="showToast('Pressable button pressed (sample)')">
+                  <i data-lucide="disc" style="width:16px;height:16px;"></i> Press
+                </button>
+              </div>
+
+              <!-- Forest fill -->
+              <div class="btn-lab-item">
+                <span class="btn-lab-label">Forest fill</span>
+                <button type="button" class="btn-emerald-liquid" onclick="showToast('Forest button pressed (sample)')">
+                  <i data-lucide="check" style="width:16px;height:16px;"></i> Save
+                </button>
+              </div>
+
+              <!-- 6. Magnetic Icon Action Circle -->
+              <div class="btn-lab-item">
+                <span class="btn-lab-label">Icon actions</span>
+                <div style="display:flex;gap:10px;">
+                  <button type="button" class="btn-icon-circle" onclick="showToast('Bookmark icon button clicked — style demo, nothing is saved.')" title="Bookmark (sample, nothing is saved)" aria-label="Bookmark (sample, nothing is saved)">
+                    <i data-lucide="bookmark" style="width:16px;height:16px;"></i>
+                  </button>
+                  <button type="button" class="btn-icon-circle" onclick="triggerConfetti()" title="Celebration effect (sample)" aria-label="Celebration effect (sample)">
+                    <i data-lucide="party-popper" style="width:16px;height:16px;"></i>
+                  </button>
                 </div>
               </div>
 
-              <!-- Control 2: Tactile Soft Toggle Switch -->
-              <div class="neu-inset-panel" style="display:flex;justify-content:space-between;align-items:center;">
+              <!-- 7. Filter Pill Chip -->
+              <div class="btn-lab-item">
+                <span class="btn-lab-label">Filter pill</span>
+                <button type="button" id="lab-filter-pill" class="btn-filter-pill active">
+                  In the 2026 snapshot
+                </button>
+              </div>
+
+              <!-- 8. Preset Auto-Fill -->
+              <div class="btn-lab-item">
+                <span class="btn-lab-label">Preset chip</span>
+                <button type="button" id="lab-preset-chip" class="btn-preset-chip" style="padding:10px 16px;">
+                  <i data-lucide="file-plus" style="width:14px;height:14px;"></i> Load sample JD
+                </button>
+              </div>
+
+            </div>
+
+            <!-- Neumorphic & Spatial UI Interactive Workbench -->
+            <div class="neu-card showcase-studio">
+            
+              <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:16px;margin-bottom:24px;border-bottom:1px solid rgba(var(--tint-rgb),0.06);padding-bottom:16px;">
                 <div>
-                  <div style="font-size:0.85rem;font-weight:600;color:var(--text-primary);">Tactile Soft Switch</div>
-                  <div style="font-size:0.75rem;color:var(--text-muted);" id="neu-toggle-status-label">State: Active (Glow)</div>
-                </div>
-                <div class="neu-toggle-wrapper checked" id="neu-tactile-toggle" role="switch" aria-checked="true" tabindex="0">
-                  <div class="neu-toggle-track">
-                    <div class="neu-toggle-thumb"></div>
-                  </div>
-                </div>
-              </div>
-
-              <!-- Control 4: Interactive 3D Lighting Vector Puck -->
-              <div class="neu-inset-panel" style="display:flex;flex-direction:column;gap:8px;">
-                <div style="display:flex;justify-content:space-between;align-items:center;">
-                  <span style="font-size:0.85rem;font-weight:600;color:var(--text-primary);display:flex;align-items:center;gap:6px;">
-                    <i data-lucide="sun" style="width:14px;height:14px;color:var(--accent-amber);"></i>
-                    <span>3D Light Vector Puck</span>
+                  <span class="neu-badge">
+                    <i data-lucide="layers" style="width:14px;height:14px;"></i>
+                    <span>Tactile surfaces</span>
                   </span>
-                  <span id="neu-light-angle-label" style="font-size:0.75rem;color:var(--accent-cyan);font-weight:700;">135° (NW)</span>
+                  <h3 style="font-family:var(--font-display);font-size:1.4rem;font-weight:700;color:var(--text-primary);margin-top:8px;">
+                    Shadow depth, toggles and 3D camera controls
+                  </h3>
                 </div>
-                <div class="neu-light-puck-container" id="neu-light-well" title="Drag puck to rotate 3D shadows across all surfaces">
-                  <div class="neu-light-puck" id="neu-light-puck" tabindex="0" role="slider" aria-label="3D Lighting Direction Puck">
-                    <span class="puck-center-glow"></span>
+              
+                <div class="neu-segmented">
+                  <button type="button" class="neu-segmented-btn active" id="btn-neu-shape-raised" onclick="setNeuPreviewShape('raised')">Raised Pill</button>
+                  <button type="button" class="neu-segmented-btn" id="btn-neu-shape-inset" onclick="setNeuPreviewShape('inset')">Sunken Recessed</button>
+                  <button type="button" class="neu-segmented-btn" id="btn-neu-shape-convex" onclick="setNeuPreviewShape('convex')">Convex Surface</button>
+                </div>
+              </div>
+
+              <div style="display:grid;grid-template-columns:repeat(auto-fit, minmax(280px, 1fr));gap:24px;align-items:center;">
+              
+                <!-- Control 1: Real-Time Shadow Depth & 3D Perspective -->
+                <div class="neu-inset-panel">
+                  <div style="display:flex;justify-content:space-between;margin-bottom:8px;">
+                    <label for="neu-depth-range" style="font-size:0.85rem;font-weight:600;color:var(--text-primary);">
+                      Dynamic Shadow Depth: <span id="neu-depth-val" style="color:var(--accent-cyan);">8px</span>
+                    </label>
+                    <span style="font-size:0.75rem;color:var(--text-muted);">Real-time CSS Shadow</span>
                   </div>
-                  <span class="puck-axis-label axis-n">N</span>
-                  <span class="puck-axis-label axis-e">E</span>
-                  <span class="puck-axis-label axis-s">S</span>
-                  <span class="puck-axis-label axis-w">W</span>
+                  <input type="range" id="neu-depth-range" class="neu-slider" min="2" max="20" value="8" aria-label="Dynamic shadow depth">
+                  <div style="display:flex;justify-content:space-between;font-size:0.7rem;color:var(--text-dim);margin-top:6px;">
+                    <span>Subtle (2px)</span>
+                    <span>Balanced (8px)</span>
+                    <span>Deep Extrusion (20px)</span>
+                  </div>
                 </div>
+
+                <!-- Control 2: Tactile Soft Toggle Switch -->
+                <div class="neu-inset-panel" style="display:flex;justify-content:space-between;align-items:center;">
+                  <div>
+                    <div style="font-size:0.85rem;font-weight:600;color:var(--text-primary);">Tactile Soft Switch</div>
+                    <div style="font-size:0.75rem;color:var(--text-muted);" id="neu-toggle-status-label">State: Active (Glow)</div>
+                  </div>
+                  <div class="neu-toggle-wrapper checked" id="neu-tactile-toggle" role="switch" aria-checked="true" tabindex="0">
+                    <div class="neu-toggle-track">
+                      <div class="neu-toggle-thumb"></div>
+                    </div>
+                  </div>
+                </div>
+
+                <!-- Control 4: Interactive 3D Lighting Vector Puck -->
+                <div class="neu-inset-panel" style="display:flex;flex-direction:column;gap:8px;">
+                  <div style="display:flex;justify-content:space-between;align-items:center;">
+                    <span style="font-size:0.85rem;font-weight:600;color:var(--text-primary);display:flex;align-items:center;gap:6px;">
+                      <i data-lucide="sun" style="width:14px;height:14px;color:var(--accent-amber);"></i>
+                      <span>3D Light Vector Puck</span>
+                    </span>
+                    <span id="neu-light-angle-label" style="font-size:0.75rem;color:var(--accent-cyan);font-weight:700;">135° (NW)</span>
+                  </div>
+                  <div class="neu-light-puck-container" id="neu-light-well" title="Drag puck to rotate 3D shadows across all surfaces">
+                    <div class="neu-light-puck" id="neu-light-puck" tabindex="0" role="slider" aria-label="3D Lighting Direction Puck">
+                      <span class="puck-center-glow"></span>
+                    </div>
+                    <span class="puck-axis-label axis-n">N</span>
+                    <span class="puck-axis-label axis-e">E</span>
+                    <span class="puck-axis-label axis-s">S</span>
+                    <span class="puck-axis-label axis-w">W</span>
+                  </div>
+                </div>
+
+                <!-- Control 3: Three.js 3D Constellation Orbit Controls -->
+                <div class="neu-inset-panel" style="display:flex;flex-direction:column;gap:10px;">
+                  <div style="font-size:0.85rem;font-weight:600;color:var(--text-primary);display:flex;align-items:center;gap:6px;">
+                    <i data-lucide="orbit" style="width:15px;height:15px;color:var(--accent-blue);"></i>
+                    <span>Spatial 3D Constellation Camera</span>
+                  </div>
+                  <div style="display:flex;gap:8px;flex-wrap:wrap;">
+                    <button type="button" class="neu-btn" style="padding:8px 14px;font-size:0.78rem;" id="btn-3d-accelerate" onclick="toggle3DAcceleration()">
+                      <i data-lucide="fast-forward" style="width:13px;height:13px;"></i> Orbit Warp
+                    </button>
+                    <button type="button" class="neu-btn" style="padding:8px 14px;font-size:0.78rem;" id="btn-3d-cluster-focus" onclick="focusNextArchetypeNode()">
+                      <i data-lucide="crosshair" style="width:13px;height:13px;"></i> Next Cluster
+                    </button>
+                    <button type="button" class="neu-btn" style="padding:8px 14px;font-size:0.78rem;" id="btn-3d-reset-cam" onclick="reset3DCamera()">
+                      <i data-lucide="rotate-ccw" style="width:13px;height:13px;"></i> Reset View
+                    </button>
+                  </div>
+                </div>
+
               </div>
 
-              <!-- Control 3: Three.js 3D Constellation Orbit Controls -->
-              <div class="neu-inset-panel" style="display:flex;flex-direction:column;gap:10px;">
-                <div style="font-size:0.85rem;font-weight:600;color:var(--text-primary);display:flex;align-items:center;gap:6px;">
-                  <i data-lucide="orbit" style="width:15px;height:15px;color:var(--accent-blue);"></i>
-                  <span>Spatial 3D Constellation Camera</span>
+              <!-- Tactile Interactive Preview Box -->
+              <div id="neu-preview-surface" class="neu-card" style="margin-top:24px;text-align:center;padding:28px;transition:all 0.3s ease;">
+                <div style="font-size:0.8rem;text-transform:uppercase;letter-spacing:0.1em;color:var(--accent-cyan);font-weight:700;margin-bottom:8px;">
+                  Live Neumorphic Surface Preview
                 </div>
-                <div style="display:flex;gap:8px;flex-wrap:wrap;">
-                  <button type="button" class="neu-btn" style="padding:8px 14px;font-size:0.78rem;" id="btn-3d-accelerate" onclick="toggle3DAcceleration()">
-                    <i data-lucide="fast-forward" style="width:13px;height:13px;"></i> Orbit Warp
+                <p style="color:var(--text-secondary);font-size:0.92rem;max-width:540px;margin:0 auto 18px;line-height:1.6;">
+                  Notice how the soft highlights and shadows dynamically dance based on depth and light angles without harsh borders.
+                </p>
+                <div style="display:inline-flex;gap:12px;flex-wrap:wrap;justify-content:center;">
+                  <button type="button" class="neu-btn" onclick="showToast('Pressed Raised Soft Button')">
+                    <i data-lucide="fingerprint" style="width:16px;height:16px;"></i> Tactile Push
                   </button>
-                  <button type="button" class="neu-btn" style="padding:8px 14px;font-size:0.78rem;" id="btn-3d-cluster-focus" onclick="focusNextArchetypeNode()">
-                    <i data-lucide="crosshair" style="width:13px;height:13px;"></i> Next Cluster
-                  </button>
-                  <button type="button" class="neu-btn" style="padding:8px 14px;font-size:0.78rem;" id="btn-3d-reset-cam" onclick="reset3DCamera()">
-                    <i data-lucide="rotate-ccw" style="width:13px;height:13px;"></i> Reset View
+                  <button type="button" class="neu-btn neu-btn-primary" onclick="showToast('Pressed Accent Soft Button')">
+                    <i data-lucide="sparkles" style="width:16px;height:16px;"></i> Accent Pulse
                   </button>
                 </div>
               </div>
 
             </div>
-
-            <!-- Tactile Interactive Preview Box -->
-            <div id="neu-preview-surface" class="neu-card" style="margin-top:24px;text-align:center;padding:28px;transition:all 0.3s ease;">
-              <div style="font-size:0.8rem;text-transform:uppercase;letter-spacing:0.1em;color:var(--accent-cyan);font-weight:700;margin-bottom:8px;">
-                Live Neumorphic Surface Preview
-              </div>
-              <p style="color:var(--text-secondary);font-size:0.92rem;max-width:540px;margin:0 auto 18px;line-height:1.6;">
-                Notice how the soft highlights and shadows dynamically dance based on depth and light angles without harsh borders.
-              </p>
-              <div style="display:inline-flex;gap:12px;flex-wrap:wrap;justify-content:center;">
-                <button type="button" class="neu-btn" onclick="showToast('Pressed Raised Soft Button')">
-                  <i data-lucide="fingerprint" style="width:16px;height:16px;"></i> Tactile Push
-                </button>
-                <button type="button" class="neu-btn neu-btn-primary" onclick="showToast('Pressed Accent Soft Button')">
-                  <i data-lucide="sparkles" style="width:16px;height:16px;"></i> Accent Pulse
-                </button>
-              </div>
             </div>
-
-          </div>
-
+          </details>
         </div>
       </section>
 
       <!-- =======================================================================
            SECTION 8: FAQ & TRUST SECTION
            ======================================================================= -->
-      <section id="faq" class="faq-section" aria-labelledby="faq-heading">
+      <section id="faq" class="faq-section band-alt" aria-labelledby="faq-heading">
         <div class="container">
-          
-          <div style="text-align:center;max-width:760px;margin:0 auto 48px;">
-            <span style="font-size:0.78rem;font-weight:700;text-transform:uppercase;letter-spacing:0.12em;color:var(--accent-emerald);margin-bottom:12px;display:inline-block;">
-              Integrity & FAQ
-            </span>
-            <h2 id="faq-heading" style="font-family:var(--font-display);font-size:clamp(2rem, 3.5vw, 2.6rem);font-weight:800;color:var(--text-primary);margin-bottom:12px;">
-              Frequently Asked Questions & Disclaimers
-            </h2>
-            <p style="color:var(--text-secondary);font-size:1rem;line-height:1.6;">
-              Understanding how your data is treated and the methodological foundation of Resume Checker.
-            </p>
+          <header class="section-head">
+            <p class="section-kicker"><span class="section-index">08</span> Methodology</p>
+            <h2 id="faq-heading" class="section-title">Sources, method and questions</h2>
+          </header>
+
+          <div class="method-grid">
+            <dl class="method-notes" aria-label="Data sources and method">
+              <div>
+                <dt>Alumni resume corpus</dt>
+                <dd><span data-evidence="source_count">226</span> indexed records (<span data-evidence="valid_document_count">224</span> valid, <span data-evidence="degraded_document_count">2</span> degraded), embedded with <code>all-MiniLM-L6-v2</code> (<span data-evidence="embedding_dimension">384</span> dimensions), indexed with FAISS and grouped into five archetypes by K-Means. Used for reference matching only.</dd>
+              </div>
+              <div>
+                <dt>2026 placement snapshot</dt>
+                <dd>Batch-level offers from the <span data-snapshot="source_name">campus placement portal</span>, snapshot of <span data-snapshot="source_snapshot_date">17 September 2026</span>. Offers are not distinct students, recruiter categories overlap, and some offers have no reported CTC.</dd>
+              </div>
+              <div>
+                <dt>Scoring</dt>
+                <dd>A deterministic rubric (<code>scoring_rubric.json</code>) scores textual alignment between resume evidence and the job description. The review lens changes the simulated reviewer, never the score.</dd>
+              </div>
+              <div>
+                <dt>Curated material</dt>
+                <dd>Company roles, sample job descriptions, interview rounds and archetype skill lists are curated for practice and marked as unverified wherever they appear.</dd>
+              </div>
+            </dl>
+
+            <div class="faq-list">
+              <details class="faq-item">
+                <summary class="faq-summary">
+                  <span>How is this different from an ATS keyword scanner?</span>
+                  <i data-lucide="plus" style="width:18px;height:18px;" aria-hidden="true"></i>
+                </summary>
+                <div class="faq-answer-panel">Keyword scanners count term overlap. Resume Checker also embeds the resume and the job description with <code>all-MiniLM-L6-v2</code>, retrieves similar resumes from the alumni corpus for reference, and scores the match with a fixed rubric. It is still a comparison of text: it cannot see how an interviewer will judge you.</div>
+              </details>
+              <details class="faq-item">
+                <summary class="faq-summary">
+                  <span>Does a high score mean I will get an interview?</span>
+                  <i data-lucide="plus" style="width:18px;height:18px;" aria-hidden="true"></i>
+                </summary>
+                <div class="faq-answer-panel">No. The score measures how well the evidence in your resume matches the language of the job description. Hiring decisions depend on assessments, interviews, timing and many factors this tool cannot observe.</div>
+              </details>
+              <details class="faq-item">
+                <summary class="faq-summary">
+                  <span>Is my resume stored or shared?</span>
+                  <i data-lucide="plus" style="width:18px;height:18px;" aria-hidden="true"></i>
+                </summary>
+                <div class="faq-answer-panel">The PDF is read into memory for the request, parsed and discarded; the server does not write resume files or extracted text to disk or a database. The job description is currently sent as a URL parameter, so it can appear in server access logs. Your browser stores only display preferences (theme, motion, 3D detail).</div>
+              </details>
+              <details class="faq-item">
+                <summary class="faq-summary">
+                  <span>Which numbers are sourced and which are illustrative?</span>
+                  <i data-lucide="plus" style="width:18px;height:18px;" aria-hidden="true"></i>
+                </summary>
+                <div class="faq-answer-panel">Sourced: the corpus counts and dimensions (corpus manifest) and every placement figure (2026 snapshot). Curated or illustrative: company roles, sample job descriptions, interview rounds, archetype skill lists and the demo report. Curated material is labelled where it appears.</div>
+              </details>
+              <details class="faq-item">
+                <summary class="faq-summary">
+                  <span>Is a large language model involved?</span>
+                  <i data-lucide="plus" style="width:18px;height:18px;" aria-hidden="true"></i>
+                </summary>
+                <div class="faq-answer-panel">Only if the server is configured with an LLM provider. Without one, reports come from a deterministic local engine. The Engine row in Preferences shows which one is active.</div>
+              </details>
+            </div>
           </div>
-
-          <div class="faq-list">
-            
-            <div class="faq-item">
-              <button class="faq-question-btn" type="button">
-                <span>How is Resume Checker different from traditional ATS keyword scanners?</span>
-                <i data-lucide="chevron-down" style="width:18px;height:18px;"></i>
-              </button>
-              <div class="faq-answer-panel">
-                Traditional ATS systems simply count keyword frequency between your resume and a job description. Resume Checker uses dense neural embeddings (<code>all-MiniLM-L6-v2</code>) and FAISS indexing across 226 verified benchmark alumni resumes to compare metric structures, technical depth, and proven career archetypes.
-              </div>
-            </div>
-
-            <div class="faq-item">
-              <button class="faq-question-btn" type="button">
-                <span>Does an archetype fit or high score guarantee an interview or offer?</span>
-                <i data-lucide="chevron-down" style="width:18px;height:18px;"></i>
-              </button>
-              <div class="faq-answer-panel">
-                No. The placement alignment score is a comparative diagnostic indicator, not a statistical guarantee of hiring. Interview outcomes depend on live coding assessments, academic credentials, hiring bar variations, and interviewer evaluations.
-              </div>
-            </div>
-
-            <div class="faq-item">
-              <button class="faq-question-btn" type="button">
-                <span>Is my uploaded resume stored or shared?</span>
-                <i data-lucide="chevron-down" style="width:18px;height:18px;"></i>
-              </button>
-              <div class="faq-answer-panel">
-                No. Resume PDFs are processed entirely in-memory using byte buffers and discarded immediately after semantic analysis. No candidate resume files or personal contact details are stored in databases or logged to disk.
-              </div>
-            </div>
-
-            <div class="faq-item">
-              <button class="faq-question-btn" type="button">
-                <span>Which placement data is verified vs sample/unverified?</span>
-                <i data-lucide="chevron-down" style="width:18px;height:18px;"></i>
-              </button>
-              <div class="faq-answer-panel">
-                The career archetypes and vector embeddings are derived from the project's alumni dataset. Recruiter compensation ranges, difficulty ratings, and specific interview questions represent curated project sample data for illustrative benchmarking.
-              </div>
-            </div>
-
-            <div class="faq-item">
-              <button class="faq-question-btn" type="button">
-                <span>Is Resume Checker an ATS scanner or an enterprise career diagnostic?</span>
-                <i data-lucide="chevron-down" style="width:18px;height:18px;"></i>
-              </button>
-              <div class="faq-answer-panel">
-                Resume Checker combines deterministic multi-factor rubric scoring with dense neural embeddings and 3D career intelligence, offering deep semantic gap analysis rather than simple keyword counting.
-              </div>
-            </div>
-
-          </div>
-
         </div>
       </section>
 
@@ -1388,18 +1390,20 @@
 
     <!-- Footer -->
     <footer class="app-footer" role="contentinfo">
-      <div class="container">
-        <nav class="footer-nav-links" aria-label="Footer Navigation">
-          <a href="#hero">Home</a>
-          <a href="#how-it-works">How It Works</a>
-          <a href="#analyzer">Resume Analyzer</a>
-          <a href="#genome">Career Genome</a>
-          <a href="#company-intel">Company Intel</a>
-          <a href="#prompt-studio">Prompt Studio (18 Frameworks)</a>
-          <a href="#buttons-lab">Button Lab</a>
-          <a href="#faq">FAQ</a>
+      <div class="container footer-inner">
+        <div class="footer-brand">
+          <span class="brand-name">Resume Checker</span>
+          <p>Placement intelligence for resume evidence. Scores describe textual alignment, not hiring outcomes.</p>
+        </div>
+        <nav class="footer-nav-links" aria-label="Footer navigation">
+          <a href="#placement-snapshot">Snapshot</a>
+          <a href="#analyzer">Analyzer</a>
+          <a href="#genome">Genome</a>
+          <a href="#company-intel">Companies</a>
+          <a href="#prompt-studio">Prompt Studio</a>
+          <a href="#how-it-works">How it works</a>
+          <a href="#faq">Methodology</a>
         </nav>
-        <p>© 2026 Resume Checker • Placement & Career Intelligence Engine</p>
       </div>
     </footer>
 

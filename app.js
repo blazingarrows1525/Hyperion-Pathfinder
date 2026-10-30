@@ -3953,17 +3953,7 @@ function initAccessibilityAndMotion() {
     }
   });
 
-  // FAQ Accordion
-  document.querySelectorAll('.faq-question-btn').forEach(btn => {
-    btn.addEventListener('click', () => {
-      const item = btn.closest('.faq-item');
-      if (item) {
-        const isOpen = item.classList.contains('open');
-        document.querySelectorAll('.faq-item').forEach(i => i.classList.remove('open'));
-        if (!isOpen) item.classList.add('open');
-      }
-    });
-  });
+  // The FAQ uses native <details> elements: no script needed.
 }
 
 // ==============================================================================
@@ -5694,8 +5684,22 @@ function initDisclosure(triggerId, panelId, { useHidden = false, onToggle } = {}
   return { setOpen, isOpen };
 }
 
+let prefsDisclosure = null;
+
 function initMasthead() {
-  initDisclosure('btn-prefs', 'prefs-panel', { useHidden: true });
+  prefsDisclosure = initDisclosure('btn-prefs', 'prefs-panel', { useHidden: true });
+
+  // "Open preferences" in the interaction section opens the same panel.
+  const openPrefs = document.getElementById('btn-open-prefs');
+  if (openPrefs) {
+    openPrefs.addEventListener('click', (e) => {
+      e.stopPropagation(); // otherwise the outside-click handler closes it again
+      if (!prefsDisclosure) return;
+      prefsDisclosure.setOpen(true);
+      const first = document.querySelector('#prefs-panel button');
+      if (first) first.focus();
+    });
+  }
   const more = initDisclosure('btn-nav-more', 'nav-more-menu');
 
   // The mobile drawer reuses #nav-links-menu; close it after navigating.
