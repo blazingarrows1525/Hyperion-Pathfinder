@@ -2,7 +2,8 @@ services:
   - type: web
     name: hyperion-pathfinder
     env: python
-    region: singapore # or oregon, frankfurt, etc.
+    plan: free
+    region: oregon
     buildCommand: pip install -r requirements.txt
     startCommand: uvicorn main:app --host 0.0.0.0 --port $PORT
     envVars:
