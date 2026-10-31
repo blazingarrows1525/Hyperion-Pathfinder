@@ -10,3 +10,5 @@ tests/
 *.log
 .DS_Store
 node_modules/
+.pytest_cache/
+ui-audit-out/

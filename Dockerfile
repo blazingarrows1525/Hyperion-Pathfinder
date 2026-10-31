@@ -6,13 +6,17 @@ ENV PYTHONUNBUFFERED=1 \
     PYTHONDONTWRITEBYTECODE=1 \
     PORT=8000
 
-# Install system dependencies
+# Install system dependencies (build-essential, curl, libgomp1 for FAISS/PyTorch)
 RUN apt-get update && apt-get install -y --no-install-recommends \
     build-essential \
     curl \
+    libgomp1 \
     && rm -rf /var/lib/apt/lists/*
 
-# Install python dependencies
+# Pre-install CPU-only PyTorch wheel for lightweight and fast container build
+RUN pip install --no-cache-dir torch --extra-index-url https://download.pytorch.org/whl/cpu
+
+# Install remaining Python dependencies
 COPY requirements.txt .
 RUN pip install --no-cache-dir -r requirements.txt
 
