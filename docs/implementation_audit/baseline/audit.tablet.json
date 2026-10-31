@@ -1,0 +1,42 @@
+{
+  "url": "http://127.0.0.1:8000/",
+  "browser": "C:/Program Files/Google/Chrome/Application/chrome.exe",
+  "theme": "default",
+  "reducedMotion": false,
+  "viewports": {
+    "768": {
+      "height": 1024,
+      "static": {
+        "duplicateIds": [],
+        "untypedButtons": 0,
+        "missingHandlers": [],
+        "sections": [
+          "hero",
+          "evidence",
+          "how-it-works",
+          "placement-snapshot",
+          "analyzer",
+          "genome",
+          "company-intel",
+          "prompt-studio",
+          "buttons-lab",
+          "faq"
+        ],
+        "theme": "terra",
+        "canvases": 1
+      },
+      "overflow": {
+        "scrollWidth": 768,
+        "clientWidth": 768,
+        "overflow": false,
+        "offenders": []
+      },
+      "shots": [
+        "768/hero.tablet.jpg",
+        "768/analyzer.tablet.jpg"
+      ],
+      "consoleErrors": [],
+      "failedRequests": []
+    }
+  }
+}

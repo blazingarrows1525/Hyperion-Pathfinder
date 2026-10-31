@@ -30,7 +30,7 @@ const REDUCED = flag('reduced-motion');
 const EVAL = opt('eval', '');
 const TAG = opt('tag', '');
 const VIEWPORTS = {
-  360: 780, 375: 812, 390: 844, 414: 896, 430: 932, 768: 1024, 800: 900,
+  320: 640, 360: 780, 375: 812, 390: 844, 414: 896, 430: 932, 768: 1024, 800: 900,
   980: 900, 1024: 768, 1280: 800, 1440: 900, 1920: 1080,
 };
 const WIDTHS = opt('widths', '375,1440').split(',').map(Number);
