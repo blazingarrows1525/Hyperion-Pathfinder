@@ -1167,12 +1167,24 @@ class CareerAtlas {
       return geo;
     });
 
-    // Five archetype nodes with gyroscopic orbital rings and breathing physics
+    // Five archetype nodes with distinctive prismatic silhouettes, gyroscopic orbital rings, and breathing physics
     const data = getAtlasNodeData();
     this.nodeGeo = new THREE.SphereGeometry(1, 40, 28);
     this.plinthGeo = new THREE.CylinderGeometry(1, 1.12, 1, 40);
     this.haloGeo = new THREE.RingGeometry(1.3, 1.48, 64);
     this.orbitalRingGeo = new THREE.TorusGeometry(1.75, 0.038, 12, 80);
+
+    // Prismatic geometry profiles tailored to each archetype cluster identity
+    const getArchetypePrismaticGeometry = (clusterId) => {
+      switch (clusterId % 5) {
+        case 0: return new THREE.CylinderGeometry(0.85, 1.05, 1.6, 6); // 0: Core Eng & Business (Faceted Prism)
+        case 1: return new THREE.IcosahedronGeometry(1.05, 2);          // 1: Data Science & AI/ML (Precision Geodesic)
+        case 2: return new THREE.OctahedronGeometry(1.22, 0);           // 2: General CS & Software Dev (Largest Octahedral Core)
+        case 3: return new THREE.TorusGeometry(0.85, 0.36, 16, 40);     // 3: Full-Stack Web Dev (Ribbon Loop Silhouette)
+        case 4: return new THREE.DodecahedronGeometry(1.02, 0);         // 4: Core Engineering Mech/Civil (Faceted Polyhedron)
+        default: return new THREE.SphereGeometry(1, 32, 24);
+      }
+    };
 
     this.nodes = data.map((d, i) => {
       const pos = atlasNodePosition(i, data.length);
@@ -1180,12 +1192,13 @@ class CareerAtlas {
       group.position.set(pos.x, 0, pos.z);
 
       const mat = new THREE.MeshStandardMaterial({ 
-        roughness: 0.55, metalness: 0.1, transparent: true,
+        roughness: 0.28, metalness: 0.18, transparent: true,
         emissive: new THREE.Color(0x000000), emissiveIntensity: 0
       });
       const plinthMat = new THREE.MeshStandardMaterial({ roughness: 0.95, metalness: 0, transparent: true });
       const haloMat = new THREE.MeshBasicMaterial({ transparent: true, opacity: 0, side: THREE.DoubleSide, depthWrite: false });
-      const mesh = new THREE.Mesh(this.nodeGeo, mat);
+      const geo = getArchetypePrismaticGeometry(d.id);
+      const mesh = new THREE.Mesh(geo, mat);
       const plinth = new THREE.Mesh(this.plinthGeo, plinthMat);
       const halo = new THREE.Mesh(this.haloGeo, haloMat);
       halo.rotation.x = -Math.PI / 2;
@@ -5135,6 +5148,40 @@ function generateGroundedCoachReply(question, framework = '') {
   return `Based on your alignment score of ${score}/100, your systems and algorithmic projects are solid. Focus on eliminating passive phrasing in your secondary bullets and specifying exact cloud/framework versions.`;
 }
 
+
+function updateRubricBreakdown(breakdown, overallScore) {
+  if (!breakdown && typeof overallScore === 'number') {
+    const r = overallScore / 100;
+    breakdown = [
+      { key: 'required_skills', points_earned: Math.round(35 * r), max_points: 35 },
+      { key: 'project_evidence', points_earned: Math.round(25 * r), max_points: 25 },
+      { key: 'domain_responsibilities', points_earned: Math.round(20 * r), max_points: 20 },
+      { key: 'metrics_density', points_earned: Math.round(10 * r), max_points: 10 },
+      { key: 'completeness_readability', points_earned: Math.round(10 * r), max_points: 10 }
+    ];
+  }
+  if (!Array.isArray(breakdown)) return;
+
+  const mapping = {
+    required_skills: { val: 'meter-val-skills', fill: 'meter-fill-skills' },
+    project_evidence: { val: 'meter-val-projects', fill: 'meter-fill-projects' },
+    domain_responsibilities: { val: 'meter-val-domain', fill: 'meter-fill-domain' },
+    metrics_density: { val: 'meter-val-metrics', fill: 'meter-fill-metrics' },
+    completeness_readability: { val: 'meter-val-structure', fill: 'meter-fill-structure' }
+  };
+
+  breakdown.forEach(item => {
+    const target = mapping[item.key];
+    if (!target) return;
+    const valEl = document.getElementById(target.val);
+    const fillEl = document.getElementById(target.fill);
+    const pts = Math.round(item.points_earned);
+    const max = item.max_points || 10;
+    if (valEl) valEl.innerHTML = `${pts}<small>/${max}</small>`;
+    if (fillEl) fillEl.style.width = `${Math.min(100, Math.round((pts / max) * 100))}%`;
+  });
+}
+
 // --- 16.7 STRUCTURED REPORT PARSING & DEMO HYDRATION ---
 function parseAndHydrateStructuredReport(streamBuffer) {
   if (!streamBuffer) return;
@@ -5147,6 +5194,7 @@ function parseAndHydrateStructuredReport(streamBuffer) {
 
     if (typeof report.deterministic_score === 'number') {
       updateScoreRingFromNumber(report.deterministic_score);
+      updateRubricBreakdown(report.deterministic_score_breakdown, report.deterministic_score);
     }
 
     if (report.persona_review) {
@@ -5298,6 +5346,7 @@ Distributed RAG & Embedding Search Engine
   };
 
   appState.reportData = mockReport;
+  updateRubricBreakdown(null, 86);
   renderExecutiveReview(demoReview);
   hydrateResumeTailoring(mockReport);
 }

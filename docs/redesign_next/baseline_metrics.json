@@ -1,0 +1,54 @@
+{
+  "timestamp": "2026-10-31T14:09:00+05:30",
+  "commit": "ae38857bee5c99fcc1fff815500f3b62915d791b",
+  "branch": "feat/prismatic-3d-redesign",
+  "python_version": "3.10.11",
+  "node_version": "v25.2.1",
+  "git_version": "2.54.0.windows.1",
+  "pytest": {
+    "total": 95,
+    "passed": 95,
+    "failed": 0,
+    "duration_seconds": 15.78
+  },
+  "dom": {
+    "sections": 10,
+    "unique_html_ids": 236,
+    "duplicate_ids": 0,
+    "total_buttons": 90,
+    "untyped_buttons": 0,
+    "internal_anchors": 9,
+    "broken_anchors": 0,
+    "external_scripts": 5,
+    "external_scripts_with_sri": 5
+  },
+  "api": {
+    "routes_total": 26,
+    "health_status": "healthy",
+    "service_version": "2.1.0",
+    "corpus_source_count": 226,
+    "corpus_valid_count": 224,
+    "corpus_degraded_count": 2,
+    "placement_total_offers": 8214,
+    "placement_unique_employers": 421,
+    "placement_job_profiles": 562,
+    "prompt_frameworks_count": 18
+  },
+  "ui_audit": {
+    "viewports_tested": [
+      { "width": 375, "height": 812, "overflow": false, "console_errors": 0, "failed_requests": 0 },
+      { "width": 768, "height": 1024, "overflow": false, "console_errors": 0, "failed_requests": 0 },
+      { "width": 1440, "height": 900, "overflow": false, "console_errors": 0, "failed_requests": 0 }
+    ]
+  },
+  "three_js": {
+    "version": "r128",
+    "renderers_active": 1,
+    "draw_calls": 24,
+    "triangles": 12560,
+    "idle_rendered_frames_per_sec": 0,
+    "archetype_nodes": 5,
+    "orbital_rings": 5,
+    "core_polyhedra": 2
+  }
+}

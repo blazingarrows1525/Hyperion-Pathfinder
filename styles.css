@@ -9,7 +9,121 @@
 /* ==============================================================================
    1. THEME TOKENS
    ============================================================================== */
+/* ==============================================================================
+   PRISMATIC CAREER INTELLIGENCE THEME SYSTEM
+   Prism Day (porcelain/cobalt/violet) & Afterglow Night (plum/spectral)
+   ============================================================================== */
 :root,
+html[data-theme="prism-day"] {
+  color-scheme: light;
+
+  --color-canvas: #F4F6FB;
+  --color-canvas-alt: #E9EDF6;
+  --color-surface: #FFFFFF;
+  --color-surface-raised: #FFFFFF;
+  --color-surface-inset: #E5E9F2;
+  --color-surface-sage: #E2E8F4;
+  --color-surface-lilac: #ECEBFB;
+  --color-ink: #17182B;
+  --color-ink-soft: #45465F;
+  --color-muted: #666A82;
+  --color-border: #D7DDEC;
+  --color-border-strong: #B8C2DC;
+  --color-forest: #405BFF;
+  --color-forest-deep: #2B45E6;
+  --color-terracotta: #FF705E;
+  --color-ochre: #E7A842;
+  --color-lagoon: #2CBFB7;
+  --color-orchid: #865BFF;
+  --color-mint: #2CBFB7;
+  --color-peach: #FF705E;
+  --color-focus: #405BFF;
+  --color-danger: #C84656;
+  --color-on-accent: #FFFFFF;
+
+  --color-forest-ink: #1B297E;
+  --color-ochre-ink: #704B10;
+  --color-terracotta-ink: #8A2D20;
+  --color-lagoon-ink: #125754;
+  --color-orchid-ink: #3D238A;
+
+  --tint-rgb: 23, 24, 43;
+  --shade-rgb: 23, 24, 43;
+  --canvas-rgb: 244, 246, 251;
+  --surface-rgb: 255, 255, 255;
+  --forest-rgb: 64, 91, 255;
+  --terracotta-rgb: 255, 112, 94;
+  --ochre-rgb: 231, 168, 66;
+  --lagoon-rgb: 44, 191, 183;
+  --orchid-rgb: 134, 91, 255;
+  --danger-rgb: 200, 70, 86;
+
+  --shadow-card: 0 10px 28px rgba(23, 24, 43, 0.08), 0 1px 3px rgba(23, 24, 43, 0.04);
+  --shadow-raised: 0 14px 34px rgba(23, 24, 43, 0.10), 0 2px 6px rgba(23, 24, 43, 0.04);
+  --shadow-inset: inset 2px 2px 6px rgba(23, 24, 43, 0.06), inset -2px -2px 6px rgba(255, 255, 255, 0.85);
+  --shadow-float: 0 22px 56px rgba(23, 24, 43, 0.14), 0 4px 12px rgba(23, 24, 43, 0.06);
+  --highlight: rgba(255, 255, 255, 0.88);
+
+  --mark-green-bg: rgba(44, 191, 183, 0.14);
+  --mark-yellow-bg: rgba(231, 168, 66, 0.16);
+  --mark-red-bg: rgba(255, 112, 94, 0.14);
+}
+
+html[data-theme="afterglow-night"] {
+  color-scheme: dark;
+
+  --color-canvas: #111321;
+  --color-canvas-alt: #191D31;
+  --color-surface: #20253B;
+  --color-surface-raised: #292F49;
+  --color-surface-inset: #15192B;
+  --color-surface-sage: #1F2D40;
+  --color-surface-lilac: #2A2445;
+  --color-ink: #F5F4FF;
+  --color-ink-soft: #D1D0E4;
+  --color-muted: #A5A7C1;
+  --color-border: #353B57;
+  --color-border-strong: #50587C;
+  --color-forest: #8190FF;
+  --color-forest-deep: #A3AFFF;
+  --color-terracotta: #FF9383;
+  --color-ochre: #F2C46C;
+  --color-lagoon: #6DE0D5;
+  --color-orchid: #B39AFF;
+  --color-mint: #6DE0D5;
+  --color-peach: #FF9383;
+  --color-focus: #8190FF;
+  --color-danger: #FF8799;
+  --color-on-accent: #111321;
+
+  --color-forest-ink: #D0D8FF;
+  --color-ochre-ink: #FAE2B0;
+  --color-terracotta-ink: #FFCDC5;
+  --color-lagoon-ink: #BEF6F1;
+  --color-orchid-ink: #E5DAFF;
+
+  --tint-rgb: 245, 244, 255;
+  --shade-rgb: 0, 0, 0;
+  --canvas-rgb: 17, 19, 33;
+  --surface-rgb: 32, 37, 59;
+  --forest-rgb: 129, 144, 255;
+  --terracotta-rgb: 255, 147, 131;
+  --ochre-rgb: 242, 196, 108;
+  --lagoon-rgb: 109, 224, 213;
+  --orchid-rgb: 179, 154, 255;
+  --danger-rgb: 255, 135, 153;
+
+  --shadow-card: 0 14px 36px rgba(0, 0, 0, 0.40);
+  --shadow-raised: 0 16px 42px rgba(0, 0, 0, 0.48), 0 0 0 1px rgba(129, 144, 255, 0.12);
+  --shadow-inset: inset 2px 2px 6px rgba(0, 0, 0, 0.45);
+  --shadow-float: 0 24px 60px rgba(0, 0, 0, 0.55), 0 0 0 1px rgba(129, 144, 255, 0.16);
+  --highlight: rgba(255, 255, 255, 0.05);
+
+  --mark-green-bg: rgba(109, 224, 213, 0.18);
+  --mark-yellow-bg: rgba(242, 196, 108, 0.18);
+  --mark-red-bg: rgba(255, 147, 131, 0.18);
+}
+
 html[data-theme="terra"] {
   color-scheme: light;
 
@@ -219,7 +333,7 @@ html[data-theme="grove"] {
   --mark-red-text: var(--color-terracotta-ink);
 
   /* Typography */
-  --font-display: 'DM Serif Display', 'Iowan Old Style', Georgia, serif;
+  --font-display: 'Space Grotesk', 'DM Serif Display', system-ui, sans-serif;
   --font-body: 'DM Sans', system-ui, -apple-system, 'Segoe UI', sans-serif;
   --font-mono: 'JetBrains Mono', ui-monospace, 'Cascadia Mono', monospace;
 
@@ -6184,3 +6298,178 @@ main section[id] {
 
 /* 9. Hyper-Warp Particle Streak Glow */
 
+
+
+/* ==============================================================================
+   PRISMATIC CAREER INTELLIGENCE: STRUCTURAL COMPONENT ELEVATIONS
+   Neo-brutalist badges, glass HUD panels, rubric breakdown canvas
+   ============================================================================== */
+
+.chapter-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-family: var(--font-mono);
+  font-size: 0.72rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  padding: 4px 10px;
+  border-radius: var(--radius-xs);
+  background: var(--color-surface-inset);
+  color: var(--color-ink);
+  border: 1px solid var(--color-border);
+}
+
+.chapter-tag {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 12px;
+  font-family: var(--font-mono);
+  font-size: 0.75rem;
+  color: var(--color-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+}
+
+/* Diagnostic Rubric Breakdown Canvas */
+.diagnostic-rubric-canvas {
+  margin-bottom: 24px;
+}
+
+.rubric-summary-card {
+  padding: 20px 24px;
+  border-radius: var(--radius-md);
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  box-shadow: var(--shadow-card);
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.rubric-summary-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  flex-wrap: wrap;
+  gap: 12px;
+  border-bottom: 1px solid var(--color-border);
+  padding-bottom: 12px;
+}
+
+.rubric-kicker {
+  display: block;
+  font-family: var(--font-mono);
+  font-size: 0.72rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: var(--accent-cyan);
+}
+
+.rubric-title {
+  margin: 4px 0 0;
+  font-family: var(--font-display);
+  font-size: 1.25rem;
+  color: var(--color-ink);
+}
+
+.rubric-provenance-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 4px 12px;
+  border-radius: var(--radius-full);
+  font-family: var(--font-mono);
+  font-size: 0.75rem;
+  font-weight: 600;
+  background: rgba(var(--forest-rgb), 0.1);
+  color: var(--color-forest);
+  border: 1px solid rgba(var(--forest-rgb), 0.25);
+}
+
+.rubric-meters-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 16px;
+}
+
+.rubric-meter {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.meter-head {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  font-size: 0.8rem;
+}
+
+.meter-label {
+  font-weight: 600;
+  color: var(--color-ink-soft);
+}
+
+.meter-val {
+  font-family: var(--font-mono);
+  font-weight: 700;
+  color: var(--color-ink);
+}
+
+.meter-val small {
+  font-size: 0.72rem;
+  color: var(--color-muted);
+  font-weight: 500;
+}
+
+.meter-bar {
+  width: 100%;
+  height: 8px;
+  border-radius: var(--radius-full);
+  background: var(--color-surface-inset);
+  overflow: hidden;
+  position: relative;
+}
+
+.meter-fill {
+  height: 100%;
+  border-radius: var(--radius-full);
+  background: var(--color-forest);
+  transition: width 0.6s cubic-bezier(0.2, 0.7, 0.2, 1);
+}
+
+#meter-fill-skills { background: var(--color-forest); }
+#meter-fill-projects { background: var(--color-lagoon); }
+#meter-fill-domain { background: var(--color-orchid); }
+#meter-fill-metrics { background: var(--color-mint); }
+#meter-fill-structure { background: var(--color-ochre); }
+
+/* Neo-brutalist card refinement */
+.story-panel,
+.kpi,
+.exec-header-card,
+.exec-section-card,
+.tailoring-toolbar,
+.genome-detail-card,
+.prompt-composer {
+  border: 1px solid var(--color-border);
+  box-shadow: var(--shadow-card);
+  transition: border-color var(--motion-control) var(--ease-standard),
+              box-shadow var(--motion-control) var(--ease-standard);
+}
+
+.story-panel:hover,
+.kpi:hover,
+.exec-section-card:hover {
+  border-color: var(--color-border-strong);
+}
+
+/* Prismatic Focus & Selection Highlights */
+:focus-visible {
+  outline: 2px solid var(--color-focus);
+  outline-offset: 3px;
+}

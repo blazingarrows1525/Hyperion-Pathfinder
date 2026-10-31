@@ -21,7 +21,7 @@
   <!-- Type: DM Serif Display (headings), DM Sans (body), JetBrains Mono (data) -->
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,400;0,9..40,500;0,9..40,600;0,9..40,700;1,9..40,400&family=DM+Serif+Display:ital@0;1&family=JetBrains+Mono:wght@400;500;600&display=swap">
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,400;0,9..40,500;0,9..40,600;0,9..40,700;1,9..40,400&family=DM+Serif+Display:ital@0;1&family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600&family=Space+Grotesk:wght@500;600;700&display=swap">
 
   <link rel="stylesheet" href="styles.css">
   
@@ -61,8 +61,8 @@
             <i data-lucide="compass" style="width:19px;height:19px;"></i>
           </span>
           <span class="wordmark-text">
-            <span class="brand-name">Resume Checker</span>
-            <span class="brand-tag">Placement Intelligence</span>
+            <span class="brand-name">Hyperion Pathfinder</span>
+            <span class="brand-tag">Prismatic Career Intelligence</span>
           </span>
         </a>
 
@@ -156,7 +156,7 @@
       <section id="hero" class="atlas-hero" aria-labelledby="hero-title-id">
         <div class="container">
           <div class="atlas-hero-copy">
-            <p class="overline">Career intelligence <span aria-hidden="true">/</span> Resume evidence <span aria-hidden="true">/</span> Placement snapshot</p>
+            <div class="chapter-tag"><span class="chapter-badge">CH. 01 / FIVE BENCHMARK ARCHETYPES</span><span>226 Indexed Alumni Vectors</span></div>
             <h1 id="hero-title-id" class="hero-title">
               Check your resume against the role you want, and see <span class="gradient-text">where the evidence falls short.</span>
             </h1>
@@ -680,6 +680,58 @@
 
                 <!-- TAB PANE 1: MARKDOWN DIAGNOSTIC REPORT -->
                 <div id="pane-diagnostic-report" class="results-tab-pane active" role="tabpanel" aria-labelledby="tab-btn-report">
+                  <!-- Prismatic Deterministic Rubric Breakdown -->
+                  <div id="diagnostic-rubric-canvas" class="diagnostic-rubric-canvas">
+                    <div class="rubric-summary-card">
+                      <div class="rubric-summary-header">
+                        <div>
+                          <span class="rubric-kicker">100-Point Deterministic Rubric</span>
+                          <h4 class="rubric-title">Evidence-to-Job Alignment Breakdown</h4>
+                        </div>
+                        <div class="rubric-provenance-pill" id="rubric-provenance-pill">
+                          <i data-lucide="shield-check" style="width:14px;height:14px;"></i>
+                          <span>Deterministic Scoring Invariant</span>
+                        </div>
+                      </div>
+                      <div class="rubric-meters-grid" id="rubric-meters-grid">
+                        <div class="rubric-meter">
+                          <div class="meter-head">
+                            <span class="meter-label">Required Skills Coverage</span>
+                            <span class="meter-val" id="meter-val-skills">30<small>/35</small></span>
+                          </div>
+                          <div class="meter-bar"><div class="meter-fill" id="meter-fill-skills" style="width:85%;"></div></div>
+                        </div>
+                        <div class="rubric-meter">
+                          <div class="meter-head">
+                            <span class="meter-label">Practical Project Evidence</span>
+                            <span class="meter-val" id="meter-val-projects">22<small>/25</small></span>
+                          </div>
+                          <div class="meter-bar"><div class="meter-fill" id="meter-fill-projects" style="width:88%;"></div></div>
+                        </div>
+                        <div class="rubric-meter">
+                          <div class="meter-head">
+                            <span class="meter-label">Role Domain Responsibilities</span>
+                            <span class="meter-val" id="meter-val-domain">17<small>/20</small></span>
+                          </div>
+                          <div class="meter-bar"><div class="meter-fill" id="meter-fill-domain" style="width:85%;"></div></div>
+                        </div>
+                        <div class="rubric-meter">
+                          <div class="meter-head">
+                            <span class="meter-label">Quantified Achievement Metrics</span>
+                            <span class="meter-val" id="meter-val-metrics">9<small>/10</small></span>
+                          </div>
+                          <div class="meter-bar"><div class="meter-fill" id="meter-fill-metrics" style="width:90%;"></div></div>
+                        </div>
+                        <div class="rubric-meter">
+                          <div class="meter-head">
+                            <span class="meter-label">Completeness &amp; Readability</span>
+                            <span class="meter-val" id="meter-val-structure">8<small>/10</small></span>
+                          </div>
+                          <div class="meter-bar"><div class="meter-fill" id="meter-fill-structure" style="width:80%;"></div></div>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
                   <div id="markdown-stream-output" class="markdown-body"></div>
                 </div>
 

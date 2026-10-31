@@ -1,0 +1,849 @@
+{
+  "commit": "ae38857bee5c99fcc1fff815500f3b62915d791b",
+  "branch": "feat/prismatic-3d-redesign",
+  "html_ids_count": 236,
+  "html_ids": [
+    "0",
+    "1",
+    "2",
+    "3",
+    "4",
+    "analyzer",
+    "analyzer-alert-card",
+    "analyzer-heading",
+    "archetype-detail-panel",
+    "archetypes-selector-grid",
+    "atlas-evidence-card",
+    "atlas-fallback",
+    "atlas-legend-list",
+    "atlas-stage-caption",
+    "bands-summary",
+    "bands-title",
+    "btn-3d-reset-cam-stage",
+    "btn-3d-zoom-in",
+    "btn-3d-zoom-out",
+    "btn-analyze-submit",
+    "btn-analyze-text",
+    "btn-cancel-request",
+    "btn-clear-jd",
+    "btn-close-diff",
+    "btn-close-llm-modal",
+    "btn-close-popover",
+    "btn-coach-voice-input",
+    "btn-copy-prompt",
+    "btn-designhead-maximalist",
+    "btn-designhead-minimalist",
+    "btn-draft-redo",
+    "btn-draft-undo",
+    "btn-export-draft",
+    "btn-fw-example",
+    "btn-fw-reset",
+    "btn-llm-control-hub",
+    "btn-mobile-menu",
+    "btn-motion-toggle",
+    "btn-nav-more",
+    "btn-neu-shape-convex",
+    "btn-neu-shape-inset",
+    "btn-neu-shape-raised",
+    "btn-open-prefs",
+    "btn-prefs",
+    "btn-prompt-to-coach",
+    "btn-quick-dictate-jd",
+    "btn-quick-play-tts",
+    "btn-recalculate-draft",
+    "btn-send-coach-msg",
+    "btn-sound-toggle",
+    "btn-theme-toggle",
+    "btn-toggle-diff",
+    "builder-fields-container",
+    "builder-fw-desc",
+    "builder-fw-scenarios",
+    "builder-fw-title",
+    "builder-progress",
+    "buttons-lab",
+    "canvas-3d-tooltip",
+    "canvas-engine-badge",
+    "canvas-engine-text",
+    "categories-title",
+    "category-rank-list",
+    "caveat-categories",
+    "caveat-no-ctc-count",
+    "caveat-students",
+    "caveats-title",
+    "clear-file-btn",
+    "coach-active-persona-title",
+    "coach-chat-transcript",
+    "coach-framework-badge",
+    "coach-framework-select",
+    "coach-query-input",
+    "companies-grid-container",
+    "company-heading",
+    "company-intel",
+    "company-modal-backdrop",
+    "company-modal-body",
+    "company-modal-title",
+    "company-results-count",
+    "company-search-input",
+    "company-sort-select",
+    "compare-modal-backdrop",
+    "compare-modal-body",
+    "compare-modal-title",
+    "demo-mode-note",
+    "demo-mode-toggle",
+    "diff-edited-content",
+    "diff-original-content",
+    "document-text-container",
+    "draft-diff-drawer",
+    "draft-revision-badge",
+    "engine-status-badge",
+    "evidence",
+    "evidence-corpus-title",
+    "evidence-snapshot-title",
+    "exec-attention-list",
+    "exec-persona-title",
+    "exec-priorities-list",
+    "exec-questions-list",
+    "exec-reaction-summary",
+    "exec-skepticism-list",
+    "exec-target-role-label",
+    "exec-verdict-badge",
+    "executive-persona-group",
+    "faq",
+    "faq-heading",
+    "file-error-msg",
+    "framework-registry-note",
+    "framework-search-input",
+    "frameworks-list-scroll",
+    "genome",
+    "genome-field-strip",
+    "genome-heading",
+    "hero",
+    "hero-3d-stage",
+    "hero-title-id",
+    "how-it-works",
+    "how-it-works-heading",
+    "jd-char-count",
+    "jd-error-msg",
+    "jd-textarea",
+    "kpi-avg-ctc",
+    "kpi-highest-ctc",
+    "kpi-job-profiles",
+    "kpi-median-ctc",
+    "kpi-note-highest",
+    "kpi-note-offers",
+    "kpi-total-offers",
+    "kpi-unique-employers",
+    "lab-filter-pill",
+    "lab-heading",
+    "lab-preset-chip",
+    "llm-active-model-tag",
+    "llm-active-name",
+    "llm-active-note",
+    "llm-modal-title",
+    "llm-provider-list",
+    "main-content",
+    "markdown-stream-output",
+    "markup-detail-popover",
+    "mini-progress-ring",
+    "mini-score-val",
+    "modal-llm-control-hub",
+    "motion-mode-label",
+    "nav-active-llm-label",
+    "nav-links-menu",
+    "nav-more-menu",
+    "neu-depth-range",
+    "neu-depth-val",
+    "neu-light-angle-label",
+    "neu-light-puck",
+    "neu-light-well",
+    "neu-preview-surface",
+    "neu-tactile-toggle",
+    "neu-toggle-status-label",
+    "offer-bands-list",
+    "pane-career-coach",
+    "pane-diagnostic-report",
+    "pane-executive-review",
+    "pane-interactive-tailoring",
+    "persona-group-label",
+    "persona-select-container",
+    "placement-snapshot",
+    "placement-snapshot-heading",
+    "popover-apply-btn",
+    "popover-category-tag",
+    "popover-color-dot",
+    "popover-critique-text",
+    "popover-dismiss-btn",
+    "popover-quoted-text",
+    "popover-rewrite-input",
+    "popover-severity-tag",
+    "prefs-detail-label",
+    "prefs-panel",
+    "prefs-panel-title",
+    "prompt-char-count",
+    "prompt-preview-code",
+    "prompt-studio",
+    "prompt-studio-heading",
+    "provenance-tag",
+    "recommendation-explanation-box",
+    "recommender-title",
+    "recruiters-title",
+    "results-placeholder",
+    "resume-document-viewport",
+    "resume-dropzone",
+    "resume-file-input",
+    "selected-file-pill",
+    "selected-filename",
+    "snapshot-company-search",
+    "snapshot-recruiters-table",
+    "snapshot-status",
+    "snapshot-table-body",
+    "sound-toggle-label",
+    "spatial-canvas-wrapper",
+    "spatial-drag-hint",
+    "spatial-hero-canvas",
+    "status-label-text",
+    "streaming-results-area",
+    "tab-btn-coach",
+    "tab-btn-persona",
+    "tab-btn-report",
+    "tab-btn-tailoring",
+    "tab-markup-count-badge",
+    "theme-mode-label",
+    "toast-message",
+    "toast-notification",
+    "tooltip-node-title",
+    "tts-play-icon",
+    "tts-play-label",
+    "tts-quick-btn-label",
+    "voice-apply-btn",
+    "voice-assistant-drawer",
+    "voice-assistant-widget",
+    "voice-dest-select",
+    "voice-discard-btn",
+    "voice-drawer-close-btn",
+    "voice-drawer-title",
+    "voice-live-status-desc",
+    "voice-locale-select",
+    "voice-orb-badge-text",
+    "voice-orb-btn",
+    "voice-orb-icon",
+    "voice-orb-pulse-ring",
+    "voice-pulse-surface",
+    "voice-record-btn",
+    "voice-record-btn-icon",
+    "voice-record-btn-text",
+    "voice-source-indicator",
+    "voice-status-badge",
+    "voice-status-dot",
+    "voice-transcript-preview",
+    "voice-tts-pause-btn",
+    "voice-tts-play-btn",
+    "voice-tts-stop-btn"
+  ],
+  "buttons_count": 90,
+  "buttons": [
+    {
+      "id": "btn-nav-more",
+      "type": "button",
+      "raw": "type=\"button\" id=\"btn-nav-more\" class=\"nav-link-btn nav-more-btn\" aria-expanded=\"false\" aria-controls=\"nav-more-menu\""
+    },
+    {
+      "id": "btn-prefs",
+      "type": "button",
+      "raw": "type=\"button\" id=\"btn-prefs\" class=\"btn-prefs\" aria-expanded=\"false\" aria-controls=\"prefs-panel\" title=\"Appearance and interaction preferences\""
+    },
+    {
+      "id": "btn-theme-toggle",
+      "type": "button",
+      "raw": "type=\"button\" id=\"btn-theme-toggle\" class=\"pref-toggle\" title=\"Switch between Terra Atelier and Midnight Grove\" aria-label=\"Switch to Midnight Grove theme\" aria-pressed=\"false\""
+    },
+    {
+      "id": "btn-motion-toggle",
+      "type": "button",
+      "raw": "type=\"button\" id=\"btn-motion-toggle\" class=\"pref-toggle\" title=\"Cycle motion: System, Calm, Full\" aria-label=\"Motion: System. Activate to change.\""
+    },
+    {
+      "id": "btn-sound-toggle",
+      "type": "button",
+      "raw": "type=\"button\" id=\"btn-sound-toggle\" class=\"pref-toggle\" title=\"Interface sounds are off until you turn them on\" aria-label=\"Toggle interface sound\" aria-pressed=\"false\""
+    },
+    {
+      "id": "btn-designhead-minimalist",
+      "type": "button",
+      "raw": "type=\"button\" id=\"btn-designhead-minimalist\" class=\"designhead-btn\" data-mode=\"minimalist\" role=\"radio\" aria-checked=\"false\""
+    },
+    {
+      "id": "btn-designhead-maximalist",
+      "type": "button",
+      "raw": "type=\"button\" id=\"btn-designhead-maximalist\" class=\"designhead-btn active\" data-mode=\"maximalist\" role=\"radio\" aria-checked=\"true\""
+    },
+    {
+      "id": "btn-llm-control-hub",
+      "type": "button",
+      "raw": "type=\"button\" id=\"btn-llm-control-hub\" class=\"pref-toggle\" title=\"Show which analysis engine is active\" aria-label=\"Open engine status\""
+    },
+    {
+      "id": "btn-mobile-menu",
+      "type": "button",
+      "raw": "type=\"button\" id=\"btn-mobile-menu\" class=\"btn-mobile-menu\" aria-label=\"Open navigation menu\" aria-expanded=\"false\" aria-controls=\"nav-links-menu\""
+    },
+    {
+      "id": null,
+      "type": "button",
+      "raw": "type=\"button\" class=\"btn-3d-mode active\" data-mode=\"atlas\" aria-pressed=\"true\""
+    },
+    {
+      "id": null,
+      "type": "button",
+      "raw": "type=\"button\" class=\"btn-3d-mode\" data-mode=\"orbit\" aria-pressed=\"false\""
+    },
+    {
+      "id": null,
+      "type": "button",
+      "raw": "type=\"button\" class=\"btn-3d-mode\" data-mode=\"evidence\" aria-pressed=\"false\""
+    },
+    {
+      "id": "btn-3d-zoom-in",
+      "type": "button",
+      "raw": "type=\"button\" id=\"btn-3d-zoom-in\" class=\"btn-3d-icon-sm\" title=\"Zoom in\" aria-label=\"Zoom in\""
+    },
+    {
+      "id": "btn-3d-zoom-out",
+      "type": "button",
+      "raw": "type=\"button\" id=\"btn-3d-zoom-out\" class=\"btn-3d-icon-sm\" title=\"Zoom out\" aria-label=\"Zoom out\""
+    },
+    {
+      "id": "btn-3d-reset-cam-stage",
+      "type": "button",
+      "raw": "type=\"button\" id=\"btn-3d-reset-cam-stage\" class=\"btn-3d-icon-sm\" title=\"Reset camera\" aria-label=\"Reset camera\""
+    },
+    {
+      "id": "clear-file-btn",
+      "type": "button",
+      "raw": "type=\"button\" id=\"clear-file-btn\" class=\"btn-clear-file\" title=\"Remove selected file\" aria-label=\"Remove selected file\""
+    },
+    {
+      "id": "btn-quick-dictate-jd",
+      "type": "button",
+      "raw": "type=\"button\" id=\"btn-quick-dictate-jd\" class=\"btn-text-action btn-dictate\" title=\"Dictate the job description with your microphone\""
+    },
+    {
+      "id": null,
+      "type": "button",
+      "raw": "type=\"button\" class=\"btn-preset-chip neu-btn\" data-preset=\"google\""
+    },
+    {
+      "id": null,
+      "type": "button",
+      "raw": "type=\"button\" class=\"btn-preset-chip neu-btn\" data-preset=\"microsoft\""
+    },
+    {
+      "id": null,
+      "type": "button",
+      "raw": "type=\"button\" class=\"btn-preset-chip neu-btn\" data-preset=\"amazon\""
+    },
+    {
+      "id": null,
+      "type": "button",
+      "raw": "type=\"button\" class=\"btn-preset-chip neu-btn\" data-preset=\"goldman\""
+    },
+    {
+      "id": "btn-clear-jd",
+      "type": "button",
+      "raw": "type=\"button\" id=\"btn-clear-jd\" class=\"btn-text-action\""
+    },
+    {
+      "id": "btn-analyze-submit",
+      "type": "button",
+      "raw": "id=\"btn-analyze-submit\" class=\"btn-analyze-submit\" type=\"button\""
+    },
+    {
+      "id": "btn-cancel-request",
+      "type": "button",
+      "raw": "id=\"btn-cancel-request\" class=\"btn-cancel-request\" type=\"button\""
+    },
+    {
+      "id": "tab-btn-report",
+      "type": "button",
+      "raw": "type=\"button\" class=\"results-tab-btn active\" id=\"tab-btn-report\" role=\"tab\" aria-selected=\"true\" aria-controls=\"pane-diagnostic-report\""
+    },
+    {
+      "id": "tab-btn-persona",
+      "type": "button",
+      "raw": "type=\"button\" class=\"results-tab-btn\" id=\"tab-btn-persona\" role=\"tab\" aria-selected=\"false\" aria-controls=\"pane-executive-review\""
+    },
+    {
+      "id": "tab-btn-tailoring",
+      "type": "button",
+      "raw": "type=\"button\" class=\"results-tab-btn\" id=\"tab-btn-tailoring\" role=\"tab\" aria-selected=\"false\" aria-controls=\"pane-interactive-tailoring\""
+    },
+    {
+      "id": "tab-btn-coach",
+      "type": "button",
+      "raw": "type=\"button\" class=\"results-tab-btn\" id=\"tab-btn-coach\" role=\"tab\" aria-selected=\"false\" aria-controls=\"pane-career-coach\""
+    },
+    {
+      "id": null,
+      "type": "button",
+      "raw": "type=\"button\" class=\"btn-icon-circle\" onclick=\"copyAnalysisToClipboard()\" title=\"Copy Markdown Report to Clipboard\" aria-label=\"Copy report\""
+    },
+    {
+      "id": null,
+      "type": "button",
+      "raw": "type=\"button\" class=\"btn-icon-circle\" onclick=\"exportAnalysisReport()\" title=\"Download Report as .md file\" aria-label=\"Download markdown report\""
+    },
+    {
+      "id": null,
+      "type": "button",
+      "raw": "type=\"button\" class=\"btn-secondary\" onclick=\"enableDemoAndRun()\""
+    },
+    {
+      "id": "btn-quick-play-tts",
+      "type": "button",
+      "raw": "type=\"button\" id=\"btn-quick-play-tts\" class=\"neu-btn\" style=\"padding:7px 12px;font-size:0.78rem;gap:6px;\" title=\"Listen to spoken diagnostic briefing\""
+    },
+    {
+      "id": "btn-draft-undo",
+      "type": "button",
+      "raw": "type=\"button\" id=\"btn-draft-undo\" class=\"neu-btn btn-sm\" disabled title=\"Undo last replacement\""
+    },
+    {
+      "id": "btn-draft-redo",
+      "type": "button",
+      "raw": "type=\"button\" id=\"btn-draft-redo\" class=\"neu-btn btn-sm\" disabled title=\"Redo last replacement\""
+    },
+    {
+      "id": "btn-toggle-diff",
+      "type": "button",
+      "raw": "type=\"button\" id=\"btn-toggle-diff\" class=\"neu-btn btn-sm\" title=\"Toggle before/after revision diff\""
+    },
+    {
+      "id": "btn-recalculate-draft",
+      "type": "button",
+      "raw": "type=\"button\" id=\"btn-recalculate-draft\" class=\"neu-btn neu-btn-primary btn-sm\" title=\"Stateless diagnostic recalculation on in-memory draft\""
+    },
+    {
+      "id": "btn-export-draft",
+      "type": "button",
+      "raw": "type=\"button\" id=\"btn-export-draft\" class=\"neu-btn btn-sm\" title=\"Download current edited draft as Markdown text\""
+    },
+    {
+      "id": "btn-close-diff",
+      "type": "button",
+      "raw": "type=\"button\" id=\"btn-close-diff\" class=\"btn-text-action\""
+    },
+    {
+      "id": "btn-close-popover",
+      "type": "button",
+      "raw": "type=\"button\" id=\"btn-close-popover\" class=\"btn-icon-circle\" aria-label=\"Close popover\""
+    },
+    {
+      "id": "popover-apply-btn",
+      "type": "button",
+      "raw": "type=\"button\" id=\"popover-apply-btn\" class=\"neu-btn neu-btn-primary btn-sm\""
+    },
+    {
+      "id": "popover-dismiss-btn",
+      "type": "button",
+      "raw": "type=\"button\" id=\"popover-dismiss-btn\" class=\"neu-btn btn-sm\""
+    },
+    {
+      "id": null,
+      "type": "button",
+      "raw": "type=\"button\" class=\"btn-coach-chip\" onclick=\"askCoachPrompt('How do I quantify the impact in my main project?')\""
+    },
+    {
+      "id": null,
+      "type": "button",
+      "raw": "type=\"button\" class=\"btn-coach-chip\" onclick=\"askCoachPrompt('What is the biggest evidence gap identified by the senior reviewer?')\""
+    },
+    {
+      "id": null,
+      "type": "button",
+      "raw": "type=\"button\" class=\"btn-coach-chip\" onclick=\"askCoachPrompt('How should I address the missing required skills?')\""
+    },
+    {
+      "id": "btn-coach-voice-input",
+      "type": "button",
+      "raw": "type=\"button\" id=\"btn-coach-voice-input\" class=\"neu-btn btn-icon-round\" title=\"Ask question with voice dictation\" aria-label=\"Dictate voice question\""
+    },
+    {
+      "id": "btn-send-coach-msg",
+      "type": "button",
+      "raw": "type=\"button\" id=\"btn-send-coach-msg\" class=\"neu-btn neu-btn-primary\" style=\"padding:10px 18px;font-size:0.85rem;\""
+    },
+    {
+      "id": null,
+      "type": "button",
+      "raw": "type=\"button\" class=\"btn-filter-pill btn-company-filter active\" data-filter=\"all\" aria-pressed=\"true\""
+    },
+    {
+      "id": null,
+      "type": "button",
+      "raw": "type=\"button\" class=\"btn-filter-pill btn-company-filter\" data-filter=\"in-snapshot\" aria-pressed=\"false\""
+    },
+    {
+      "id": null,
+      "type": "button",
+      "raw": "type=\"button\" class=\"btn-filter-pill btn-company-filter\" data-filter=\"ctc-20\" aria-pressed=\"false\""
+    },
+    {
+      "id": null,
+      "type": "button",
+      "raw": "type=\"button\" class=\"btn-scenario-chip\" data-scenario=\"research\""
+    },
+    {
+      "id": null,
+      "type": "button",
+      "raw": "type=\"button\" class=\"btn-scenario-chip\" data-scenario=\"resume\""
+    },
+    {
+      "id": null,
+      "type": "button",
+      "raw": "type=\"button\" class=\"btn-scenario-chip\" data-scenario=\"planning\""
+    },
+    {
+      "id": null,
+      "type": "button",
+      "raw": "type=\"button\" class=\"btn-scenario-chip\" data-scenario=\"interview\""
+    },
+    {
+      "id": null,
+      "type": "button",
+      "raw": "type=\"button\" class=\"btn-scenario-chip\" data-scenario=\"email\""
+    },
+    {
+      "id": null,
+      "type": "button",
+      "raw": "type=\"button\" class=\"btn-scenario-chip\" data-scenario=\"experiment\""
+    },
+    {
+      "id": null,
+      "type": "button",
+      "raw": "type=\"button\" class=\"btn-filter-pill btn-framework-cat active\" data-cat=\"all\" aria-pressed=\"true\""
+    },
+    {
+      "id": null,
+      "type": "button",
+      "raw": "type=\"button\" class=\"btn-filter-pill btn-framework-cat\" data-cat=\"Research &amp; Structured Work\" aria-pressed=\"false\""
+    },
+    {
+      "id": null,
+      "type": "button",
+      "raw": "type=\"button\" class=\"btn-filter-pill btn-framework-cat\" data-cat=\"Task &amp; Response Structuring\" aria-pressed=\"false\""
+    },
+    {
+      "id": "btn-fw-example",
+      "type": "button",
+      "raw": "type=\"button\" id=\"btn-fw-example\" class=\"btn-secondary btn-sm\""
+    },
+    {
+      "id": "btn-fw-reset",
+      "type": "button",
+      "raw": "type=\"button\" id=\"btn-fw-reset\" class=\"btn-text-action\""
+    },
+    {
+      "id": "btn-copy-prompt",
+      "type": "button",
+      "raw": "type=\"button\" id=\"btn-copy-prompt\" class=\"btn-primary\""
+    },
+    {
+      "id": "btn-prompt-to-coach",
+      "type": "button",
+      "raw": "type=\"button\" id=\"btn-prompt-to-coach\" class=\"btn-secondary\""
+    },
+    {
+      "id": "btn-open-prefs",
+      "type": "button",
+      "raw": "type=\"button\" id=\"btn-open-prefs\" class=\"btn-secondary showcase-prefs-btn\""
+    },
+    {
+      "id": null,
+      "type": "button",
+      "raw": "type=\"button\" class=\"btn-magnetic-glow\" onclick=\"showToast('Primary button pressed (sample)')\""
+    },
+    {
+      "id": null,
+      "type": "button",
+      "raw": "type=\"button\" class=\"btn-glass-shimmer\" onclick=\"showToast('Secondary button pressed (sample)')\""
+    },
+    {
+      "id": null,
+      "type": "button",
+      "raw": "type=\"button\" class=\"btn-cyber-border\" onclick=\"showToast('Outline button pressed (sample)')\""
+    },
+    {
+      "id": null,
+      "type": "button",
+      "raw": "type=\"button\" class=\"btn-3d-push\" onclick=\"showToast('Pressable button pressed (sample)')\""
+    },
+    {
+      "id": null,
+      "type": "button",
+      "raw": "type=\"button\" class=\"btn-emerald-liquid\" onclick=\"showToast('Forest button pressed (sample)')\""
+    },
+    {
+      "id": null,
+      "type": "button",
+      "raw": "type=\"button\" class=\"btn-icon-circle\" onclick=\"showToast('Bookmark icon button clicked \u2014 style demo, nothing is saved.')\" title=\"Bookmark (sample, nothing is saved)\" aria-label=\"Bookmark (sample, nothing is saved)\""
+    },
+    {
+      "id": null,
+      "type": "button",
+      "raw": "type=\"button\" class=\"btn-icon-circle\" onclick=\"triggerConfetti()\" title=\"Celebration effect (sample)\" aria-label=\"Celebration effect (sample)\""
+    },
+    {
+      "id": "lab-filter-pill",
+      "type": "button",
+      "raw": "type=\"button\" id=\"lab-filter-pill\" class=\"btn-filter-pill active\""
+    },
+    {
+      "id": "lab-preset-chip",
+      "type": "button",
+      "raw": "type=\"button\" id=\"lab-preset-chip\" class=\"btn-preset-chip\" style=\"padding:10px 16px;\""
+    },
+    {
+      "id": "btn-neu-shape-raised",
+      "type": "button",
+      "raw": "type=\"button\" class=\"neu-segmented-btn active\" id=\"btn-neu-shape-raised\" onclick=\"setNeuPreviewShape('raised')\""
+    },
+    {
+      "id": "btn-neu-shape-inset",
+      "type": "button",
+      "raw": "type=\"button\" class=\"neu-segmented-btn\" id=\"btn-neu-shape-inset\" onclick=\"setNeuPreviewShape('inset')\""
+    },
+    {
+      "id": "btn-neu-shape-convex",
+      "type": "button",
+      "raw": "type=\"button\" class=\"neu-segmented-btn\" id=\"btn-neu-shape-convex\" onclick=\"setNeuPreviewShape('convex')\""
+    },
+    {
+      "id": null,
+      "type": "button",
+      "raw": "type=\"button\" class=\"neu-btn\" onclick=\"showToast('Pressed Raised Soft Button')\""
+    },
+    {
+      "id": null,
+      "type": "button",
+      "raw": "type=\"button\" class=\"neu-btn neu-btn-primary\" onclick=\"showToast('Pressed Accent Soft Button')\""
+    },
+    {
+      "id": null,
+      "type": "button",
+      "raw": "type=\"button\" class=\"modal-close-btn\" onclick=\"closeCompanyModal()\" aria-label=\"Close dialog\""
+    },
+    {
+      "id": null,
+      "type": "button",
+      "raw": "type=\"button\" class=\"modal-close-btn\" onclick=\"closeCompareModal()\" aria-label=\"Close dialog\""
+    },
+    {
+      "id": "voice-orb-btn",
+      "type": "button",
+      "raw": "type=\"button\" id=\"voice-orb-btn\" class=\"voice-orb-btn\" aria-label=\"Open Voice Assistant &amp; Dictation\" aria-expanded=\"false\" title=\"Click to open Hands-Free Voice Assistant\""
+    },
+    {
+      "id": "voice-drawer-close-btn",
+      "type": "button",
+      "raw": "type=\"button\" id=\"voice-drawer-close-btn\" class=\"btn-icon-circle\" aria-label=\"Minimize voice assistant\""
+    },
+    {
+      "id": "voice-record-btn",
+      "type": "button",
+      "raw": "type=\"button\" id=\"voice-record-btn\" class=\"neu-btn neu-btn-primary\" style=\"flex:1;padding:9px 14px;font-size:0.82rem;gap:6px;\""
+    },
+    {
+      "id": "voice-apply-btn",
+      "type": "button",
+      "raw": "type=\"button\" id=\"voice-apply-btn\" class=\"neu-btn\" style=\"padding:9px 14px;font-size:0.82rem;\" disabled title=\"Insert transcript into selected destination\""
+    },
+    {
+      "id": "voice-discard-btn",
+      "type": "button",
+      "raw": "type=\"button\" id=\"voice-discard-btn\" class=\"neu-btn\" style=\"padding:9px 12px;font-size:0.82rem;\" title=\"Clear transcript preview\""
+    },
+    {
+      "id": null,
+      "type": "button",
+      "raw": "type=\"button\" class=\"btn-tts-speed active\" data-rate=\"1.0\""
+    },
+    {
+      "id": null,
+      "type": "button",
+      "raw": "type=\"button\" class=\"btn-tts-speed\" data-rate=\"0.85\""
+    },
+    {
+      "id": "voice-tts-play-btn",
+      "type": "button",
+      "raw": "type=\"button\" id=\"voice-tts-play-btn\" class=\"neu-btn btn-sm\" style=\"flex:1;gap:6px;\" title=\"Play spoken summary of current diagnostic report\""
+    },
+    {
+      "id": "voice-tts-pause-btn",
+      "type": "button",
+      "raw": "type=\"button\" id=\"voice-tts-pause-btn\" class=\"neu-btn btn-sm\" disabled title=\"Pause playback\""
+    },
+    {
+      "id": "voice-tts-stop-btn",
+      "type": "button",
+      "raw": "type=\"button\" id=\"voice-tts-stop-btn\" class=\"neu-btn btn-sm\" disabled title=\"Stop playback\""
+    },
+    {
+      "id": "btn-close-llm-modal",
+      "type": "button",
+      "raw": "type=\"button\" id=\"btn-close-llm-modal\" class=\"modal-close-btn\" aria-label=\"Close dialog\""
+    }
+  ],
+  "js_get_by_id": [
+    "analyzer",
+    "analyzer-alert-card",
+    "archetype-detail-panel",
+    "archetypes-selector-grid",
+    "atlas-evidence-card",
+    "atlas-fallback",
+    "btn-3d-reset-cam-stage",
+    "btn-3d-zoom-in",
+    "btn-3d-zoom-out",
+    "btn-analyze-submit",
+    "btn-analyze-text",
+    "btn-cancel-request",
+    "btn-clear-jd",
+    "btn-close-diff",
+    "btn-close-llm-modal",
+    "btn-close-popover",
+    "btn-coach-voice-input",
+    "btn-copy-prompt",
+    "btn-designhead-maximalist",
+    "btn-designhead-minimalist",
+    "btn-draft-redo",
+    "btn-draft-undo",
+    "btn-export-draft",
+    "btn-fw-example",
+    "btn-fw-reset",
+    "btn-llm-control-hub",
+    "btn-mobile-menu",
+    "btn-motion-toggle",
+    "btn-neu-shape-convex",
+    "btn-neu-shape-inset",
+    "btn-neu-shape-raised",
+    "btn-open-prefs",
+    "btn-prompt-to-coach",
+    "btn-quick-dictate-jd",
+    "btn-quick-play-tts",
+    "btn-recalculate-draft",
+    "btn-send-coach-msg",
+    "btn-sound-toggle",
+    "btn-theme-toggle",
+    "btn-toggle-diff",
+    "builder-fields-container",
+    "builder-fw-desc",
+    "builder-fw-scenarios",
+    "builder-fw-title",
+    "builder-progress",
+    "canvas-3d-tooltip",
+    "clear-file-btn",
+    "coach-active-persona-title",
+    "coach-chat-transcript",
+    "coach-framework-badge",
+    "coach-framework-select",
+    "coach-query-input",
+    "companies-grid-container",
+    "company-intel",
+    "company-modal-body",
+    "company-results-count",
+    "company-search-input",
+    "company-sort-select",
+    "compare-modal-body",
+    "demo-mode-toggle",
+    "diff-edited-content",
+    "diff-original-content",
+    "document-text-container",
+    "draft-diff-drawer",
+    "draft-revision-badge",
+    "engine-status-badge",
+    "exec-attention-list",
+    "exec-persona-title",
+    "exec-priorities-list",
+    "exec-questions-list",
+    "exec-reaction-summary",
+    "exec-skepticism-list",
+    "exec-target-role-label",
+    "exec-verdict-badge",
+    "file-error-msg",
+    "framework-registry-note",
+    "framework-search-input",
+    "frameworks-list-scroll",
+    "genome-field-strip",
+    "jd-char-count",
+    "jd-textarea",
+    "lab-filter-pill",
+    "lab-preset-chip",
+    "llm-active-model-tag",
+    "llm-active-name",
+    "llm-active-note",
+    "llm-provider-list",
+    "markdown-stream-output",
+    "markup-detail-popover",
+    "mini-progress-ring",
+    "mini-score-val",
+    "motion-mode-label",
+    "nav-active-llm-label",
+    "nav-links-menu",
+    "neu-depth-range",
+    "neu-depth-val",
+    "neu-light-angle-label",
+    "neu-light-puck",
+    "neu-light-well",
+    "neu-preview-surface",
+    "neu-tactile-toggle",
+    "neu-toggle-status-label",
+    "popover-apply-btn",
+    "popover-category-tag",
+    "popover-color-dot",
+    "popover-critique-text",
+    "popover-dismiss-btn",
+    "popover-quoted-text",
+    "popover-rewrite-input",
+    "popover-severity-tag",
+    "prompt-char-count",
+    "prompt-preview-code",
+    "provenance-tag",
+    "recommendation-explanation-box",
+    "results-placeholder",
+    "resume-document-viewport",
+    "resume-dropzone",
+    "resume-file-input",
+    "selected-file-pill",
+    "selected-filename",
+    "snapshot-company-search",
+    "snapshot-status",
+    "snapshot-table-body",
+    "sound-toggle-label",
+    "spatial-canvas-wrapper",
+    "spatial-drag-hint",
+    "spatial-hero-canvas",
+    "status-label-text",
+    "streaming-results-area",
+    "tab-markup-count-badge",
+    "theme-mode-label",
+    "toast-message",
+    "toast-notification",
+    "tooltip-node-title",
+    "tts-play-label",
+    "tts-quick-btn-label",
+    "voice-apply-btn",
+    "voice-assistant-drawer",
+    "voice-dest-select",
+    "voice-discard-btn",
+    "voice-drawer-close-btn",
+    "voice-live-status-desc",
+    "voice-locale-select",
+    "voice-orb-btn",
+    "voice-record-btn",
+    "voice-record-btn-text",
+    "voice-transcript-preview",
+    "voice-tts-pause-btn",
+    "voice-tts-play-btn",
+    "voice-tts-stop-btn"
+  ],
+  "js_qs_id": []
+}
