@@ -343,6 +343,8 @@ class DraftRecalculateRequest(BaseModel):
     @classmethod
     def resolve_recalc_aliases(cls, data: Any) -> Any:
         if isinstance(data, dict):
+            if not data.get("edited_text") and data.get("draft_text"):
+                data["edited_text"] = data["draft_text"]
             if not data.get("job_description") and data.get("target_job_description"):
                 data["job_description"] = data["target_job_description"]
             if not data.get("revision_id") and data.get("base_revision_id"):

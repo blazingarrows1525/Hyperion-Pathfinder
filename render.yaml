@@ -1,13 +1,21 @@
 services:
   - type: web
-    name: resume-checker-backend
+    name: hyperion-pathfinder
     env: python
-    region: singapore # or ohio, frankfurt, etc.
+    region: singapore # or oregon, frankfurt, etc.
     buildCommand: pip install -r requirements.txt
     startCommand: uvicorn main:app --host 0.0.0.0 --port $PORT
     envVars:
       - key: PYTHON_VERSION
         value: 3.10.12
+      - key: GEMINI_API_KEY
+        sync: false
+      - key: GEMINI_MODEL
+        value: gemini-flash-lite-latest
+      - key: GROQ_API_KEY
+        sync: false
+      - key: GROQ_MODEL
+        value: qwen/qwen3.8-27b
       - key: OPENAI_API_KEY
         sync: false
       - key: OPENAI_BASE_URL
