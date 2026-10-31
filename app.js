@@ -1119,14 +1119,23 @@ class CareerAtlas {
   buildScene() {
     this.root = new THREE.Group();
     this.scene.add(this.root);
+    this.clock = new THREE.Clock();
+    this.elapsed = 0;
+    this.introProgress = 0;
+    this.introComplete = false;
 
-    // One consistent light direction (top-left) with a soft hemisphere fill.
-    this.hemi = new THREE.HemisphereLight(0xffffff, 0x888888, 0.7);
-    this.sun = new THREE.DirectionalLight(0xffffff, 0.9);
+    // Atmospheric depth fog
+    this.scene.fog = new THREE.FogExp2(0x000000, 0.00032);
+
+    // Multi-light rig: hemisphere fill + warm key + soft cool rim
+    this.hemi = new THREE.HemisphereLight(0xffffff, 0x888888, 0.65);
+    this.sun = new THREE.DirectionalLight(0xffffff, 0.88);
     this.sun.position.set(-280, 460, 300);
-    this.scene.add(this.hemi, this.sun);
+    this.rimLight = new THREE.DirectionalLight(0x88aaff, 0.32);
+    this.rimLight.position.set(200, 80, -400);
+    this.scene.add(this.hemi, this.sun, this.rimLight);
 
-    // Matte paper disc with two thin contour rings.
+    // Matte paper disc with subtle contour rings
     this.discGeo = new THREE.CylinderGeometry(300, 306, 10, 80);
     this.discMat = new THREE.MeshStandardMaterial({ roughness: 1, metalness: 0 });
     const disc = new THREE.Mesh(this.discGeo, this.discMat);
@@ -1134,7 +1143,19 @@ class CareerAtlas {
     disc.position.y = -6;
     this.root.add(disc);
 
-    this.lineMat = new THREE.LineBasicMaterial({ transparent: true, opacity: 0.5 });
+    // Glowing ground aura ring
+    this.groundRingGeo = new THREE.RingGeometry(294, 308, 120);
+    this.groundRingMat = new THREE.MeshBasicMaterial({ 
+      transparent: true, opacity: 0.16, side: THREE.DoubleSide, depthWrite: false 
+    });
+    const groundRing = new THREE.Mesh(this.groundRingGeo, this.groundRingMat);
+    groundRing.rotation.x = -Math.PI / 2;
+    groundRing.position.y = 0.5;
+    groundRing.scale.set(1, 0.64, 1);
+    this.root.add(groundRing);
+
+    // Thin contour lines on disc
+    this.lineMat = new THREE.LineBasicMaterial({ transparent: true, opacity: 0.45 });
     this.ringGeos = [150, 238].map(r => {
       const pts = [];
       for (let i = 0; i <= 120; i++) {
@@ -1146,16 +1167,22 @@ class CareerAtlas {
       return geo;
     });
 
-    // Five archetype nodes: shared geometry, one material each.
+    // Five archetype nodes with gyroscopic orbital rings and breathing physics
     const data = getAtlasNodeData();
     this.nodeGeo = new THREE.SphereGeometry(1, 40, 28);
     this.plinthGeo = new THREE.CylinderGeometry(1, 1.12, 1, 40);
-    this.haloGeo = new THREE.RingGeometry(1.3, 1.46, 64);
+    this.haloGeo = new THREE.RingGeometry(1.3, 1.48, 64);
+    this.orbitalRingGeo = new THREE.TorusGeometry(1.75, 0.038, 12, 80);
+
     this.nodes = data.map((d, i) => {
       const pos = atlasNodePosition(i, data.length);
       const group = new THREE.Group();
       group.position.set(pos.x, 0, pos.z);
-      const mat = new THREE.MeshStandardMaterial({ roughness: 0.68, metalness: 0, transparent: true }); // matte clay
+
+      const mat = new THREE.MeshStandardMaterial({ 
+        roughness: 0.55, metalness: 0.1, transparent: true,
+        emissive: new THREE.Color(0x000000), emissiveIntensity: 0
+      });
       const plinthMat = new THREE.MeshStandardMaterial({ roughness: 0.95, metalness: 0, transparent: true });
       const haloMat = new THREE.MeshBasicMaterial({ transparent: true, opacity: 0, side: THREE.DoubleSide, depthWrite: false });
       const mesh = new THREE.Mesh(this.nodeGeo, mat);
@@ -1163,26 +1190,78 @@ class CareerAtlas {
       const halo = new THREE.Mesh(this.haloGeo, haloMat);
       halo.rotation.x = -Math.PI / 2;
       mesh.userData.archetypeId = d.id;
-      group.add(plinth, mesh, halo);
+
+      // Outer gyroscopic orbital ring
+      const orbRingMat = new THREE.MeshBasicMaterial({ transparent: true, opacity: 0.35, depthWrite: false, side: THREE.DoubleSide });
+      const orbRing = new THREE.Mesh(this.orbitalRingGeo, orbRingMat);
+      orbRing.rotation.x = Math.PI / 2.2 + (i * 0.35);
+      orbRing.rotation.z = i * 0.45;
+
+      // Inner intersecting orbital ring
+      const orbRing2Mat = new THREE.MeshBasicMaterial({ transparent: true, opacity: 0.22, depthWrite: false, side: THREE.DoubleSide });
+      const orbRing2 = new THREE.Mesh(this.orbitalRingGeo, orbRing2Mat);
+      orbRing2.rotation.x = Math.PI / 3.4 + (i * 0.4);
+      orbRing2.rotation.y = Math.PI / 4 + (i * 0.5);
+
+      // Soft glow corona
+      const glowGeo = new THREE.SphereGeometry(1.3, 20, 16);
+      const glowMat = new THREE.MeshBasicMaterial({ transparent: true, opacity: 0, depthWrite: false });
+      const glow = new THREE.Mesh(glowGeo, glowMat);
+
+      group.add(plinth, mesh, halo, orbRing, orbRing2, glow);
       this.root.add(group);
-      return { ...d, pos, group, mesh, plinth, halo, mat, plinthMat, haloMat, radius: 30, lift: 1, opacity: 1, haloOpacity: 0 };
+      return { 
+        ...d, pos, group, mesh, plinth, halo, orbRing, orbRing2, glow,
+        mat, plinthMat, haloMat, orbRingMat, orbRing2Mat, glowMat,
+        radius: 30, lift: 1, opacity: 1, haloOpacity: 0,
+        pulsePhase: i * 1.25, bobPhase: i * 0.85
+      };
     });
     this.pickables = this.nodes.map(n => n.mesh);
 
-    // Uniform arcs between neighbouring clusters.
+    // Connection beams between neighbouring clusters with energy tubes
+    this.beamCurves = [];
+    this.beamMeshes = [];
     this.linkGeos = this.nodes.map((a, i) => {
       const b = this.nodes[(i + 1) % this.nodes.length];
       const curve = new THREE.QuadraticBezierCurve3(
         new THREE.Vector3(a.pos.x, 8, a.pos.z),
-        new THREE.Vector3((a.pos.x + b.pos.x) / 2, 46, (a.pos.z + b.pos.z) / 2),
+        new THREE.Vector3((a.pos.x + b.pos.x) / 2, 54, (a.pos.z + b.pos.z) / 2),
         new THREE.Vector3(b.pos.x, 8, b.pos.z)
       );
+      this.beamCurves.push(curve);
+
+      // Base contour line
       const geo = new THREE.BufferGeometry().setFromPoints(curve.getPoints(24));
       this.root.add(new THREE.Line(geo, this.lineMat));
+
+      // Animated energy beam tube
+      const tubeGeo = new THREE.TubeGeometry(curve, 36, 0.75, 8, false);
+      const tubeMat = new THREE.MeshBasicMaterial({ transparent: true, opacity: 0.12, depthWrite: false });
+      const tube = new THREE.Mesh(tubeGeo, tubeMat);
+      this.root.add(tube);
+      this.beamMeshes.push({ mesh: tube, mat: tubeMat, curve });
+
       return geo;
     });
 
-    // Illustrative corpus dots: one geometry, a round sprite, colours per cluster.
+    // Flowing energy data particles traveling along connection beams
+    this.flowParticles = this.buildFlowParticles();
+
+    // Central holographic intelligence core (icosahedron + octahedron)
+    this.coreGeo = new THREE.IcosahedronGeometry(18, 1);
+    this.coreMat = new THREE.MeshBasicMaterial({ wireframe: true, transparent: true, opacity: 0.28, depthWrite: false });
+    this.core = new THREE.Mesh(this.coreGeo, this.coreMat);
+    this.core.position.y = 35;
+    this.root.add(this.core);
+
+    this.innerCoreGeo = new THREE.OctahedronGeometry(7, 0);
+    this.innerCoreMat = new THREE.MeshBasicMaterial({ transparent: true, opacity: 0.45 });
+    this.innerCore = new THREE.Mesh(this.innerCoreGeo, this.innerCoreMat);
+    this.innerCore.position.y = 35;
+    this.root.add(this.innerCore);
+
+    // Illustrative corpus dots: round sprites, colors per cluster
     const sprite = document.createElement('canvas');
     sprite.width = sprite.height = 32;
     const ctx = sprite.getContext('2d');
@@ -1198,8 +1277,109 @@ class CareerAtlas {
     this.dots = new THREE.Points(this.dotGeo, this.dotMat);
     this.root.add(this.dots);
 
+    // Ambient floating stardust particles
+    this.ambientParticles = this.buildAmbientParticles();
+
     this.updateNodeSizes();
     this.buildDots();
+  }
+
+  buildFlowParticles() {
+    const particlesPerBeam = 10;
+    const totalCount = this.beamCurves.length * particlesPerBeam;
+    const positions = new Float32Array(totalCount * 3);
+    const colors = new Float32Array(totalCount * 3);
+
+    this.flowData = [];
+    let idx = 0;
+    this.beamCurves.forEach((curve, beamIdx) => {
+      for (let p = 0; p < particlesPerBeam; p++) {
+        const t = p / particlesPerBeam;
+        const pt = curve.getPoint(t);
+        positions[idx * 3] = pt.x;
+        positions[idx * 3 + 1] = pt.y;
+        positions[idx * 3 + 2] = pt.z;
+        colors[idx * 3] = 1;
+        colors[idx * 3 + 1] = 1;
+        colors[idx * 3 + 2] = 1;
+        this.flowData.push({ beamIdx, t, speed: 0.09 + (p % 3) * 0.04 });
+        idx++;
+      }
+    });
+
+    const flowGeo = new THREE.BufferGeometry();
+    flowGeo.setAttribute('position', new THREE.Float32BufferAttribute(positions, 3));
+    flowGeo.setAttribute('color', new THREE.Float32BufferAttribute(colors, 3));
+
+    const flowSprite = document.createElement('canvas');
+    flowSprite.width = flowSprite.height = 16;
+    const fctx = flowSprite.getContext('2d');
+    const fgrad = fctx.createRadialGradient(8, 8, 0, 8, 8, 8);
+    fgrad.addColorStop(0, 'rgba(255,255,255,1)');
+    fgrad.addColorStop(0.5, 'rgba(255,255,255,0.7)');
+    fgrad.addColorStop(1, 'rgba(255,255,255,0)');
+    fctx.fillStyle = fgrad;
+    fctx.fillRect(0, 0, 16, 16);
+    this.flowTexture = new THREE.CanvasTexture(flowSprite);
+
+    const flowMat = new THREE.PointsMaterial({
+      size: 5, map: this.flowTexture, vertexColors: true,
+      transparent: true, depthWrite: false, opacity: 0.65,
+      blending: THREE.AdditiveBlending
+    });
+    const flowPoints = new THREE.Points(flowGeo, flowMat);
+    this.root.add(flowPoints);
+    return { geometry: flowGeo, material: flowMat, points: flowPoints };
+  }
+
+  buildAmbientParticles() {
+    const count = this.lowDetail ? 60 : 160;
+    const positions = new Float32Array(count * 3);
+    const colors = new Float32Array(count * 3);
+    const rand = seededRandom(42);
+
+    this.ambientData = [];
+    for (let i = 0; i < count; i++) {
+      const x = (rand() - 0.5) * 800;
+      const y = rand() * 220 + 8;
+      const z = (rand() - 0.5) * 600;
+      positions[i * 3] = x;
+      positions[i * 3 + 1] = y;
+      positions[i * 3 + 2] = z;
+      colors[i * 3] = 0.8;
+      colors[i * 3 + 1] = 0.85;
+      colors[i * 3 + 2] = 0.8;
+      this.ambientData.push({
+        baseY: y,
+        speed: 0.35 + rand() * 0.65,
+        phase: rand() * Math.PI * 2,
+        driftX: (rand() - 0.5) * 0.25,
+        driftZ: (rand() - 0.5) * 0.25
+      });
+    }
+
+    const ambGeo = new THREE.BufferGeometry();
+    ambGeo.setAttribute('position', new THREE.Float32BufferAttribute(positions, 3));
+    ambGeo.setAttribute('color', new THREE.Float32BufferAttribute(colors, 3));
+
+    const ambSprite = document.createElement('canvas');
+    ambSprite.width = ambSprite.height = 16;
+    const actx = ambSprite.getContext('2d');
+    const agrad = actx.createRadialGradient(8, 8, 0, 8, 8, 8);
+    agrad.addColorStop(0, 'rgba(255,255,255,0.9)');
+    agrad.addColorStop(1, 'rgba(255,255,255,0)');
+    actx.fillStyle = agrad;
+    actx.fillRect(0, 0, 16, 16);
+    this.ambientTexture = new THREE.CanvasTexture(ambSprite);
+
+    const ambMat = new THREE.PointsMaterial({
+      size: 4, map: this.ambientTexture, vertexColors: true,
+      transparent: true, depthWrite: false, opacity: 0.38,
+      blending: THREE.AdditiveBlending
+    });
+    const ambPoints = new THREE.Points(ambGeo, ambMat);
+    this.root.add(ambPoints);
+    return { geometry: ambGeo, material: ambMat, points: ambPoints };
   }
 
   updateNodeSizes() {
@@ -1259,11 +1439,51 @@ class CareerAtlas {
     this.hemi.groundColor.set(p.border);
     this.hemi.intensity = p.isDark ? 0.55 : 0.75;
     this.sun.intensity = p.isDark ? 0.7 : 0.9;
+
+    if (this.scene.fog) {
+      this.scene.fog.color.set(p.isDark ? 0x161422 : p.canvas);
+    }
+
     this.nodes.forEach(n => {
-      n.mat.color.set(p.archetypes[n.id]);
+      const c = p.archetypes[n.id];
+      n.mat.color.set(c);
+      n.mat.emissive.set(c);
       n.plinthMat.color.set(p.isDark ? p.border : p.canvas);
-      n.haloMat.color.set(p.archetypes[n.id]);
+      n.haloMat.color.set(c);
+      if (n.orbRingMat) n.orbRingMat.color.set(c);
+      if (n.orbRing2Mat) n.orbRing2Mat.color.set(c);
+      if (n.glowMat) n.glowMat.color.set(c);
     });
+
+    if (this.groundRingMat) {
+      this.groundRingMat.color.set(p.isDark ? p.forest : p.borderStrong);
+    }
+
+    if (this.coreMat) this.coreMat.color.set(p.isDark ? (p.orchid || 0x7965A8) : p.forest);
+    if (this.innerCoreMat) this.innerCoreMat.color.set(p.isDark ? (p.lagoon || 0x277C7D) : p.terracotta);
+
+    if (this.beamMeshes) {
+      this.beamMeshes.forEach((bm, i) => {
+        bm.mat.color.set(p.archetypes[this.nodes[i % this.nodes.length].id]);
+      });
+    }
+
+    if (this.flowParticles && this.flowData) {
+      const fc = this.flowParticles.geometry.getAttribute('color');
+      const c = new THREE.Color();
+      this.flowData.forEach((fd, i) => {
+        c.set(p.archetypes[this.nodes[fd.beamIdx % this.nodes.length].id]);
+        fc.setXYZ(i, c.r, c.g, c.b);
+      });
+      fc.needsUpdate = true;
+      this.flowParticles.material.blending = p.isDark ? THREE.AdditiveBlending : THREE.NormalBlending;
+    }
+
+    if (this.ambientParticles) {
+      this.ambientParticles.material.blending = p.isDark ? THREE.AdditiveBlending : THREE.NormalBlending;
+      this.ambientParticles.material.opacity = p.isDark ? 0.45 : 0.25;
+    }
+
     this.dotMat.blending = p.isDark ? THREE.AdditiveBlending : THREE.NormalBlending;
     this.paintDots();
     this.requestRender();
@@ -1342,6 +1562,8 @@ class CareerAtlas {
   tick() {
     this.frame = null;
     if (this.disposed || this.pauseReasons.size) return;
+    const dt = this.clock ? Math.min(0.05, this.clock.getDelta()) : 0.016;
+    this.elapsed += dt;
     const k = this.reducedMotion ? 1 : 0.16;
     let moving = false;
     const ease = (from, to) => {
@@ -1350,7 +1572,7 @@ class CareerAtlas {
       return Math.abs(to - next) > 0.0005 ? next : to;
     };
 
-    // Inertia after an orbit drag stops within a short interval.
+    // Inertia drag decay
     if (!this.dragging && (Math.abs(this.velocity.x) > 0.0004 || Math.abs(this.velocity.y) > 0.0004)) {
       this.targetRot.y += this.velocity.x;
       this.targetRot.x += this.velocity.y;
@@ -1359,12 +1581,19 @@ class CareerAtlas {
       this.clampRotation();
       moving = true;
     }
+
+    // Slow cinematic drift in Atlas mode when not dragging
+    if (this.mode === 'atlas' && !this.dragging && !this.reducedMotion) {
+      this.targetRot.y += dt * 0.012;
+      this.clampRotation();
+      moving = true;
+    }
+
     this.rot.x = ease(this.rot.x, this.targetRot.x);
     this.rot.y = ease(this.rot.y, this.targetRot.y);
     this.zoom = ease(this.zoom, this.mode === 'evidence' ? this.targetZoom * 0.78 : this.targetZoom);
 
     const selected = this.nodes.find(n => n.id === this.selectedId);
-    // keeps the selected node left of centre, clear of the evidence card
     const focusX = this.mode === 'evidence' && selected ? selected.pos.x * 0.55 + 120 : 0;
     const focusZ = this.mode === 'evidence' && selected ? selected.pos.z * 0.55 : 0;
     this.focus.x = ease(this.focus.x, focusX);
@@ -1373,19 +1602,94 @@ class CareerAtlas {
     const highlighted = this.previewId !== null ? this.previewId : this.hoverId;
     this.nodes.forEach(n => {
       const isSelected = n.id === this.selectedId;
-      n.lift = ease(n.lift, isSelected ? 1.12 : n.id === highlighted ? 1.07 : 1);
+      const isHighlighted = n.id === highlighted;
+
+      // Breathing pulse and gentle floating bob
+      const pulse = Math.sin(this.elapsed * 1.8 + n.pulsePhase) * 0.04;
+      const bob = Math.sin(this.elapsed * 0.9 + n.bobPhase) * 2.2;
+
+      n.lift = ease(n.lift, isSelected ? 1.15 + pulse : isHighlighted ? 1.08 + pulse * 0.5 : 1 + pulse * 0.25);
       n.opacity = ease(n.opacity, this.mode === 'evidence' && !isSelected ? 0.35 : 1);
-      n.haloOpacity = ease(n.haloOpacity, isSelected ? 0.9 : n.id === highlighted ? 0.45 : 0);
+      n.haloOpacity = ease(n.haloOpacity, isSelected ? 0.9 : isHighlighted ? 0.45 : 0);
       const r = n.radius * n.lift;
       n.mesh.scale.setScalar(r);
-      n.mesh.position.y = r + 6;
+      n.mesh.position.y = r + 6 + (this.reducedMotion ? 0 : bob);
       n.mat.opacity = n.opacity;
       n.plinthMat.opacity = n.opacity;
       n.haloMat.opacity = n.haloOpacity;
+
+      // Emissive glow highlight
+      const targetEmissive = isSelected ? 0.22 : isHighlighted ? 0.12 : 0.02;
+      n.mat.emissiveIntensity += (targetEmissive - n.mat.emissiveIntensity) * 0.1;
+      n.mat.emissive.copy(n.mat.color).multiplyScalar(0.4);
+
+      // Gyroscopic orbital rings rotation
+      if (n.orbRing && !this.reducedMotion) {
+        n.orbRing.rotation.z += dt * (0.35 + n.id * 0.07);
+        n.orbRing.scale.setScalar(r * 0.038);
+        n.orbRing.position.y = n.mesh.position.y;
+        n.orbRingMat.opacity = isSelected ? 0.55 : isHighlighted ? 0.32 : 0.18;
+      }
+      if (n.orbRing2 && !this.reducedMotion) {
+        n.orbRing2.rotation.y += dt * (0.28 + n.id * 0.05);
+        n.orbRing2.scale.setScalar(r * 0.042);
+        n.orbRing2.position.y = n.mesh.position.y;
+        n.orbRing2Mat.opacity = isSelected ? 0.4 : isHighlighted ? 0.22 : 0.12;
+      }
+
+      // Soft glow corona
+      if (n.glow) {
+        const glowScale = r * (isSelected ? 1.4 : isHighlighted ? 1.25 : 1.12);
+        n.glow.scale.setScalar(glowScale);
+        n.glow.position.y = n.mesh.position.y;
+        n.glowMat.opacity = isSelected ? 0.12 : isHighlighted ? 0.07 : 0.02;
+      }
     });
+
+    // Flowing energy data particles along bezier paths
+    if (this.flowParticles && this.flowData && !this.reducedMotion) {
+      const fp = this.flowParticles.geometry.getAttribute('position');
+      this.flowData.forEach((fd, i) => {
+        fd.t = (fd.t + dt * fd.speed) % 1;
+        const pt = this.beamCurves[fd.beamIdx].getPoint(fd.t);
+        fp.setXYZ(i, pt.x, pt.y, pt.z);
+      });
+      fp.needsUpdate = true;
+      moving = true;
+    }
+
+    // Ambient floating stardust
+    if (this.ambientParticles && this.ambientData && !this.reducedMotion) {
+      const ap = this.ambientParticles.geometry.getAttribute('position');
+      this.ambientData.forEach((ad, i) => {
+        const y = ad.baseY + Math.sin(this.elapsed * ad.speed + ad.phase) * 14;
+        const x = ap.getX(i) + ad.driftX * dt;
+        const z = ap.getZ(i) + ad.driftZ * dt;
+        ap.setXYZ(i, x, y, z);
+      });
+      ap.needsUpdate = true;
+    }
+
+    // Central holographic intelligence core rotation
+    if (this.core && !this.reducedMotion) {
+      this.core.rotation.x += dt * 0.14;
+      this.core.rotation.y += dt * 0.2;
+      this.coreMat.opacity = 0.16 + Math.sin(this.elapsed * 1.4) * 0.07;
+    }
+    if (this.innerCore && !this.reducedMotion) {
+      this.innerCore.rotation.x -= dt * 0.26;
+      this.innerCore.rotation.z += dt * 0.22;
+      this.innerCoreMat.opacity = 0.32 + Math.sin(this.elapsed * 2.0) * 0.12;
+    }
+
+    // Ground ring pulse
+    if (this.groundRingMat) {
+      this.groundRingMat.opacity = 0.12 + Math.sin(this.elapsed * 0.8) * 0.04;
+    }
 
     this.updateCamera();
     this.renderer.render(this.scene, this.camera);
+    if (!this.reducedMotion) moving = true;
     if (moving) this.requestRender();
   }
 
@@ -1570,6 +1874,12 @@ class CareerAtlas {
     });
     while (this.scene.children.length) this.scene.remove(this.scene.children[0]);
     if (this.dotTexture) this.dotTexture.dispose();
+    if (this.flowTexture) this.flowTexture.dispose();
+    if (this.ambientTexture) this.ambientTexture.dispose();
+    this.beamMeshes = [];
+    this.beamCurves = [];
+    this.flowData = null;
+    this.ambientData = null;
   }
 
   dispose() {

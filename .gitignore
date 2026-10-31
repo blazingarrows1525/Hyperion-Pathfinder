@@ -10,4 +10,5 @@ data/
 processed_data/
 *.png
 .DS_Store
-Resumes/
+Resumes/
+ui-audit-out/
