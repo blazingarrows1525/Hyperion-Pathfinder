@@ -11,7 +11,11 @@ import time
 import re
 from typing import Dict, List, Optional, AsyncGenerator, Any
 from abc import ABC, abstractmethod
+from dotenv import load_dotenv
 from openai import OpenAI, AsyncOpenAI
+
+# Auto-load environment variables from .env if present
+load_dotenv()
 
 
 def is_valid_api_key(key: Optional[str]) -> bool:
@@ -156,14 +160,14 @@ class OpenAICompatibleProvider(LLMProvider):
 class GoogleGeminiProvider(OpenAICompatibleProvider):
     """
     Google Gemini provider connecting via Google's OpenAI-compatible endpoint.
-    Compatible with Gemini 2.0 Flash, Gemini 1.5 Flash, and Gemini 1.5 Pro.
+    Compatible with Gemini 2.5 Flash, Gemini 3.5 Flash Lite, and Gemini Flash Latest.
     """
 
     def __init__(self, api_key: Optional[str] = None, model: Optional[str] = None):
         raw_key = api_key if api_key is not None else (os.getenv("GEMINI_API_KEY") or os.getenv("GOOGLE_API_KEY") or "")
         key = raw_key if is_valid_api_key(raw_key) else ""
         base_url = "https://generativelanguage.googleapis.com/v1beta/openai/"
-        target_model = model or os.getenv("GEMINI_MODEL", "gemini-2.0-flash")
+        target_model = model or os.getenv("GEMINI_MODEL", "gemini-flash-lite-latest")
         super().__init__(
             api_key=key,
             base_url=base_url,
@@ -171,22 +175,83 @@ class GoogleGeminiProvider(OpenAICompatibleProvider):
             provider_label="Google Gemini"
         )
 
+    def complete(self, messages: List[Dict[str, str]], model: Optional[str] = None) -> str:
+        target_model = model or self.model
+        try:
+            return super().complete(messages, model=target_model)
+        except Exception as e:
+            if "404" in str(e) and target_model != "gemini-flash-lite-latest":
+                return super().complete(messages, model="gemini-flash-lite-latest")
+            raise
+
+    async def acomplete(self, messages: List[Dict[str, str]], model: Optional[str] = None) -> str:
+        target_model = model or self.model
+        try:
+            return await super().acomplete(messages, model=target_model)
+        except Exception as e:
+            if "404" in str(e) and target_model != "gemini-flash-lite-latest":
+                return await super().acomplete(messages, model="gemini-flash-lite-latest")
+            raise
+
 
 class GroqProvider(OpenAICompatibleProvider):
     """
-    Groq high-speed inference provider (Llama-3.3-70b-versatile, DeepSeek-R1-distill-llama-70b).
+    Groq high-speed inference provider (qwen/qwen3.8-27b, openai/gpt-oss-120b).
     """
 
     def __init__(self, api_key: Optional[str] = None, model: Optional[str] = None):
         raw_key = api_key if api_key is not None else (os.getenv("GROQ_API_KEY") or "")
         key = raw_key if is_valid_api_key(raw_key) else ""
         base_url = "https://api.groq.com/openai/v1"
-        target_model = model or os.getenv("GROQ_MODEL", "llama-3.3-70b-versatile")
+        target_model = model or os.getenv("GROQ_MODEL", "qwen/qwen3.8-27b")
         super().__init__(
             api_key=key,
             base_url=base_url,
             model=target_model,
             provider_label="Groq"
+        )
+
+    def complete(self, messages: List[Dict[str, str]], model: Optional[str] = None) -> str:
+        target_model = model or self.model
+        try:
+            return super().complete(messages, model=target_model)
+        except Exception as e:
+            if any(code in str(e) for code in ["400", "404"]) and target_model not in ["qwen/qwen3.8-27b", "openai/gpt-oss-120b"]:
+                return super().complete(messages, model="qwen/qwen3.8-27b")
+            raise
+
+    async def acomplete(self, messages: List[Dict[str, str]], model: Optional[str] = None) -> str:
+        target_model = model or self.model
+        try:
+            return await super().acomplete(messages, model=target_model)
+        except Exception as e:
+            if any(code in str(e) for code in ["400", "404"]) and target_model not in ["qwen/qwen3.8-27b", "openai/gpt-oss-120b"]:
+                return await super().acomplete(messages, model="qwen/qwen3.8-27b")
+            raise
+
+
+class AzureOpenAIProvider(OpenAICompatibleProvider):
+    """
+    Azure AI Foundry / OpenAI-compatible endpoint.
+    """
+
+    def __init__(
+        self,
+        api_key: Optional[str] = None,
+        model: Optional[str] = None,
+        base_url: Optional[str] = None
+    ):
+        raw_key = api_key if api_key is not None else (
+            os.getenv("AZURE_OPENAI_KEY") or os.getenv("AZURE_API_KEY") or os.getenv("GITHUB_TOKEN") or ""
+        )
+        key = raw_key if is_valid_api_key(raw_key) else ""
+        url = base_url or os.getenv("AZURE_OPENAI_ENDPOINT") or "https://models.inference.ai.azure.com"
+        target_model = model or os.getenv("AZURE_MODEL", "gpt-4o")
+        super().__init__(
+            api_key=key,
+            base_url=url,
+            model=target_model,
+            provider_label="Azure AI Foundry / GitHub Models"
         )
 
 
@@ -392,7 +457,7 @@ def get_available_providers() -> List[Dict[str, Any]]:
             "description": "Google's ultra-fast Gemini 2.0 & 1.5 Flash models via official OpenAI-compatible endpoint.",
             "is_ready": is_valid_api_key(gemini_key),
             "requires_key": True,
-            "default_model": os.getenv("GEMINI_MODEL", "gemini-2.0-flash")
+            "default_model": os.getenv("GEMINI_MODEL", "gemini-flash-lite-latest")
         },
         {
             "id": "openai",
@@ -408,7 +473,7 @@ def get_available_providers() -> List[Dict[str, Any]]:
             "description": "Sub-second inference running Llama-3.3-70b and DeepSeek-R1-distill.",
             "is_ready": is_valid_api_key(groq_key),
             "requires_key": True,
-            "default_model": os.getenv("GROQ_MODEL", "llama-3.3-70b-versatile")
+            "default_model": os.getenv("GROQ_MODEL", "qwen/qwen3.8-27b")
         },
         {
             "id": "ollama",
@@ -459,7 +524,7 @@ def get_llm_provider() -> LLMProvider:
     # Priority 4: Check GitHub Token / Azure
     github_key = os.getenv("GITHUB_TOKEN")
     if is_valid_api_key(github_key):
-        _active_provider = OpenAICompatibleProvider(api_key=github_key, provider_label="GitHub Models")
+        _active_provider = AzureOpenAIProvider(api_key=github_key)
         _active_provider_id = "azure"
         return _active_provider
 
@@ -501,6 +566,12 @@ def set_active_provider(
             prov = OllamaProvider(base_url=base_url, model=model)
             _active_provider = prov
             _active_provider_id = "ollama"
+        elif provider_id in ("azure", "github"):
+            prov = AzureOpenAIProvider(api_key=api_key, model=model, base_url=base_url)
+            if not prov.is_configured():
+                return {"success": False, "error": "Invalid or missing Azure / GitHub API Key."}
+            _active_provider = prov
+            _active_provider_id = "azure"
         elif provider_id == "neural_local":
             _active_provider = IntelligentLocalProvider()
             _active_provider_id = "neural_local"
@@ -535,6 +606,8 @@ def test_llm_connection(
             test_prov = GroqProvider(api_key=api_key, model=model)
         elif provider_id == "ollama":
             test_prov = OllamaProvider(base_url=base_url, model=model)
+        elif provider_id in ("azure", "github"):
+            test_prov = AzureOpenAIProvider(api_key=api_key, model=model, base_url=base_url)
         elif provider_id == "neural_local":
             test_prov = IntelligentLocalProvider()
         else:
