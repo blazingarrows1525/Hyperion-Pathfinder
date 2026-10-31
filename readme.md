@@ -1,3 +1,15 @@
+---
+title: Hyperion Pathfinder
+emoji: ⚡
+colorFrom: blue
+colorTo: indigo
+sdk: gradio
+sdk_version: 6.31.0
+app_file: app.py
+pinned: false
+license: mit
+---
+
 # 🚀 Resume Checker — Master System Architecture & Production Specification
 
 > **Intelligent Placement Benchmarking Engine, Alumni Knowledge Genome, Hybrid Retrieval & LLM Career Coach**  
