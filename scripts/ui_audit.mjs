@@ -4,14 +4,16 @@
 //   node scripts/ui_audit.mjs --out docs/terra-atelier/after [--url http://127.0.0.1:8000/]
 //        [--widths 360,375,1440] [--sections hero,analyzer] [--no-shots] [--theme grove]
 //        [--reduced-motion] [--eval "js run in the page before measuring"] [--tag name]
+//        [--eval-file scripts/ui_probes/<probe>.js]
 //
-// --eval may return a Promise; it runs after load (and after --theme). --tag names
-// the screenshot files <section>.<tag>.jpg so several states can share one folder.
+// --eval may return a Promise; it runs after load (and after --theme). --eval-file reads
+// the same kind of body from a file (see scripts/ui_probes/). --tag names the screenshot
+// files <section>.<tag>.jpg so several states can share one folder.
 //
 // Writes <out>/<width>/<section>.jpg and <out>/audit.json (overflow, console errors,
 // failed requests, static DOM checks). Requires the backend to be running.
 import { spawn } from 'node:child_process';
-import { mkdirSync, writeFileSync, existsSync, rmSync } from 'node:fs';
+import { mkdirSync, writeFileSync, readFileSync, existsSync, rmSync } from 'node:fs';
 import { join, resolve } from 'node:path';
 import { tmpdir } from 'node:os';
 
@@ -27,7 +29,8 @@ const OUT = resolve(opt('out', 'ui-audit-out'));
 const SHOTS = !flag('no-shots');
 const THEME = opt('theme', '');
 const REDUCED = flag('reduced-motion');
-const EVAL = opt('eval', '');
+const EVAL_FILE = opt('eval-file', '');
+const EVAL = EVAL_FILE ? readFileSync(EVAL_FILE, 'utf8') : opt('eval', '');
 const TAG = opt('tag', '');
 const VIEWPORTS = {
   320: 640, 360: 780, 375: 812, 390: 844, 414: 896, 430: 932, 768: 1024, 800: 900,
