@@ -1,17 +1,25 @@
 """
 tests/test_live_api.py
-Integration smoke test sending a synthetic PDF to POST /analyze and verifying the streaming output.
+Integration smoke test sending a synthetic PDF to POST /analyze on a running server and verifying
+the streaming output.
+
+Opt-in: set LIVE_API_BASE_URL (for example http://127.0.0.1:8010) to a server you started yourself.
+Point it at a server running the deterministic engine; a server with provider keys would forward
+the synthetic resume to that provider.
 """
 
-import sys
-import io
+import os
 import urllib.request
-from pypdf import PdfWriter
+
+import pytest
 
 
 def test_analyze_endpoint():
-    print("Executing live API test against http://127.0.0.1:8000/analyze...")
-    
+    base = os.environ.get("LIVE_API_BASE_URL", "").rstrip("/")
+    if not base:
+        pytest.skip("LIVE_API_BASE_URL is not set; start a deterministic server and set it to run this test")
+    print(f"Executing live API test against {base}/analyze...")
+
     # Minimal valid PDF stream with extractable text
     pdf_bytes = (
         b"%PDF-1.4\n1 0 obj\n<< /Type /Catalog /Pages 2 0 R >>\nendobj\n"
@@ -31,7 +39,7 @@ def test_analyze_endpoint():
     
     payload = disposition.encode('utf-8') + pdf_bytes + footer.encode('utf-8')
 
-    url = 'http://127.0.0.1:8000/analyze?job_description=Senior+Python+Backend+Developer+with+FastAPI+Docker+and+Kubernetes'
+    url = f'{base}/analyze?job_description=Senior+Python+Backend+Developer+with+FastAPI+Docker+and+Kubernetes'
     req = urllib.request.Request(
         url,
         data=payload,
