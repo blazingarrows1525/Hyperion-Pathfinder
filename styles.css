@@ -433,9 +433,7 @@ body {
    4. LAYOUT & 3D CANVAS BACKGROUND
    ============================================================================== */
 
-
 /* Minimalist Monochromatic Ambient Soft Glows */
-
 
 .app-wrapper {
   position: relative;
@@ -883,22 +881,6 @@ main section[id] {
   color: var(--color-forest-ink);
 }
 
-.overline {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 0.55em;
-  margin-bottom: 22px;
-  font-size: 0.74rem;
-  font-weight: 700;
-  letter-spacing: 0.16em;
-  text-transform: uppercase;
-  color: var(--color-forest-ink);
-}
-
-.overline span {
-  color: var(--color-muted);
-}
-
 .hero-title {
   margin-bottom: 22px;
   font-family: var(--font-display);
@@ -1321,7 +1303,6 @@ main section[id] {
    7. 3D CARD PARALLAX TILT (HERO VISUAL) — FLOATING SPATIAL DEPTH
    ============================================================================== */
 
-
 .card-3d-tilt {
   width: 100%;
   max-width: 480px;
@@ -1347,23 +1328,6 @@ main section[id] {
   right: 0;
   height: 2px;
   background: linear-gradient(90deg, transparent, rgba(var(--tint-rgb), 0.85), transparent);
-}
-
-
-.match-metric-icon {
-  width: 36px;
-  height: 36px;
-  border-radius: var(--radius-sm);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-}
-.icon-emerald { background: rgba(var(--tint-rgb), 0.08); color: var(--color-ink); }
-
-
-@keyframes floatOrbit {
-  0% { transform: translateY(0px); }
-  100% { transform: translateY(-12px); }
 }
 
 /* ==============================================================================
@@ -1984,14 +1948,6 @@ main section[id] {
   gap: 12px;
 }
 
-.panel-title-row {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 12px;
-  margin-bottom: 16px;
-}
-
 .panel-title {
   display: flex;
   align-items: center;
@@ -2085,10 +2041,6 @@ main section[id] {
 .input-step {
   padding-top: 18px;
   border-top: 1px solid var(--color-border);
-}
-
-.form-group {
-  margin-bottom: 20px;
 }
 
 .form-label-row {
@@ -2530,14 +2482,6 @@ main section[id] {
 .analyzer-results-card .results-tab-btn[aria-selected="true"] {
   color: var(--color-ink);
   box-shadow: inset 0 -2px 0 var(--color-forest);
-}
-
-.results-header-row {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 12px;
-  margin-bottom: 16px;
 }
 
 .results-actions-row {
@@ -4642,19 +4586,7 @@ main section[id] {
   background: var(--color-forest-deep);
 }
 
-
-.neu-btn-icon {
-  width: 44px;
-  height: 44px;
-  padding: 0;
-  border-radius: 50%;
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-}
-
-/* --- Neumorphic Inset Form Controls --- */
-.neu-input, .neu-textarea {
+.neu-textarea {
   background: var(--field-bg);
   border-radius: var(--radius-md);
   border: 1px solid var(--field-border);
@@ -4666,11 +4598,11 @@ main section[id] {
   box-sizing: border-box;
 }
 
-.neu-input::placeholder, .neu-textarea::placeholder {
+.neu-textarea::placeholder {
   color: var(--text-dim);
 }
 
-.neu-input:focus, .neu-textarea:focus {
+.neu-textarea:focus {
   outline: var(--focus-width) solid var(--color-focus);
   outline-offset: 2px;
   border-color: var(--color-forest);
@@ -4833,32 +4765,6 @@ main section[id] {
   opacity: 1;
 }
 
-/* Multi-Tier Floating Spatial UIs in Depth */
-.spatial-layer-1 {
-  transform: translateZ(16px);
-  transition: transform 0.25s ease-out;
-}
-
-.spatial-layer-2 {
-  transform: translateZ(32px);
-  transition: transform 0.25s ease-out;
-}
-
-.spatial-layer-3 {
-  transform: translateZ(48px);
-  transition: transform 0.25s ease-out;
-}
-
-.spatial-floating-card {
-  box-shadow: var(--shadow-spatial-float);
-  animation: spatialFloat 7s ease-in-out infinite;
-  transition: transform 0.25s var(--ease-spring), box-shadow 0.25s ease;
-}
-
-.spatial-floating-card:hover {
-  box-shadow: 0 35px 70px -12px rgba(var(--shade-rgb), 0.44), 0 0 2px 1px rgba(255, 255, 255, 0.2);
-}
-
 @keyframes spatialFloat {
   0%, 100% {
     transform: translateY(0px) rotate(0deg);
@@ -4873,11 +4779,9 @@ main section[id] {
 
 /* Theme Toggle Button in Navigation */
 
-
 /* ==============================================================================
    9. ANNOTATION TOKENS, EXECUTIVE REVIEW, IN-DOC TAILORING & VOICE ASSISTANT
    ============================================================================== */
-
 
 /* --- Executive Persona Selection Grid --- */
 .persona-chips-grid {
@@ -5021,18 +4925,6 @@ main section[id] {
   border: 1px solid var(--color-forest);
 }
 
-.verdict-gaps {
-  background: rgba(var(--ochre-rgb), 0.16);
-  color: var(--color-ochre);
-  border: 1px solid var(--color-ochre);
-}
-
-.verdict-insufficient {
-  background: rgba(var(--terracotta-rgb), 0.16);
-  color: var(--color-terracotta-ink);
-  border: 1px solid var(--color-terracotta);
-}
-
 .exec-reaction-text {
   margin: 12px 0 0;
   font-size: 0.92rem;
@@ -5087,53 +4979,6 @@ main section[id] {
   gap: 4px;
 }
 
-.obs-header-line {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-}
-
-.obs-category {
-  font-size: 0.72rem;
-  font-weight: 700;
-  color: var(--color-lagoon-ink);
-}
-
-.obs-status-tag {
-  font-size: 0.68rem;
-  padding: 2px 6px;
-  border-radius: 4px;
-  font-weight: 600;
-}
-
-.obs-status-tag.demonstrated {
-  background: var(--mark-green-bg);
-  color: var(--mark-green-text);
-}
-
-.obs-status-tag.partially_demonstrated {
-  background: var(--mark-yellow-bg);
-  color: var(--mark-yellow-text);
-}
-
-.obs-status-tag.not_detected {
-  background: var(--mark-red-bg);
-  color: var(--mark-red-text);
-}
-
-.obs-statement {
-  font-size: 0.84rem;
-  color: var(--text-primary);
-  margin: 0;
-  line-height: 1.4;
-}
-
-.obs-why {
-  font-size: 0.76rem;
-  color: var(--text-muted);
-  margin: 0;
-}
-
 .exec-questions-ul {
   list-style: none;
   padding: 0;
@@ -5168,43 +5013,6 @@ main section[id] {
   display: flex;
   flex-direction: column;
   gap: 8px;
-}
-
-.priority-item {
-  display: flex;
-  align-items: flex-start;
-  gap: 10px;
-  padding: 10px 12px;
-  border-radius: var(--radius-sm);
-  background: rgba(var(--shade-rgb), 0.08);
-  border: 1px solid rgba(var(--tint-rgb), 0.06);
-}
-
-.priority-rank {
-  width: 22px;
-  height: 22px;
-  border-radius: 50%;
-  background: var(--accent-cyan);
-  color: var(--color-on-accent);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  font-size: 0.74rem;
-  font-weight: 800;
-  flex-shrink: 0;
-}
-
-.priority-content h6 {
-  margin: 0 0 2px;
-  font-size: 0.82rem;
-  color: var(--color-ink);
-  font-weight: 600;
-}
-
-.priority-content p {
-  margin: 0;
-  font-size: 0.75rem;
-  color: var(--text-muted);
 }
 
 /* --- In-Document Tailoring Pane --- */
@@ -5932,8 +5740,7 @@ main section[id] {
 /* Reduced motion preference */
 @media (prefers-reduced-motion: reduce) {
   .voice-orb-btn.listening .voice-orb-pulse,
-  .voice-pulse-surface.listening .pulse-bar,
-  .marquee-track {
+  .voice-pulse-surface.listening .pulse-bar {
     animation: none !important;
   }
 }
@@ -5972,7 +5779,6 @@ main section[id] {
   max-width: 280px;
 }
 
-
 .fw-active-badge.is-active {
   color: var(--color-forest-ink);
 }
@@ -5986,7 +5792,6 @@ main section[id] {
   color: var(--color-lagoon-ink);
   border: 1px solid rgba(var(--tint-rgb), 0.2);
 }
-
 
 /* ==============================================================================
    CAREER ATLAS STAGE — toolbar, tooltip, evidence card, 2D fallback
@@ -6490,7 +6295,6 @@ main section[id] {
   touch-action: none;
 }
 
-
 .neu-light-puck {
   position: absolute;
   top: 50%;
@@ -6675,14 +6479,10 @@ main section[id] {
   display: none;
 }
 
-
-/* Panels share one border and one soft shadow. */
 .story-panel,
 .exec-header-card,
 .exec-section-card,
-.tailoring-toolbar,
-.genome-detail-card,
-.prompt-composer {
+.tailoring-toolbar {
   border: 1px solid var(--color-border);
   box-shadow: var(--shadow-card);
 }
