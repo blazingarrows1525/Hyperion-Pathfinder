@@ -1073,6 +1073,7 @@ class CareerAtlas {
     this.reducedMotion = appState.motionMode === 'reduced';
     this.pauseReasons = new Set();
     this.frame = null;
+    this.lastRenderAt = 0;
     this.disposed = false;
     this.listeners = [];
     this.dragging = false;
@@ -1575,6 +1576,17 @@ class CareerAtlas {
   tick() {
     this.frame = null;
     if (this.disposed || this.pauseReasons.size) return;
+
+    // Keep the scene cinematic without forcing a 60 Hz GPU render on every display.
+    // Low-detail/mobile devices use a lower cap; reduced-motion remains one-shot.
+    const now = performance.now();
+    const frameInterval = this.lowDetail ? (1000 / 24) : (1000 / 30);
+    if (!this.reducedMotion && this.lastRenderAt && now - this.lastRenderAt < frameInterval) {
+      this.frame = requestAnimationFrame(() => this.tick());
+      return;
+    }
+    this.lastRenderAt = now;
+
     const dt = this.clock ? Math.min(0.05, this.clock.getDelta()) : 0.016;
     this.elapsed += dt;
     const k = this.reducedMotion ? 1 : 0.16;
