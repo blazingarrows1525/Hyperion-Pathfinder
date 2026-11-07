@@ -60,7 +60,7 @@ check('no invented skills are sent', first.matched_skills.length === 0 && first.
 const body = lastAssistant().querySelector('.coach-msg-body');
 check('the answer renders its Markdown', body && body.querySelector('strong') && !body.textContent.includes('**'), body && body.innerHTML.slice(0, 120));
 check('the answer goes through the sanitizer', !body.querySelector('img') && !window.__xss);
-check('evidence references come from the response', /rubric_score/.test(lastAssistant().textContent));
+check('evidence references come from the response', /Based on: rubric score/.test(lastAssistant().textContent), lastAssistant().textContent.slice(-80));
 
 // --- Coach service down -------------------------------------------------------
 for (const failure of ['down', 'error']) {

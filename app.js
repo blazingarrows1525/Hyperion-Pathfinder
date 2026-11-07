@@ -5621,8 +5621,8 @@ function appendCoachMessage(sender, text, evidenceIds = [], spokenText = '') {
 
     if (evidenceIds && evidenceIds.length > 0) {
       const tag = document.createElement('span');
-      tag.className = 'meta-tag';
-      tag.textContent = `Evidence: ${evidenceIds.join(', ')}`;
+      tag.className = 'coach-msg-basis';
+      tag.textContent = `Based on: ${evidenceIds.map(id => String(id).replace(/_/g, ' ')).join(', ')}`;
       actionsBar.appendChild(tag);
     }
 

@@ -5588,6 +5588,60 @@ main section[id] {
   color: var(--color-ink);
 }
 
+.coach-msg-actions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px 10px;
+  margin-top: 10px;
+  padding-top: 8px;
+  border-top: 1px solid var(--color-border);
+}
+
+.btn-coach-action {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  min-height: 32px;
+  padding: 4px 12px;
+  border: 1px solid var(--color-border-control);
+  border-radius: var(--radius-full);
+  background: var(--color-surface);
+  color: var(--color-forest-ink);
+  font-family: inherit;
+  font-size: 0.78rem;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.btn-coach-action:hover {
+  border-color: var(--color-forest);
+}
+
+.coach-msg-basis {
+  font-size: 0.74rem;
+  color: var(--color-muted);
+}
+
+/* Phones: the answer gets the width the nested panels were taking. */
+@media (max-width: 640px) {
+  .coach-container {
+    padding: 14px;
+  }
+
+  .coach-transcript-well {
+    padding: 8px;
+  }
+
+  .coach-msg {
+    max-width: 100%;
+  }
+
+  .coach-msg-assistant .msg-avatar {
+    display: none;
+  }
+}
+
 .coach-input-bar {
   display: flex;
   align-items: flex-end;
@@ -6117,15 +6171,9 @@ main section[id] {
 }
 
 .atlas-evidence-card {
-  position: absolute;
-  top: 70px;
-  right: 14px;
-  width: min(280px, calc(100% - 28px));
   padding: 14px 16px;
-  border: 1px solid var(--color-border-strong);
-  border-radius: var(--radius-md);
+  border-top: 1px solid var(--color-border);
   background: var(--color-surface-raised);
-  box-shadow: var(--shadow-card);
 }
 
 .evidence-card-kicker {

@@ -198,6 +198,12 @@ modeBtn('evidence').click();
 await sleep(80);
 check('Evidence shows the card', visible($('atlas-evidence-card')));
 check('the card is a live region', $('atlas-evidence-card').getAttribute('aria-live') === 'polite');
+{
+  // The card used to sit on top of the stage, over the archetype it describes (all of it on phones).
+  const card = $('atlas-evidence-card').getBoundingClientRect();
+  const stage = $('spatial-canvas-wrapper').getBoundingClientRect();
+  check('the card does not cover the 3D stage', card.top >= stage.bottom - 1 || card.bottom <= stage.top + 1, `card ${Math.round(card.top)}..${Math.round(card.bottom)}, stage ${Math.round(stage.top)}..${Math.round(stage.bottom)}`);
+}
 const c1 = getArchetypeCorpusCount(archetypesDatabase.find((a) => a.id === 1));
 check('the card gives the real count', $('atlas-evidence-card').textContent.includes(`${c1.count} resumes`), $('atlas-evidence-card').textContent.slice(0, 80));
 check('curated skills are labelled curated', /curated/i.test($('atlas-evidence-card').textContent));
