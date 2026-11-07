@@ -228,6 +228,10 @@ if (realWrite) navigator.clipboard.writeText = realWrite;
 // --- Next steps use the server's field names (models.ActionablePriority) -------------
 renderExecutiveReview({
   ...appState.reportData.persona_review,
+  skepticism_points: [{
+    statement: 'No deployment target named', evidence_status: 'not_detected', why_it_matters: 'Ops roles need it',
+    missing_evidence: 'A named deployment target', suggested_action: 'Name the cluster and the pipeline',
+  }],
   strategic_priorities: [
     { priority_rank: 2, action: 'Second step', expected_impact: 'Impact two' },
     { priority_rank: 1, action: 'First step', expected_impact: 'Impact one', prerequisites: 'Find the dataset', acceptance_condition: 'The bullet names the dataset' },
@@ -236,6 +240,8 @@ renderExecutiveReview({
 const steps = [...document.querySelectorAll('#exec-priorities-list li')];
 check('next steps are an ordered list in rank order', steps.length === 2 && steps[0].closest('ol') && /First step/.test(steps[0].textContent), steps.map((s) => s.textContent.trim().slice(0, 20)).join(' | '));
 check('the server\'s expected_impact is shown', /Impact one/.test(steps[0]?.textContent) && /Impact two/.test(steps[1]?.textContent));
+const doubt = $('exec-skepticism-list').textContent.replace(/\s+/g, ' ');
+check('a doubt shows what evidence is missing and what to add', /Missing evidence: A named deployment target/.test(doubt) && /What to add: Name the cluster and the pipeline/.test(doubt), doubt.trim().slice(0, 160));
 check('prerequisites and the acceptance condition are shown with labels', /Before you start\s+Find the dataset/.test(steps[0]?.textContent) && /Done when\s+The bullet names the dataset/.test(steps[0]?.textContent), steps[0]?.textContent.replace(/\s+/g, ' ').trim());
 
 window.fetch = realFetch;

@@ -4409,34 +4409,28 @@ function renderExecutiveReview(review) {
     reactionElem.textContent = review.reaction_summary || 'Review generated based on submitted evidence.';
   }
 
-  // Attention list
+  // Observations: models.EvidenceObservation also carries missing_evidence and
+  // suggested_action, which say what is absent and what to add.
+  const observation = (obs, tone, whyLabel) => `
+        <div class="exec-obs-item ${tone}">
+          <div class="obs-bullet-title">${escapeHTML(obs.statement)}</div>
+          ${obs.why_it_matters ? `<div class="obs-why-it-matters"><strong>${whyLabel}</strong> ${escapeHTML(obs.why_it_matters)}</div>` : ''}
+          ${obs.missing_evidence ? `<div class="obs-why-it-matters"><strong>Missing evidence:</strong> ${escapeHTML(obs.missing_evidence)}</div>` : ''}
+          ${obs.suggested_action ? `<div class="obs-why-it-matters"><strong>What to add:</strong> ${escapeHTML(obs.suggested_action)}</div>` : ''}
+        </div>`;
+
   if (attentionList) {
     const items = review.what_catches_attention || [];
-    if (items.length === 0) {
-      attentionList.innerHTML = '<p class="empty-hint">Nothing stood out in this review.</p>';
-    } else {
-      attentionList.innerHTML = items.map(obs => `
-        <div class="exec-obs-item obs-positive">
-          <div class="obs-bullet-title">${escapeHTML(obs.statement)}</div>
-          <div class="obs-why-it-matters"><strong>Why it matters:</strong> ${escapeHTML(obs.why_it_matters || '')}</div>
-        </div>
-      `).join('');
-    }
+    attentionList.innerHTML = items.length === 0
+      ? '<p class="empty-hint">Nothing stood out in this review.</p>'
+      : items.map(obs => observation(obs, 'obs-positive', 'Why it matters:')).join('');
   }
 
-  // Skepticism list
   if (skepticismList) {
     const items = review.skepticism_points || [];
-    if (items.length === 0) {
-      skepticismList.innerHTML = '<p class="empty-hint">This review raised no questions.</p>';
-    } else {
-      skepticismList.innerHTML = items.map(obs => `
-        <div class="exec-obs-item obs-skeptical">
-          <div class="obs-bullet-title">${escapeHTML(obs.statement)}</div>
-          <div class="obs-why-it-matters"><strong>Why it would be questioned:</strong> ${escapeHTML(obs.why_it_matters || '')}</div>
-        </div>
-      `).join('');
-    }
+    skepticismList.innerHTML = items.length === 0
+      ? '<p class="empty-hint">This review raised no questions.</p>'
+      : items.map(obs => observation(obs, 'obs-skeptical', 'Why it would be questioned:')).join('');
   }
 
   // Architecture questions list
