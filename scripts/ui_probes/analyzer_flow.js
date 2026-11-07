@@ -42,7 +42,7 @@ const JD = 'Backend Software Engineer. Required: Python, FastAPI, Docker, Kubern
   + 'Preferred: AWS, CI/CD.';
 const METERS = ['skills', 'projects', 'domain', 'metrics', 'structure'];
 const readMeters = () => Object.fromEntries(METERS.map((k) => {
-  const m = (document.getElementById(`meter-val-${k}`)?.textContent || '').match(/(\d+)\s*\/\s*(\d+)/);
+  const m = (document.getElementById(`meter-val-${k}`)?.textContent || '').match(/([\d.]+)\s*\/\s*(\d+)/);
   return [k, m ? [+m[1], +m[2]] : null];
 }));
 
@@ -75,7 +75,7 @@ const out = {
   breakdownSum: Math.round(breakdown.reduce((s, b) => s + b.points_earned, 0)),
   metersBefore,
   meters,
-  meterSum: Object.values(meters).reduce((s, v) => s + (v ? v[0] : 0), 0),
+  meterSum: +Object.values(meters).reduce((s, v) => s + (v ? v[0] : 0), 0).toFixed(1),
   miniScore: document.getElementById('mini-score-val')?.textContent.trim(),
   provenance: document.getElementById('provenance-tag')?.textContent.trim(),
   analyzeUrlHasJdQuery: analyzeEntry ? /[?&]job_description=/.test(analyzeEntry.name) : null,
