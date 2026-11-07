@@ -6824,3 +6824,29 @@ button:disabled, [aria-disabled="true"] {
   }
   .workspace-panel { border-radius: 13px; }
 }
+
+
+/* Editorial reveal primitives (content remains visible when motion is reduced). */
+.hp-reveal {
+  opacity: 0;
+  transform: translate3d(0,16px,0);
+  transition:
+    opacity .62s var(--hp-ease-out) var(--hp-reveal-delay,0ms),
+    transform .62s var(--hp-ease-out) var(--hp-reveal-delay,0ms);
+  will-change: opacity, transform;
+}
+.hp-reveal.hp-reveal-visible {
+  opacity: 1;
+  transform: translate3d(0,0,0);
+  will-change: auto;
+}
+[data-motion="reduced"] .hp-reveal,
+[data-motion="reduced"] .hp-reveal.hp-reveal-visible,
+@media (prefers-reduced-motion: reduce) {
+  .hp-reveal, .hp-reveal.hp-reveal-visible {
+    opacity: 1 !important;
+    transform: none !important;
+    transition: none !important;
+    will-change: auto !important;
+  }
+}
