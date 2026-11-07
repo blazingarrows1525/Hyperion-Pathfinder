@@ -2300,6 +2300,12 @@ async function checkBackendHealth() {
 // ==============================================================================
 // 9. RESUME ANALYZER WORKSPACE CONTROLLER
 // ==============================================================================
+const RESUME_MAX_BYTES = 10 * 1024 * 1024; // services/pdf_ingestion.py MAX_FILE_BYTES
+// /analyze takes the job description in its query string. Measured on uvicorn, 32,000
+// characters pass and 60,000 get a plain-text 400, so the form stops well short of that.
+const JD_MAX_CHARS = 20000;
+const JD_MAX_QUERY_LENGTH = 30000;
+
 function initResumeAnalyzer() {
   const dropzone = document.getElementById('resume-dropzone');
   const fileInput = document.getElementById('resume-file-input');
@@ -2342,30 +2348,26 @@ function initResumeAnalyzer() {
     }
   });
 
-  // Clear file
+  // Clear file. The input is removed from the pill's way, so focus returns to it.
   if (clearFileBtn) {
     clearFileBtn.addEventListener('click', (e) => {
       e.stopPropagation();
       resetFileSelection();
+      fileInput.focus();
     });
   }
 
-  // Character counter
+  // Counter, length check and state all follow the textarea's input event.
   if (jdTextarea && charCounter) {
-    jdTextarea.addEventListener('input', () => {
-      const len = jdTextarea.value.length;
-      charCounter.textContent = `${len.toLocaleString()} characters`;
-      appState.analyzer.jobDescription = jdTextarea.value;
-      hideFieldError('jd-error-msg');
-    });
+    jdTextarea.addEventListener('input', syncJobDescription);
   }
 
   // Clear JD action
   if (clearJdBtn && jdTextarea) {
     clearJdBtn.addEventListener('click', () => {
       jdTextarea.value = '';
-      charCounter.textContent = '0 characters';
-      appState.analyzer.jobDescription = '';
+      syncJobDescription();
+      jdTextarea.focus();
       showToast('Job description cleared.');
     });
   }
@@ -2382,9 +2384,7 @@ function initResumeAnalyzer() {
           }
         }
         jdTextarea.value = company.sampleJd;
-        appState.analyzer.jobDescription = company.sampleJd;
-        charCounter.textContent = `${company.sampleJd.length.toLocaleString()} characters`;
-        hideFieldError('jd-error-msg');
+        jdTextarea.dispatchEvent(new Event('input', { bubbles: true }));
         showToast(`Loaded the sample job description for ${company.name}.`);
       }
     });
@@ -2419,28 +2419,40 @@ function initResumeAnalyzer() {
   }
 }
 
+function formatFileSize(bytes) {
+  if (bytes < 1024 * 1024) return `${Math.max(1, Math.round(bytes / 1024))} KB`;
+  return `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
+}
+
+function resumeFileProblem(file) {
+  if (!file.name.toLowerCase().endsWith('.pdf') && file.type !== 'application/pdf') {
+    return 'This file is not a PDF. Choose a .pdf file.';
+  }
+  if (file.size === 0) return 'This PDF is empty (0 bytes). Choose another file.';
+  if (file.size > RESUME_MAX_BYTES) {
+    return `This PDF is ${formatFileSize(file.size)}, over the 10 MB limit. Choose a smaller file.`;
+  }
+  return '';
+}
+
 function validateAndSetFile(file) {
-  const errorElem = document.getElementById('file-error-msg');
+  const fileInput = document.getElementById('resume-file-input');
   const selectedPill = document.getElementById('selected-file-pill');
   const fileNameDisplay = document.getElementById('selected-filename');
 
   hideFieldError('file-error-msg');
+  // Choosing the same file again must fire change, whatever happens to this one.
+  if (fileInput) fileInput.value = '';
 
-  // Validate PDF extension/mime
-  if (!file.name.toLowerCase().endsWith('.pdf') && file.type !== 'application/pdf') {
-    showFieldError('file-error-msg', 'Please upload a valid PDF document (.pdf format only).');
-    return;
-  }
-
-  // Validate size (10 MB max)
-  const maxSize = 10 * 1024 * 1024;
-  if (file.size > maxSize) {
-    showFieldError('file-error-msg', 'File size exceeds 10 MB limit. Please upload a smaller PDF.');
+  const problem = resumeFileProblem(file);
+  if (problem) {
+    const kept = appState.analyzer.selectedFile;
+    showFieldError('file-error-msg', kept ? `${problem} ${kept.name} is still attached.` : problem);
     return;
   }
 
   appState.analyzer.selectedFile = file;
-  fileNameDisplay.textContent = `${file.name} (${(file.size / 1024).toFixed(0)} KB)`;
+  fileNameDisplay.textContent = `${file.name} (${formatFileSize(file.size)})`;
   selectedPill.style.display = 'inline-flex';
   showToast(`Resume attached: ${file.name}`);
 }
@@ -2454,12 +2466,44 @@ function resetFileSelection() {
   hideFieldError('file-error-msg');
 }
 
+function jobDescriptionProblem(jd) {
+  if (!jd) return 'Enter a job description or choose a sample.';
+  if (jd.length > JD_MAX_CHARS) {
+    return `This job description is over the ${JD_MAX_CHARS.toLocaleString()} character limit. Shorten it to continue.`;
+  }
+  if (new URLSearchParams({ job_description: jd }).toString().length > JD_MAX_QUERY_LENGTH) {
+    return 'This job description has too many symbols or non-English characters to send in one request. Shorten it to continue.';
+  }
+  return '';
+}
+
+function syncJobDescription() {
+  const jdTextarea = document.getElementById('jd-textarea');
+  const counter = document.getElementById('jd-char-count');
+  if (!jdTextarea) return;
+  const value = jdTextarea.value;
+  appState.analyzer.jobDescription = value;
+  // An empty field is only an error once someone tries to run.
+  const problem = value.trim() ? jobDescriptionProblem(value.trim()) : '';
+  if (counter) {
+    counter.textContent = `${value.length.toLocaleString()} of ${JD_MAX_CHARS.toLocaleString()} characters`;
+    counter.classList.toggle('is-over-limit', Boolean(problem));
+  }
+  if (problem) showFieldError('jd-error-msg', problem);
+  else hideFieldError('jd-error-msg');
+}
+
+const FIELD_ERROR_INPUTS = { 'file-error-msg': 'resume-file-input', 'jd-error-msg': 'jd-textarea' };
+
 function showFieldError(id, msg) {
   const elem = document.getElementById(id);
   if (elem) {
-    elem.textContent = msg;
+    // Unchanged text is left alone so a live region does not repeat itself on every keystroke.
+    if (elem.textContent !== msg) elem.textContent = msg;
     elem.classList.add('visible');
   }
+  const input = document.getElementById(FIELD_ERROR_INPUTS[id]);
+  if (input) input.setAttribute('aria-invalid', 'true');
 }
 
 function hideFieldError(id) {
@@ -2468,6 +2512,8 @@ function hideFieldError(id) {
     elem.classList.remove('visible');
     elem.textContent = '';
   }
+  const input = document.getElementById(FIELD_ERROR_INPUTS[id]);
+  if (input) input.removeAttribute('aria-invalid');
 }
 
 async function executeAnalysis() {
@@ -2480,21 +2526,19 @@ async function executeAnalysis() {
   const markdownArea = document.getElementById('markdown-stream-output');
   const alertCard = document.getElementById('analyzer-alert-card');
 
-  // 1. Validation
-  let hasError = false;
+  // 1. Validation: each problem appears beside its field, and focus goes to the first one.
   const jd = (jdTextarea ? jdTextarea.value : '').trim();
   const file = appState.analyzer.selectedFile;
+  const fileProblem = !file && !appState.analyzer.demoMode ? 'Add your resume PDF to begin.' : '';
+  const jdProblem = jobDescriptionProblem(jd);
 
-  if (!jd) {
-    showFieldError('jd-error-msg', 'Please enter or select a target Job Description.');
-    hasError = true;
+  if (fileProblem) showFieldError('file-error-msg', fileProblem);
+  if (jdProblem) showFieldError('jd-error-msg', jdProblem);
+  if (fileProblem || jdProblem) {
+    const firstInvalid = document.getElementById(fileProblem ? 'resume-file-input' : 'jd-textarea');
+    if (firstInvalid) firstInvalid.focus();
+    return;
   }
-  if (!file && !appState.analyzer.demoMode) {
-    showFieldError('file-error-msg', 'Please upload your resume PDF to begin.');
-    hasError = true;
-  }
-
-  if (hasError) return;
 
   // 2. State setup
   appState.analyzer.status = 'analyzing';
@@ -2992,13 +3036,11 @@ function populateSampleJdFromArchetype(id) {
       }
     }
     jdTextarea.value = arch.sampleJd;
-    appState.analyzer.jobDescription = arch.sampleJd;
-    const charCounter = document.getElementById('jd-char-count');
-    if (charCounter) charCounter.textContent = `${arch.sampleJd.length.toLocaleString()} characters`;
+    jdTextarea.dispatchEvent(new Event('input', { bubbles: true }));
     showToast(`Loaded ${arch.name} sample Job Description.`);
 
     const analyzerSection = document.getElementById('analyzer');
-    if (analyzerSection) analyzerSection.scrollIntoView({ behavior: 'smooth' });
+    if (analyzerSection) analyzerSection.scrollIntoView({ behavior: appState.motionMode === 'reduced' ? 'auto' : 'smooth' });
   }
 }
 

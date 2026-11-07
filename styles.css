@@ -2069,6 +2069,10 @@ main section[id] {
 }
 
 .req {
+  font-size: 0.74rem;
+  font-weight: 600;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
   color: var(--color-terracotta-ink);
 }
 
@@ -2087,7 +2091,7 @@ main section[id] {
 
 .privacy-note {
   display: flex;
-  align-items: center;
+  align-items: flex-start;
   gap: 8px;
   margin-bottom: 10px;
   font-size: 0.82rem;
@@ -2206,17 +2210,26 @@ main section[id] {
   background: rgba(var(--forest-rgb), 0.07);
 }
 
-.dropzone-container:focus-visible {
+.dropzone-container:focus-within {
   outline: var(--focus-width) solid var(--color-focus);
   outline-offset: 2px;
 }
 
+/* The real control: transparent and covering the well, so a click, a tap, Enter or
+   Space on it opens the file picker natively, and a drop lands on the same element. */
 .dropzone-input-hidden {
   position: absolute;
-  width: 1px;
-  height: 1px;
+  inset: 0;
+  width: 100%;
+  height: 100%;
   opacity: 0;
-  pointer-events: none;
+  cursor: pointer;
+}
+
+/* The remove button sits above the input. */
+.dropzone-container .selected-file-pill {
+  position: relative;
+  z-index: 1;
 }
 
 .dropzone-icon {

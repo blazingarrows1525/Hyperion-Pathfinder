@@ -495,20 +495,20 @@
               <ol class="input-steps">
                 <li class="input-step">
                   <div class="form-label-row">
-                    <label for="resume-file-input"><span class="step-no" aria-hidden="true">1</span>Resume PDF <span class="req" aria-hidden="true">*</span></label>
-                    <span class="form-hint">PDF only · up to 10 MB</span>
+                    <label for="resume-file-input"><span class="step-no" aria-hidden="true">1</span>Resume PDF <span class="req">required</span></label>
+                    <span class="form-hint" id="resume-file-hint">PDF only, up to 10 MB and 15 pages</span>
                   </div>
                   <p class="privacy-note">
                     <i data-lucide="shield-check" style="width:15px;height:15px;"></i>
-                    <span>Read in memory for this request only. The file is not stored.</span>
+                    <span>The app reads your PDF in memory and does not save the file. When an AI provider is configured, the extracted text is sent to it to write the feedback.</span>
                   </p>
-                  <div id="resume-dropzone" class="dropzone-container neu-dropzone" tabindex="0" role="button" aria-label="Upload resume PDF document">
-                    <input type="file" id="resume-file-input" class="dropzone-input-hidden" accept=".pdf" aria-label="Resume file input">
+                  <div id="resume-dropzone" class="dropzone-container neu-dropzone">
+                    <input type="file" id="resume-file-input" class="dropzone-input-hidden" accept=".pdf,application/pdf" aria-describedby="resume-file-hint file-error-msg" title="Choose a resume PDF">
                     <div class="dropzone-icon">
                       <i data-lucide="upload-cloud" style="width:26px;height:26px;"></i>
                     </div>
-                    <div class="dropzone-title">Click to browse or drag & drop</div>
-                    <div class="dropzone-meta">PDF format up to 10 MB limit • In-memory privacy</div>
+                    <div class="dropzone-title">Choose a resume PDF</div>
+                    <div class="dropzone-meta">or drop it here</div>
 
                     <div id="selected-file-pill" class="selected-file-pill" style="display:none;">
                       <i data-lucide="file-check" style="width:16px;height:16px;"></i>
@@ -523,7 +523,7 @@
 
                 <li class="input-step">
                   <div class="form-label-row">
-                    <label for="jd-textarea"><span class="step-no" aria-hidden="true">2</span>Job description <span class="req" aria-hidden="true">*</span></label>
+                    <label for="jd-textarea"><span class="step-no" aria-hidden="true">2</span>Job description <span class="req">required</span></label>
                     <button type="button" id="btn-quick-dictate-jd" class="btn-text-action btn-dictate" title="Dictate the job description with your microphone">
                       <i data-lucide="mic" style="width:14px;height:14px;"></i>
                       <span>Dictate</span>
@@ -536,10 +536,10 @@
                     <button type="button" class="btn-preset-chip neu-btn" data-preset="amazon">Amazon Cloud</button>
                     <button type="button" class="btn-preset-chip neu-btn" data-preset="goldman">Goldman Analyst</button>
                   </div>
-                  <textarea id="jd-textarea" class="jd-textarea neu-textarea" aria-required="true" aria-describedby="jd-char-count jd-error-msg" placeholder="Paste the target job description, requirements, or qualifications here..."></textarea>
+                  <textarea id="jd-textarea" class="jd-textarea neu-textarea" required aria-describedby="jd-char-count jd-error-msg" placeholder="Paste the target job description, requirements, or qualifications here..."></textarea>
 
                   <div class="char-counter-row">
-                    <span id="jd-char-count">0 characters</span>
+                    <span id="jd-char-count">0 of 20,000 characters</span>
                     <button type="button" id="btn-clear-jd" class="btn-text-action">Clear JD</button>
                   </div>
                   <div id="jd-error-msg" class="field-error-msg" role="alert"></div>

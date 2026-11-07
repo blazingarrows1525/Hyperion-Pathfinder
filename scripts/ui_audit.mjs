@@ -114,10 +114,82 @@ listeners.push((msg) => {
   }
 });
 
+// Real input for probes: synthetic el.click() cannot tell whether a pointer would hit a control
+// or whether a key reaches it. window.__real sends genuine mouse, touch and keyboard events over
+// DevTools; window.__cdp is the raw call, and DevTools events collect in window.__cdpEvents.
+const REAL_INPUT_BRIDGE = `(() => {
+  if (window.__real) return;
+  let seq = 0;
+  const waiting = new Map();
+  window.__cdpEvents = [];
+  window.__cdp = (method, params = {}) => new Promise((res, rej) => {
+    const id = ++seq;
+    waiting.set(id, { res, rej });
+    window.__cdpSend(JSON.stringify({ id, method, params }));
+  });
+  window.__cdpDone = (id, result, error) => {
+    const w = waiting.get(id);
+    waiting.delete(id);
+    if (error) w.rej(new Error(error)); else w.res(result);
+  };
+  const KEYS = {
+    Tab: 9, Enter: 13, Escape: 27, Space: 32, End: 35, Home: 36,
+    ArrowLeft: 37, ArrowUp: 38, ArrowRight: 39, ArrowDown: 40,
+  };
+  const mouse = (type, x, y, extra = {}) => window.__cdp('Input.dispatchMouseEvent', { type, x, y, button: 'left', buttons: type === 'mousePressed' ? 1 : 0, clickCount: 1, ...extra });
+  window.__real = {
+    key: async (name, modifiers = 0) => {
+      const code = name === 'Space' ? 'Space' : name;
+      const key = name === 'Space' ? ' ' : name;
+      const text = name === 'Enter' ? String.fromCharCode(13) : name === 'Space' ? ' ' : undefined;
+      const common = { key, code, windowsVirtualKeyCode: KEYS[name], nativeVirtualKeyCode: KEYS[name], modifiers };
+      await window.__cdp('Input.dispatchKeyEvent', { type: text ? 'keyDown' : 'rawKeyDown', text, ...common });
+      await window.__cdp('Input.dispatchKeyEvent', { type: 'keyUp', ...common });
+    },
+    tab: (backwards = false) => window.__real.key('Tab', backwards ? 8 : 0),
+    type: async (text) => { for (const ch of text) await window.__cdp('Input.dispatchKeyEvent', { type: 'char', text: ch }); },
+    click: async (x, y) => {
+      await window.__cdp('Input.dispatchMouseEvent', { type: 'mouseMoved', x, y });
+      await mouse('mousePressed', x, y);
+      await mouse('mouseReleased', x, y);
+    },
+    drag: async (x1, y1, x2, y2, steps = 6) => {
+      await window.__cdp('Input.dispatchMouseEvent', { type: 'mouseMoved', x: x1, y: y1 });
+      await mouse('mousePressed', x1, y1);
+      for (let i = 1; i <= steps; i++) {
+        await window.__cdp('Input.dispatchMouseEvent', { type: 'mouseMoved', x: x1 + ((x2 - x1) * i) / steps, y: y1 + ((y2 - y1) * i) / steps, button: 'left', buttons: 1 });
+      }
+      await mouse('mouseReleased', x2, y2);
+    },
+    tap: async (x, y) => {
+      await window.__cdp('Input.dispatchTouchEvent', { type: 'touchStart', touchPoints: [{ x, y }] });
+      await window.__cdp('Input.dispatchTouchEvent', { type: 'touchEnd', touchPoints: [] });
+    },
+    centerOf: (el) => { const r = el.getBoundingClientRect(); return [r.left + r.width / 2, r.top + r.height / 2]; },
+    clickEl: async (el) => { el.scrollIntoView({ block: 'center', behavior: 'auto' }); await new Promise((r) => setTimeout(r, 60)); const [x, y] = window.__real.centerOf(el); await window.__real.click(x, y); },
+    tapEl: async (el) => { el.scrollIntoView({ block: 'center', behavior: 'auto' }); await new Promise((r) => setTimeout(r, 60)); const [x, y] = window.__real.centerOf(el); await window.__real.tap(x, y); },
+  };
+})()`;
+
 await send('Page.enable');
 await send('Runtime.enable');
 await send('Network.enable');
 await send('Network.setCacheDisabled', { cacheDisabled: true });
+await send('Runtime.addBinding', { name: '__cdpSend' });
+const toPage = (expression) => send('Runtime.evaluate', { expression }).catch(() => {});
+listeners.push(async (msg) => {
+  if (msg.method === 'Runtime.bindingCalled' && msg.params.name === '__cdpSend') {
+    const { id, method, params } = JSON.parse(msg.params.payload);
+    try {
+      const result = await send(method, params);
+      await toPage(`window.__cdpDone(${id}, ${JSON.stringify(result)})`);
+    } catch (err) {
+      await toPage(`window.__cdpDone(${id}, null, ${JSON.stringify(err.message)})`);
+    }
+  } else if (msg.method === 'Page.fileChooserOpened') {
+    await toPage(`window.__cdpEvents && window.__cdpEvents.push(${JSON.stringify({ method: msg.method, params: msg.params })})`);
+  }
+});
 if (REDUCED) {
   await send('Emulation.setEmulatedMedia', { features: [{ name: 'prefers-reduced-motion', value: 'reduce' }] });
 }
@@ -138,6 +210,7 @@ async function load(width, height) {
   await sleep(2500);
   let evalResult = null;
   if (EVAL) {
+    await evaluate(REAL_INPUT_BRIDGE);
     evalResult = await evaluate(`(async () => { ${EVAL}\n })()`);
     await sleep(800);
   }
