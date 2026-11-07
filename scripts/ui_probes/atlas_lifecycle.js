@@ -169,7 +169,7 @@ for (const node of atlas.nodes) {
   const tip = $('canvas-3d-tooltip').getBoundingClientRect();
   const wrap = stage.getBoundingClientRect();
   check(`cluster ${node.id}: the tooltip stays in the stage`, tip.left >= wrap.left && tip.right <= wrap.right && tip.top >= wrap.top && tip.bottom <= wrap.bottom, `${Math.round(tip.left)},${Math.round(tip.top)} ${Math.round(tip.right)},${Math.round(tip.bottom)}`);
-  const bar = stage.querySelector('.atlas-toolbar').getBoundingClientRect();
+  const bar = document.querySelector('.atlas-toolbar').getBoundingClientRect();
   check(`cluster ${node.id}: the tooltip clears the toolbar`, tip.bottom <= bar.top || tip.top >= bar.bottom, `${tip.top}-${tip.bottom} vs ${bar.top}-${bar.bottom}`);
 }
 document.dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape', bubbles: true }));

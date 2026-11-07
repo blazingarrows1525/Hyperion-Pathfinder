@@ -1203,7 +1203,7 @@ class CareerAtlas {
 
     // Illustrative dots: they suggest each cluster's share of the corpus and are not records.
     this.dotGeo = new THREE.BufferGeometry();
-    this.dotMat = new THREE.PointsMaterial({ size: 6, map: this.softTexture, vertexColors: true, transparent: true, depthWrite: false, opacity: 0.85 });
+    this.dotMat = new THREE.PointsMaterial({ size: 9, map: this.softTexture, vertexColors: true, transparent: true, depthWrite: false });
     this.dots = new THREE.Points(this.dotGeo, this.dotMat);
     this.root.add(this.dots);
 
@@ -1388,8 +1388,8 @@ class CareerAtlas {
     this.nodes.forEach(n => {
       // Square root, so a solid's visible area rather than its width follows the count.
       n.radius = max && typeof n.count === 'number' ? 15 + 27 * Math.sqrt(n.count / max) : 28;
-      n.plinth.scale.set(n.radius * 0.72, 5, n.radius * 0.72);
-      n.plinth.position.y = 2.5;
+      n.plinth.scale.set(n.radius * 0.6, 3, n.radius * 0.6);
+      n.plinth.position.y = 1.5;
       n.halo.scale.setScalar(n.radius);
       n.halo.position.y = 0.7;
       n.shadow.scale.set(n.radius * 3.1, n.radius * 3.1, 1);
@@ -1417,7 +1417,7 @@ class CareerAtlas {
     });
     this.dotGeo.setAttribute('position', new THREE.Float32BufferAttribute(positions, 3));
     this.dotGeo.setAttribute('color', new THREE.Float32BufferAttribute(new Array(this.dotOwners.length * 3).fill(1), 3));
-    this.dotMat.size = this.lowDetail ? 5 : 6;
+    this.dotMat.size = this.lowDetail ? 8 : 9;
     this.paintDots();
   }
 
@@ -1446,7 +1446,7 @@ class CareerAtlas {
     this.shadowMat.color.set(p.isDark ? '#000000' : p.ink);
     this.shadowMat.opacity = p.isDark ? 0.5 : 0.24;
     this.brassMat.color.set(p.ochre);
-    this.plinthMat.color.set(p.isDark ? p.border : p.canvas);
+    this.plinthMat.color.set(p.border);
 
     this.nodes.forEach(n => {
       const c = p.archetypes[n.id];
@@ -1672,7 +1672,7 @@ class CareerAtlas {
 
       const r = n.radius * (n.lift + pulse);
       n.mesh.scale.setScalar(r);
-      n.mesh.position.y = 5 + r * n.halfHeight + bob;
+      n.mesh.position.y = 3 + r * n.halfHeight + bob;
       n.mat.opacity = n.opacity;
       n.haloMat.opacity = n.haloOpacity;
       n.mat.emissiveIntensity = this.easeTo(n.mat.emissiveIntensity, isSelected ? 0.16 : isHighlighted ? 0.09 : 0, 'node-selection');
@@ -1702,11 +1702,12 @@ class CareerAtlas {
     const aspect = this.size.w / this.size.h;
     const tanHalfFov = Math.tan((this.camera.fov / 2) * Math.PI / 180);
     // Keep the whole dial in frame whichever side of the stage is the tight one.
-    const fit = Math.max((ATLAS_DIAL_RADIUS + 40) / (tanHalfFov * aspect), 262 / tanHalfFov);
+    const fit = Math.max((ATLAS_DIAL_RADIUS + 40) / (tanHalfFov * aspect), 292 / tanHalfFov);
     const distance = fit * this.zoom;
     const elevation = 0.66 + this.rot.x + this.parallax.y;
     const azimuth = this.rot.y + this.parallax.x;
-    this.cameraTarget.set(this.focus.x, 22, this.focus.z);
+    // Aimed a little in front of the centre, so the near rim of the dial stays in frame.
+    this.cameraTarget.set(this.focus.x, 22, this.focus.z + 26);
     this.camera.position.set(
       this.cameraTarget.x + distance * Math.cos(elevation) * Math.sin(azimuth),
       this.cameraTarget.y + distance * Math.sin(elevation),
@@ -1873,16 +1874,12 @@ class CareerAtlas {
     }
     tip.style.setProperty('--arch', `var(--arch-${node.id}-color)`);
     tip.style.display = 'block';
-    // Inside the stage, and clear of the toolbar whichever edge it sits on.
+    // Inside the stage, whichever edge the pointer is near.
     const rect = this.wrapper.getBoundingClientRect();
-    const toolbar = this.wrapper.querySelector('.atlas-toolbar');
-    const toolbarAtTop = toolbar && toolbar.offsetTop < rect.height / 2;
-    const minY = toolbarAtTop ? toolbar.offsetTop + toolbar.offsetHeight + 8 : 8;
-    const bottomEdge = toolbar && !toolbarAtTop ? toolbar.offsetTop : rect.height;
     const maxX = Math.max(8, rect.width - tip.offsetWidth - 8);
-    const maxY = Math.max(minY, bottomEdge - tip.offsetHeight - 8);
+    const maxY = Math.max(8, rect.height - tip.offsetHeight - 8);
     tip.style.left = `${Math.min(maxX, Math.max(8, clientX - rect.left + 14))}px`;
-    tip.style.top = `${Math.min(maxY, Math.max(minY, clientY - rect.top - tip.offsetHeight - 12))}px`;
+    tip.style.top = `${Math.min(maxY, Math.max(8, clientY - rect.top - tip.offsetHeight - 12))}px`;
   }
 
   hideTooltip() {
@@ -1975,6 +1972,8 @@ function showAtlasFallback(note, { offerThreeD = false } = {}) {
   if (canvas) canvas.hidden = true;
   const wrapper = document.getElementById('spatial-canvas-wrapper');
   if (wrapper) wrapper.classList.add('is-fallback');
+  const stage = document.getElementById('hero-3d-stage');
+  if (stage) stage.classList.add('is-fallback');
   if (!box.dataset.bound) {
     box.dataset.bound = 'true';
     box.addEventListener('click', (e) => {
@@ -1995,6 +1994,8 @@ function hideAtlasFallback() {
   if (canvas) canvas.hidden = false;
   const wrapper = document.getElementById('spatial-canvas-wrapper');
   if (wrapper) wrapper.classList.remove('is-fallback');
+  const stage = document.getElementById('hero-3d-stage');
+  if (stage) stage.classList.remove('is-fallback');
 }
 
 function syncAtlasFallbackSelection() {

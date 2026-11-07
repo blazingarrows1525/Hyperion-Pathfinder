@@ -62,7 +62,7 @@
           </span>
           <span class="wordmark-text">
             <span class="brand-name">Hyperion Pathfinder</span>
-            <span class="brand-tag">Prismatic Career Intelligence</span>
+            <span class="brand-tag">Career intelligence</span>
           </span>
         </a>
 
@@ -154,21 +154,15 @@
            SECTION 1: HERO & PRODUCT STATEMENT
            ======================================================================= -->
       <section id="hero" class="atlas-hero" aria-labelledby="hero-title-id">
-        <div class="container">
+        <div class="container atlas-hero-grid">
           <div class="atlas-hero-copy">
-            <div class="chapter-tag"><span class="chapter-badge">CH. 01 / FIVE BENCHMARK ARCHETYPES</span><span>226 Indexed Alumni Vectors</span></div>
+            <p class="hero-kicker">Career intelligence for placement preparation</p>
             <h1 id="hero-title-id" class="hero-title">
               Check your resume against the role you want, and see <span class="gradient-text">where the evidence falls short.</span>
             </h1>
-            <div class="atlas-hero-lede">
-              <p class="hero-subtitle">
-                Upload a resume PDF and paste a job description. Resume Checker compares the two, explains the score component by component and marks the lines worth rewriting. For reference it draws on an indexed corpus of alumni resumes grouped into five career archetypes.
-              </p>
-              <p class="hero-disclaimer">
-                <i data-lucide="info" style="width:16px;height:16px;"></i>
-                <span>The score measures textual alignment with the job description. It is not a hiring probability.</span>
-              </p>
-            </div>
+            <p class="hero-subtitle">
+              Upload a resume PDF and paste a job description. Hyperion Pathfinder compares the two, explains the score component by component and marks the lines worth rewriting, with an alumni corpus of five career archetypes for reference.
+            </p>
             <div class="hero-cta-group">
               <a href="#analyzer" class="btn-primary btn-lg">
                 <i data-lucide="file-search" style="width:18px;height:18px;"></i>
@@ -179,10 +173,34 @@
                 <span>Explore placement data</span>
               </a>
             </div>
+            <p class="hero-disclaimer">
+              <i data-lucide="info" style="width:15px;height:15px;" aria-hidden="true"></i>
+              <span>The score measures textual alignment with the job description. It is not a hiring probability.</span>
+            </p>
           </div>
 
-          <!-- Career Atlas: one wide 3D stage with a DOM legend of the five real archetypes -->
+          <!-- Career Atlas: controls, the instrument, then an index of the five real archetypes -->
           <figure class="atlas-stage" id="hero-3d-stage" aria-labelledby="atlas-stage-caption">
+            <!-- View modes and camera controls -->
+            <div class="atlas-toolbar" role="toolbar" aria-label="Career Atlas view">
+              <div class="atlas-modes" role="group" aria-label="View mode">
+                <button type="button" class="btn-3d-mode active" data-mode="atlas" aria-pressed="true">Atlas</button>
+                <button type="button" class="btn-3d-mode" data-mode="orbit" aria-pressed="false">Orbit</button>
+                <button type="button" class="btn-3d-mode" data-mode="evidence" aria-pressed="false">Evidence map</button>
+              </div>
+              <div class="spatial-zoom-controls" role="group" aria-label="Camera">
+                <button type="button" id="btn-3d-zoom-in" class="btn-3d-icon-sm" title="Zoom in" aria-label="Zoom in">
+                  <i data-lucide="zoom-in" style="width:15px;height:15px;"></i>
+                </button>
+                <button type="button" id="btn-3d-zoom-out" class="btn-3d-icon-sm" title="Zoom out" aria-label="Zoom out">
+                  <i data-lucide="zoom-out" style="width:15px;height:15px;"></i>
+                </button>
+                <button type="button" id="btn-3d-reset-cam-stage" class="btn-3d-icon-sm" title="Reset camera" aria-label="Reset camera">
+                  <i data-lucide="rotate-ccw" style="width:15px;height:15px;"></i>
+                </button>
+              </div>
+            </div>
+
             <div class="spatial-canvas-wrapper" id="spatial-canvas-wrapper">
               <canvas id="spatial-hero-canvas" class="spatial-hero-canvas" role="img" aria-label="Career Atlas: the five archetype clusters of the alumni corpus, sized by record count. Use the legend to select a cluster."></canvas>
               <div id="atlas-fallback" class="atlas-fallback" hidden></div>
@@ -198,41 +216,20 @@
                 </div>
               </div>
 
-              <!-- View modes and camera controls -->
-              <div class="atlas-toolbar" role="toolbar" aria-label="Career Atlas view">
-                <div class="atlas-modes" role="group" aria-label="View mode">
-                  <button type="button" class="btn-3d-mode active" data-mode="atlas" aria-pressed="true">Atlas</button>
-                  <button type="button" class="btn-3d-mode" data-mode="orbit" aria-pressed="false">Orbit</button>
-                  <button type="button" class="btn-3d-mode" data-mode="evidence" aria-pressed="false">Evidence map</button>
-                </div>
-                <div class="spatial-zoom-controls" role="group" aria-label="Camera">
-                  <button type="button" id="btn-3d-zoom-in" class="btn-3d-icon-sm" title="Zoom in" aria-label="Zoom in">
-                    <i data-lucide="zoom-in" style="width:15px;height:15px;"></i>
-                  </button>
-                  <button type="button" id="btn-3d-zoom-out" class="btn-3d-icon-sm" title="Zoom out" aria-label="Zoom out">
-                    <i data-lucide="zoom-out" style="width:15px;height:15px;"></i>
-                  </button>
-                  <button type="button" id="btn-3d-reset-cam-stage" class="btn-3d-icon-sm" title="Reset camera" aria-label="Reset camera">
-                    <i data-lucide="rotate-ccw" style="width:15px;height:15px;"></i>
-                  </button>
-                </div>
-              </div>
-
               <p class="spatial-drag-hint" id="spatial-drag-hint" hidden>
                 <i data-lucide="move" style="width:13px;height:13px;"></i> Drag inside the map to rotate · tap a cluster to select it
               </p>
 
-              <div id="atlas-evidence-card" class="atlas-evidence-card" aria-live="polite" hidden></div>
-
-              <p class="atlas-caption" id="canvas-engine-badge">
-                <span id="canvas-engine-text">Illustrative layout. Sizes follow corpus share; dots are not individual records; spokes show membership, not similarity.</span>
-              </p>
-              <p id="atlas-status" class="sr-only" role="status" aria-live="polite"></p>
             </div>
 
+            <p id="atlas-status" class="sr-only" role="status" aria-live="polite"></p>
+            <div id="atlas-evidence-card" class="atlas-evidence-card" aria-live="polite" hidden></div>
+
             <figcaption class="atlas-legend" id="atlas-stage-caption">
-              <p class="atlas-legend-title">Career Atlas <span>Five archetypes in the alumni corpus</span></p>
-              <a class="atlas-legend-link" href="#genome">Open the selected archetype in Career Genome</a>
+              <div class="atlas-legend-head">
+                <p class="atlas-legend-title">Career Atlas <span>Five archetypes in the alumni corpus</span></p>
+                <a class="atlas-legend-link" href="#genome">Open the selected archetype in Career Genome</a>
+              </div>
               <ul class="atlas-legend-list" id="atlas-legend-list">
                 <li>
                   <button type="button" class="atlas-legend-item" data-archetype-id="0" aria-pressed="false">
@@ -270,9 +267,9 @@
                   </button>
                 </li>
               </ul>
-              <p class="atlas-provenance">
-                Alumni corpus: <strong data-evidence="source_count">226</strong> indexed records · five K-Means archetypes ·
-                <a href="#faq">Methodology</a>
+              <p class="atlas-caption" id="canvas-engine-badge">
+                <span id="canvas-engine-text">Illustrative layout. Sizes follow corpus share; dots are not individual records; spokes show membership, not similarity.</span>
+                <span class="atlas-provenance"><strong data-evidence="source_count">—</strong> indexed records, five K-Means clusters. <a href="#faq">Methodology</a></span>
               </p>
             </figcaption>
           </figure>
