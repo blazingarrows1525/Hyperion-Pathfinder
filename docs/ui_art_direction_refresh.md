@@ -348,3 +348,16 @@ The current changes are on `feat/ui-art-direction-refresh`, not merged into `mai
 A complete visual audit of every dynamic control, animation frame, browser, theme and device cannot be honestly certified from static GitHub source alone. The repo's own audit scripts make that next step possible once run in the project environment.
 
 **Recommendation:** review this branch, run the documented browser matrix, fix all verified regressions, then open/merge only after the analyzer, report, Career Atlas and Prompt Studio journeys pass end-to-end.
+
+
+## 11. Follow-up scheduler refinement
+
+After the initial 30/24 FPS render cap was introduced, the animation loop was refined to avoid waking JavaScript on every animation frame while waiting to draw:
+
+- `requestRender()` remains the immediate path for selection, camera, theme, resize and direct user interaction.
+- `scheduleContinuousRender()` uses one pending timeout at 30 FPS for normal detail or 24 FPS for low-detail/mobile, then schedules one RAF for the actual draw.
+- A direct render request cancels a pending continuous timer.
+- `pause()` and `dispose()` cancel both RAF and timer.
+- Reduced motion still exits the continuous scheduling path after a single render.
+
+This is source-verified in the current branch. It still requires runtime testing under active interaction, hidden-tab, offscreen, reduced-motion, resize, and WebGL context-loss scenarios. No power, CPU, GPU or frame-pacing improvement is claimed until measured.
