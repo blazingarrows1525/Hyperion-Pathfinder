@@ -18,7 +18,7 @@ const atRest = async (ms) => {
 // Time until the scheduler stops asking for frames.
 const settle = async () => {
   const t0 = performance.now();
-  while (a.schedulerState !== 'ready-idle' && performance.now() - t0 < 30000) await sleep(100);
+  while (a.schedulerState !== 'at-rest' && performance.now() - t0 < 30000) await sleep(100);
   return Math.round(performance.now() - t0);
 };
 document.documentElement.style.scrollBehavior = 'auto';

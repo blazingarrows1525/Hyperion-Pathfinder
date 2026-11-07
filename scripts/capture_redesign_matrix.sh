@@ -52,3 +52,13 @@ state prompt-race prompt-studio "window.confirm = () => true; selectFramework('R
 state webgl-fallback hero-3d-stage "cleanup3DScene(); showAtlasFallback('Interactive 3D is unavailable in this browser; the career map remains available in 2D.');"
 state report-grove analyzer "$DEMO_DONE" "--theme grove"
 state reduced-motion hero,analyzer "" "--reduced-motion"
+
+# States that exist only after the refresh (no before pair): the voice panel, a failed
+# request, an applied edit in the diff drawer, a coach answer and the evidence map mode.
+if [ "${AFTER_ONLY:-1}" = "1" ]; then
+  state voice-panel hero "document.getElementById('voice-orb-btn').click();"
+  state api-failure analyzer "$PDF const realFetch = window.fetch; window.fetch = (url, opts) => String(url).includes('/analyze') ? Promise.resolve(new Response('upstream failure', { status: 502 })) : realFetch(url, opts); document.getElementById('btn-analyze-submit').click(); await new Promise(r => setTimeout(r, 900));"
+  state diff-drawer-edited pane-interactive-tailoring "$DEMO_DONE document.getElementById('tab-btn-tailoring').click(); document.querySelector('.doc-markup-span.mark-yellow').click(); document.getElementById('popover-rewrite-input').value = 'Built the data loading and preprocessing pipeline in Python.'; document.getElementById('popover-apply-btn').click(); document.getElementById('btn-toggle-diff').click(); await new Promise(r => setTimeout(r, 300));"
+  state coach-answer pane-career-coach "$DEMO_DONE document.getElementById('tab-btn-coach').click(); document.getElementById('coach-query-input').value = 'What is my biggest evidence gap?'; document.getElementById('btn-send-coach-msg').click(); await new Promise(r => setTimeout(r, 2500));"
+  state evidence-map hero-3d-stage "document.querySelector('.btn-3d-mode[data-mode=evidence]').click(); await new Promise(r => setTimeout(r, 1500));"
+fi
