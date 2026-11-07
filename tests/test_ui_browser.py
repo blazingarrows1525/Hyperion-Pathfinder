@@ -34,6 +34,7 @@ PROBES = [
     ("target_sizes.js", "", "1440,768,430,375,320", []),
     ("keyboard_walk.js", "", "1440,375", []),
     ("text_and_modes.js", "", "1920,1440,768,375,320", []),
+    ("interaction_latency.js", "", "1440,375", []),
     ("contrast_scan.js", "?scan=demo", "1440,375", ["--theme", "terra"]),
     ("contrast_scan.js", "?scan=demo", "1440,375", ["--theme", "grove"]),
 ]

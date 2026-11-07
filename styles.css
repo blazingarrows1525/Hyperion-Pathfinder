@@ -1079,12 +1079,16 @@ main section[id] {
 
 .legend-count {
   grid-area: count;
+  min-width: 2ch;
   font-family: var(--font-mono);
   font-size: 0.78rem;
+  text-align: right;
   color: var(--color-ink-soft);
 }
 
+/* Two lines reserved, so the arriving corpus count does not move the page below. */
 .atlas-caption {
+  min-height: 3em;
   font-size: 0.74rem;
   line-height: 1.5;
   color: var(--color-muted);
