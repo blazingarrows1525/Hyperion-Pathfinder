@@ -4730,10 +4730,6 @@ main section[id] {
   opacity: 1;
 }
 
-.spatial-floating {
-  animation: spatialFloat 6s ease-in-out infinite;
-}
-
 /* Multi-Tier Floating Spatial UIs in Depth */
 .spatial-layer-1 {
   transform: translateZ(16px);
@@ -5689,15 +5685,17 @@ main section[id] {
 /* Voice Drawer */
 .voice-drawer {
   width: 360px;
-  max-width: calc(100vw - 36px);
+  max-width: calc(100vw - 24px);
+  max-height: calc(100vh - 110px);
+  overflow-y: auto;
   padding: 16px;
   border-radius: var(--radius-lg);
   display: flex;
   flex-direction: column;
   gap: 12px;
-  background: rgba(var(--surface-rgb), 0.96);
-  border: 1px solid rgba(var(--tint-rgb), 0.2);
-  box-shadow: 0 24px 60px rgba(var(--shade-rgb), 0.43);
+  background: var(--color-surface-raised);
+  border: 1px solid var(--color-border-strong);
+  box-shadow: var(--shadow-float);
 }
 
 .voice-drawer-header {
@@ -5852,7 +5850,6 @@ main section[id] {
 @media (prefers-reduced-motion: reduce) {
   .voice-orb-btn.listening .voice-orb-pulse,
   .voice-pulse-surface.listening .pulse-bar,
-  .spatial-floating,
   .marquee-track {
     animation: none !important;
   }

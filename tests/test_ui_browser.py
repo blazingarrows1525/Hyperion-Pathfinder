@@ -29,6 +29,7 @@ PROBES = [
     ("reveal_motion.js", "", "1440,375", ["--reduced-motion"]),
     ("atlas_lifecycle.js", "", "1440,375", []),
     ("prompt_studio.js", "", "1440,375", []),
+    ("voice.js", "", "1440,375", []),
     ("contrast_scan.js", "?scan=demo", "1440,375", ["--theme", "terra"]),
     ("contrast_scan.js", "?scan=demo", "1440,375", ["--theme", "grove"]),
 ]

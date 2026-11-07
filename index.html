@@ -56,7 +56,7 @@
     <!-- Masthead: wordmark, primary sections, truthful status, one preferences entry, one CTA -->
     <header class="masthead" role="banner">
       <div class="masthead-inner">
-        <a href="#hero" class="wordmark" aria-label="Resume Checker, back to top">
+        <a href="#hero" class="wordmark" aria-label="Hyperion Pathfinder, back to top">
           <span class="wordmark-mark" aria-hidden="true">
             <i data-lucide="compass" style="width:19px;height:19px;"></i>
           </span>
@@ -324,7 +324,7 @@
           <header class="section-head">
             <p class="section-kicker"><span class="section-index">01</span> Method</p>
             <h2 id="how-it-works-heading" class="section-title">How a resume is read</h2>
-            <p class="section-lede">Four steps, from the PDF you upload to the changes worth making. Nothing is stored after the request finishes.</p>
+            <p class="section-lede">Four steps, from the PDF you upload to the changes worth making. The app reads the file in memory and does not save it.</p>
           </header>
 
           <ol class="process-rail">
@@ -695,7 +695,7 @@
                   <div style="display:flex;align-items:center;gap:8px;">
                     <button type="button" id="btn-quick-play-tts" class="neu-btn" style="padding:7px 12px;font-size:0.78rem;gap:6px;" title="Listen to spoken diagnostic briefing">
                       <i data-lucide="volume-2" style="width:15px;height:15px;color:var(--accent-cyan);"></i>
-                      <span id="tts-quick-btn-label">Spoken Briefing</span>
+                      <span id="tts-quick-btn-label">Spoken briefing</span>
                     </button>
                   </div>
                 </div>
@@ -1397,7 +1397,7 @@
                   <span>How is this different from an ATS keyword scanner?</span>
                   <i data-lucide="plus" style="width:18px;height:18px;" aria-hidden="true"></i>
                 </summary>
-                <div class="faq-answer-panel">Keyword scanners count term overlap. Resume Checker also embeds the resume and the job description with <code>all-MiniLM-L6-v2</code>, retrieves similar resumes from the alumni corpus for reference, and scores the match with a fixed rubric. It is still a comparison of text: it cannot see how an interviewer will judge you.</div>
+                <div class="faq-answer-panel">Keyword scanners count term overlap. Hyperion Pathfinder also embeds the resume and the job description with <code>all-MiniLM-L6-v2</code>, retrieves similar resumes from the alumni corpus for reference, and scores the match with a fixed rubric. It is still a comparison of text: it cannot see how an interviewer will judge you.</div>
               </details>
               <details class="faq-item">
                 <summary class="faq-summary">
@@ -1411,7 +1411,7 @@
                   <span>Is my resume stored or shared?</span>
                   <i data-lucide="plus" style="width:18px;height:18px;" aria-hidden="true"></i>
                 </summary>
-                <div class="faq-answer-panel">The PDF is read into memory for the request, parsed and discarded; the server does not write resume files or extracted text to disk or a database. The job description is currently sent as a URL parameter, so it can appear in server access logs. Your browser stores only display preferences (theme, motion, 3D detail).</div>
+                <div class="faq-answer-panel">The PDF is read into memory for the request and parsed. The code writes neither the file nor its extracted text to disk or a database. When an AI provider is configured, the extracted text is sent to it to write the feedback, under that provider's own terms. The job description is sent as a URL parameter, so it can appear in server access logs. Your browser stores only display preferences; drafts stay in memory until you close the page.</div>
               </details>
               <details class="faq-item">
                 <summary class="faq-summary">
@@ -1438,7 +1438,7 @@
     <footer class="app-footer" role="contentinfo">
       <div class="container footer-inner">
         <div class="footer-brand">
-          <span class="brand-name">Resume Checker</span>
+          <span class="brand-name">Hyperion Pathfinder</span>
           <p>Placement intelligence for resume evidence. Scores describe textual alignment, not hiring outcomes.</p>
         </div>
         <nav class="footer-nav-links" aria-label="Footer navigation">
@@ -1494,10 +1494,10 @@
   <!-- ===========================================================================
        VOICE ASSISTANT: FLOATING ORB & ACCESSIBLE DICTATION / TTS DRAWER
        =========================================================================== -->
-  <aside id="voice-assistant-widget" class="voice-assistant-widget" aria-label="Hands-Free Voice Assistant">
+  <aside id="voice-assistant-widget" class="voice-assistant-widget" aria-label="Dictation and spoken briefing">
     
     <!-- Tactile Floating Orb Button -->
-    <button type="button" id="voice-orb-btn" class="voice-orb-btn" aria-label="Open Voice Assistant &amp; Dictation" aria-expanded="false" title="Click to open Hands-Free Voice Assistant">
+    <button type="button" id="voice-orb-btn" class="voice-orb-btn" aria-label="Open dictation and spoken briefing" aria-expanded="false" aria-controls="voice-assistant-drawer" title="Dictation and spoken briefing">
       <div class="voice-orb-pulse" id="voice-orb-pulse-ring" aria-hidden="true"></div>
       <div class="voice-orb-inner">
         <i data-lucide="mic" id="voice-orb-icon" style="width:22px;height:22px;"></i>
@@ -1506,15 +1506,15 @@
     </button>
 
     <!-- Collapsible Voice Assistant Drawer -->
-    <div id="voice-assistant-drawer" class="voice-drawer neu-card spatial-floating" style="display:none;" role="region" aria-labelledby="voice-drawer-title">
+    <div id="voice-assistant-drawer" class="voice-drawer neu-card" role="region" aria-labelledby="voice-drawer-title" hidden>
       <div class="voice-drawer-header">
         <div style="display:flex;align-items:center;gap:8px;">
           <div class="voice-status-dot idle" id="voice-status-dot"></div>
-          <h4 id="voice-drawer-title" style="font-family:var(--font-display);font-size:0.95rem;color:var(--text-primary);margin:0;">Voice Assistant</h4>
+          <h4 id="voice-drawer-title" style="font-family:var(--font-display);font-size:0.95rem;color:var(--text-primary);margin:0;">Dictation and briefing</h4>
         </div>
         <div style="display:flex;align-items:center;gap:6px;">
-          <span id="voice-status-badge" class="voice-status-pill">Idle</span>
-          <button type="button" id="voice-drawer-close-btn" class="btn-icon-circle" aria-label="Minimize voice assistant">
+          <span id="voice-status-badge" class="voice-status-pill">Ready</span>
+          <button type="button" id="voice-drawer-close-btn" class="btn-icon-circle" aria-label="Close dictation and briefing">
             <i data-lucide="chevron-down" style="width:14px;height:14px;"></i>
           </button>
         </div>
@@ -1528,48 +1528,48 @@
           <div class="pulse-bar bar-3"></div>
           <div class="pulse-bar bar-4"></div>
           <div class="pulse-bar bar-5"></div>
-          <span id="voice-live-status-desc" class="voice-live-label" aria-live="polite">Microphone ready. Click Record to speak.</span>
+          <span id="voice-live-status-desc" class="voice-live-label" aria-live="polite">Press Start listening to dictate, or type below.</span>
         </div>
 
         <!-- Destination Selector -->
         <div class="voice-setting-row">
-          <label for="voice-dest-select" style="font-size:0.75rem;color:var(--text-muted);font-weight:600;">Insert Destination:</label>
-          <select id="voice-dest-select" class="neu-select-compact" aria-label="Transcript Destination">
-            <option value="replace_jd" selected>Target Job Description (Replace)</option>
-            <option value="append_jd">Target Job Description (Append)</option>
-            <option value="coach_message">Ask Career Coach</option>
+          <label for="voice-dest-select" style="font-size:0.75rem;color:var(--text-muted);font-weight:600;">Insert into</label>
+          <select id="voice-dest-select" class="neu-select-compact" >
+            <option value="replace_jd" selected>Job description (replace)</option>
+            <option value="append_jd">Job description (add to the end)</option>
+            <option value="coach_message">Career Coach question</option>
           </select>
         </div>
 
         <!-- Locale Selector -->
         <div class="voice-setting-row">
-          <label for="voice-locale-select" style="font-size:0.75rem;color:var(--text-muted);font-weight:600;">Spoken Language / Locale:</label>
-          <select id="voice-locale-select" class="neu-select-compact" aria-label="Speech Recognition Locale">
-            <option value="en-IN" selected>English (India) — en-IN</option>
-            <option value="en-US">English (US) — en-US</option>
-            <option value="hi-IN">Hindi (India) — hi-IN</option>
+          <label for="voice-locale-select" style="font-size:0.75rem;color:var(--text-muted);font-weight:600;">Spoken language</label>
+          <select id="voice-locale-select" class="neu-select-compact" >
+            <option value="en-IN" selected>English (India)</option>
+            <option value="en-US">English (US)</option>
+            <option value="hi-IN">Hindi (India)</option>
           </select>
         </div>
 
         <!-- Live Transcript Preview Textarea -->
         <div class="voice-transcript-group">
           <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:4px;">
-            <label for="voice-transcript-preview" style="font-size:0.74rem;color:var(--text-muted);font-weight:600;">Transcript Preview (Editable):</label>
-            <span id="voice-source-indicator" class="sub-hint">Source: Browser STT</span>
+            <label for="voice-transcript-preview" style="font-size:0.74rem;color:var(--text-muted);font-weight:600;">Text to insert</label>
+            <span id="voice-source-indicator" class="sub-hint">Typed or dictated</span>
           </div>
-          <textarea id="voice-transcript-preview" class="neu-textarea voice-preview-area" placeholder="Spoken words will appear here live... You can edit before applying."></textarea>
+          <textarea id="voice-transcript-preview" class="neu-textarea voice-preview-area" placeholder="Dictated words appear here. You can also type, and edit before inserting."></textarea>
         </div>
 
         <!-- Primary Recognition Action Controls -->
         <div class="voice-actions-strip">
           <button type="button" id="voice-record-btn" class="neu-btn neu-btn-primary" style="flex:1;padding:9px 14px;font-size:0.82rem;gap:6px;">
             <i data-lucide="mic" id="voice-record-btn-icon" style="width:15px;height:15px;"></i>
-            <span id="voice-record-btn-text">Start Listening</span>
+            <span id="voice-record-btn-text">Start listening</span>
           </button>
-          <button type="button" id="voice-apply-btn" class="neu-btn" style="padding:9px 14px;font-size:0.82rem;" disabled title="Insert transcript into selected destination">
-            <i data-lucide="check" style="width:14px;height:14px;"></i> Apply
+          <button type="button" id="voice-apply-btn" class="neu-btn" style="padding:9px 14px;font-size:0.82rem;" disabled>
+            <i data-lucide="check" style="width:14px;height:14px;" aria-hidden="true"></i> Insert
           </button>
-          <button type="button" id="voice-discard-btn" class="neu-btn" style="padding:9px 12px;font-size:0.82rem;" title="Clear transcript preview">
+          <button type="button" id="voice-discard-btn" class="neu-btn" style="padding:9px 12px;font-size:0.82rem;" title="Clear the text" aria-label="Clear the text">
             <i data-lucide="trash-2" style="width:14px;height:14px;"></i>
           </button>
         </div>
@@ -1579,23 +1579,23 @@
           <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px;">
             <div style="display:flex;align-items:center;gap:6px;">
               <i data-lucide="volume-2" style="width:14px;height:14px;color:var(--accent-cyan);"></i>
-              <strong style="font-size:0.78rem;color:var(--text-primary);">Diagnostic Audio Briefing</strong>
+              <strong style="font-size:0.78rem;color:var(--text-primary);">Spoken briefing of the report</strong>
             </div>
             <div class="tts-speed-controls">
-              <button type="button" class="btn-tts-speed active" data-rate="1.0">1.0x</button>
-              <button type="button" class="btn-tts-speed" data-rate="0.85">0.85x</button>
+              <button type="button" class="btn-tts-speed active" data-rate="1.0" aria-pressed="true" aria-label="Normal speed">1.0x</button>
+              <button type="button" class="btn-tts-speed" data-rate="0.85" aria-pressed="false" aria-label="Slower speed">0.85x</button>
             </div>
           </div>
           
           <div class="tts-playback-row">
             <button type="button" id="voice-tts-play-btn" class="neu-btn btn-sm" style="flex:1;gap:6px;" title="Play spoken summary of current diagnostic report">
               <i data-lucide="play" id="tts-play-icon" style="width:13px;height:13px;"></i>
-              <span id="tts-play-label">Play Briefing</span>
+              <span id="tts-play-label">Play briefing</span>
             </button>
-            <button type="button" id="voice-tts-pause-btn" class="neu-btn btn-sm" disabled title="Pause playback">
+            <button type="button" id="voice-tts-pause-btn" class="neu-btn btn-sm" disabled title="Pause" aria-label="Pause the briefing">
               <i data-lucide="pause" style="width:13px;height:13px;"></i>
             </button>
-            <button type="button" id="voice-tts-stop-btn" class="neu-btn btn-sm" disabled title="Stop playback">
+            <button type="button" id="voice-tts-stop-btn" class="neu-btn btn-sm" disabled title="Stop" aria-label="Stop the briefing">
               <i data-lucide="square" style="width:13px;height:13px;"></i>
             </button>
           </div>
@@ -1604,7 +1604,7 @@
         <!-- Privacy & Transparency Disclosure -->
         <p class="voice-privacy-note">
           <i data-lucide="shield" style="width:11px;height:11px;vertical-align:middle;margin-right:2px;"></i>
-          <strong>Privacy:</strong> Speech recognition runs locally in your browser or through standard vendor speech services. Audio recordings and personal identifiers are never stored on our servers.
+          <strong>Privacy:</strong> Dictation uses your browser's speech recognition, which may send audio to the browser maker's service. This app receives only the text you insert.
         </p>
 
       </div>

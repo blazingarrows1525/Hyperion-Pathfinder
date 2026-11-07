@@ -5035,108 +5035,135 @@ ${text}
 }
 
 // --- 16.4 VOICE ASSISTANT CONTROLLER (STT & TTS) ---
+function voiceEls() {
+  const ids = {
+    orb: 'voice-orb-btn',
+    drawer: 'voice-assistant-drawer',
+    record: 'voice-record-btn',
+    recordText: 'voice-record-btn-text',
+    apply: 'voice-apply-btn',
+    preview: 'voice-transcript-preview',
+    desc: 'voice-live-status-desc',
+    dot: 'voice-status-dot',
+    pill: 'voice-status-badge',
+    surface: 'voice-pulse-surface',
+    dest: 'voice-dest-select',
+    source: 'voice-source-indicator'
+  };
+  return Object.fromEntries(Object.entries(ids).map(([key, id]) => [key, document.getElementById(id)]));
+}
+
+// One place opens and closes the panel, so the button, the panel and the microphone cannot
+// disagree: closing always stops listening.
+function setVoiceDrawerOpen(open, { returnFocus = false } = {}) {
+  const { orb, drawer, record } = voiceEls();
+  if (!drawer) return;
+  drawer.hidden = !open;
+  drawer.classList.toggle('open', open);
+  if (orb) {
+    orb.setAttribute('aria-expanded', String(open));
+    orb.setAttribute('aria-label', open ? 'Close dictation and spoken briefing' : 'Open dictation and spoken briefing');
+  }
+  if (!open) {
+    stopVoiceRecognition();
+    if (returnFocus && orb) orb.focus();
+    return;
+  }
+  if (window.lucide) window.lucide.createIcons();
+  if (record && !record.disabled) record.focus({ preventScroll: true });
+}
+
+function syncVoiceApplyButton() {
+  const { apply, preview } = voiceEls();
+  if (apply && preview) apply.disabled = !preview.value.trim();
+}
+
 function initVoiceAssistantController() {
-  const orbBtn = document.getElementById('voice-orb-btn');
-  const drawer = document.getElementById('voice-assistant-drawer');
+  const { orb, drawer, record, apply, preview, dest, desc, source } = voiceEls();
   const closeBtn = document.getElementById('voice-drawer-close-btn');
-  const recordBtn = document.getElementById('voice-record-btn');
-  const applyBtn = document.getElementById('voice-apply-btn');
   const discardBtn = document.getElementById('voice-discard-btn');
   const quickDictateBtn = document.getElementById('btn-quick-dictate-jd');
-  const destSelect = document.getElementById('voice-dest-select');
   const localeSelect = document.getElementById('voice-locale-select');
 
-  // Toggle drawer
-  if (orbBtn && drawer) {
-    orbBtn.addEventListener('click', () => {
-      drawer.classList.toggle('open');
-      const isOpen = drawer.classList.contains('open');
-      orbBtn.setAttribute('aria-expanded', isOpen);
-    });
+  if (orb && drawer) {
+    orb.addEventListener('click', () => setVoiceDrawerOpen(drawer.hidden));
   }
+  if (closeBtn) closeBtn.addEventListener('click', () => setVoiceDrawerOpen(false, { returnFocus: true }));
+  document.addEventListener('keydown', (e) => {
+    if (e.key === 'Escape' && drawer && !drawer.hidden && !document.querySelector('.modal-backdrop.open')) {
+      setVoiceDrawerOpen(false, { returnFocus: true });
+    }
+  });
 
-  if (closeBtn && drawer) {
-    closeBtn.addEventListener('click', () => {
-      drawer.classList.remove('open');
-      if (orbBtn) orbBtn.setAttribute('aria-expanded', 'false');
-      stopVoiceRecognition();
-    });
-  }
-
-  // Quick Dictate from JD box
-  if (quickDictateBtn && drawer) {
+  // Quick dictate from the job description field
+  if (quickDictateBtn) {
     quickDictateBtn.addEventListener('click', () => {
-      drawer.classList.add('open');
-      if (destSelect) destSelect.value = 'append_jd';
-      if (orbBtn) orbBtn.setAttribute('aria-expanded', 'true');
+      if (dest) dest.value = 'append_jd';
+      setVoiceDrawerOpen(true);
       startVoiceRecognition();
     });
   }
 
-  // Destination / Locale changes
-  if (destSelect) {
-    destSelect.addEventListener('change', (e) => {
-      appState.voice.destination = e.target.value;
-    });
-  }
+  if (dest) dest.addEventListener('change', (e) => { appState.voice.destination = e.target.value; });
   if (localeSelect) {
     localeSelect.addEventListener('change', (e) => {
       appState.voice.locale = e.target.value;
-      if (appState.voice.recognition) {
-        appState.voice.recognition.lang = e.target.value;
-      }
+      if (appState.voice.recognition) appState.voice.recognition.lang = e.target.value;
     });
   }
 
-  // Recording controls
-  if (recordBtn) {
-    recordBtn.addEventListener('click', () => {
-      if (appState.voice.status === 'listening') {
-        stopVoiceRecognition();
-      } else {
-        startVoiceRecognition();
-      }
+  if (record) {
+    record.addEventListener('click', () => {
+      if (appState.voice.status === 'listening') stopVoiceRecognition();
+      else startVoiceRecognition();
+    });
+  }
+  if (apply) apply.addEventListener('click', applyVoiceTranscript);
+  if (discardBtn) discardBtn.addEventListener('click', discardVoiceTranscript);
+
+  // Typing is always available, with or without a microphone.
+  if (preview) {
+    preview.addEventListener('input', () => {
+      if (source) source.textContent = 'Typed or edited';
+      syncVoiceApplyButton();
     });
   }
 
-  if (applyBtn) {
-    applyBtn.addEventListener('click', applyVoiceTranscript);
-  }
-
-  if (discardBtn) {
-    discardBtn.addEventListener('click', discardVoiceTranscript);
-  }
-
-  // Check Web Speech API Support
   const SpeechRec = window.SpeechRecognition || window.webkitSpeechRecognition;
+  appState.voice.sttSupport = SpeechRec ? 'supported' : 'unsupported';
   if (!SpeechRec) {
-    appState.voice.sttSupport = 'unsupported';
-    const statusDesc = document.getElementById('voice-live-status-desc');
-    if (statusDesc) {
-      statusDesc.textContent = 'Browser SpeechRecognition unavailable. You can type or use server transcription.';
-    }
-  } else {
-    appState.voice.sttSupport = 'supported';
+    if (record) record.disabled = true;
+    if (desc) desc.textContent = 'This browser has no speech recognition. Type your text below, then press Insert.';
+    if (source) source.textContent = 'Typing only';
   }
 }
+
+const VOICE_ERROR_MESSAGES = {
+  'not-allowed': 'Microphone access was refused. Allow it in your browser settings, or type below.',
+  'service-not-allowed': 'Speech recognition is blocked in this browser. Type below instead.',
+  'no-speech': 'No speech was heard. Check your microphone and try again, or type below.',
+  'audio-capture': 'No microphone was found. Connect one and try again, or type below.',
+  network: 'Speech recognition needs a network connection in this browser. Try again, or type below.',
+  'language-not-supported': 'This language is not available here. Choose another, or type below.'
+};
 
 function startVoiceRecognition() {
   const SpeechRec = window.SpeechRecognition || window.webkitSpeechRecognition;
   if (!SpeechRec) {
-    showToast('SpeechRecognition is not supported in this browser. Please use text input.');
+    updateVoiceUI('error', 'This browser has no speech recognition. Type your text below, then press Insert.');
     return;
   }
+  if (appState.voice.status === 'listening') return;
 
   try {
     if (!appState.voice.recognition) {
       const rec = new SpeechRec();
       rec.continuous = true;
       rec.interimResults = true;
-      rec.lang = appState.voice.locale || 'en-IN';
 
       rec.onstart = () => {
         appState.voice.status = 'listening';
-        updateVoiceUI('listening', 'Listening... Speak clearly into your microphone.');
+        updateVoiceUI('listening', 'Listening. Your browser may be sending this audio to its speech service.');
       };
 
       rec.onresult = (event) => {
@@ -5149,32 +5176,23 @@ function startVoiceRecognition() {
           }
         }
         appState.voice.interimTranscript = interim;
-
-        const preview = document.getElementById('voice-transcript-preview');
-        if (preview) {
-          preview.value = (appState.voice.finalTranscript + ' ' + interim).trim();
-        }
-
-        const applyBtn = document.getElementById('voice-apply-btn');
-        if (applyBtn) applyBtn.disabled = (appState.voice.finalTranscript.trim().length === 0 && interim.trim().length === 0);
+        const { preview, source } = voiceEls();
+        if (preview) preview.value = (appState.voice.finalTranscript + ' ' + interim).trim();
+        if (source) source.textContent = 'From browser speech recognition';
+        syncVoiceApplyButton();
       };
 
       rec.onerror = (event) => {
-        console.warn('SpeechRecognition error:', event.error);
+        console.warn('Speech recognition stopped:', event.error);
+        if (event.error === 'aborted') return;
         appState.voice.status = 'error';
-        let msg = `Microphone error: ${event.error}`;
-        if (event.error === 'not-allowed') {
-          msg = 'Microphone permission was denied. Please allow microphone access in browser settings.';
-        } else if (event.error === 'no-speech') {
-          msg = 'No speech detected. Please check your microphone.';
-        }
-        updateVoiceUI('error', msg);
+        updateVoiceUI('error', VOICE_ERROR_MESSAGES[event.error] || 'Speech recognition stopped. Try again, or type below.');
       };
 
       rec.onend = () => {
         if (appState.voice.status === 'listening') {
           appState.voice.status = 'transcript_ready';
-          updateVoiceUI('transcript_ready', 'Microphone paused. Review and apply your transcript.');
+          updateVoiceUI('transcript_ready', 'Stopped listening. Review the text, then press Insert.');
         }
       };
 
@@ -5183,91 +5201,88 @@ function startVoiceRecognition() {
 
     appState.voice.recognition.lang = appState.voice.locale || 'en-IN';
     appState.voice.recognition.start();
-
   } catch (err) {
-    console.error('Failed to start speech recognition:', err);
-    showToast('Unable to start microphone. Please check permissions.');
+    console.warn('Speech recognition could not start:', err.message);
+    updateVoiceUI('error', 'The microphone could not start. Check its permission, or type below.');
   }
 }
 
 function stopVoiceRecognition() {
   if (appState.voice.recognition && appState.voice.status === 'listening') {
-    appState.voice.recognition.stop();
     appState.voice.status = 'transcript_ready';
-    updateVoiceUI('transcript_ready', 'Listening stopped. Review transcript below.');
+    appState.voice.recognition.stop();
+    updateVoiceUI('transcript_ready', 'Stopped listening. Review the text, then press Insert.');
   }
 }
 
+// Visible state, on the panel and on the button that stays on screen when the panel is closed.
 function updateVoiceUI(status, label) {
-  const statusDesc = document.getElementById('voice-live-status-desc');
-  const btnText = document.getElementById('voice-record-btn-text');
-  const recordBtn = document.getElementById('voice-record-btn');
-  const pulseBars = document.querySelectorAll('.pulse-bar');
-  const orb = document.getElementById('voice-orb-btn');
+  const { orb, record, recordText, desc, dot, pill, surface } = voiceEls();
+  const listening = status === 'listening';
+  const pillText = { listening: 'Listening', transcript_ready: 'Stopped', error: 'Stopped', idle: 'Ready' };
 
-  if (statusDesc) statusDesc.textContent = label;
-
-  if (status === 'listening') {
-    if (btnText) btnText.textContent = 'Stop Listening';
-    if (recordBtn) recordBtn.classList.add('recording-active');
-    pulseBars.forEach(b => b.classList.add('live'));
-    if (orb) orb.classList.add('orb-listening');
-  } else {
-    if (btnText) btnText.textContent = 'Start Listening';
-    if (recordBtn) recordBtn.classList.remove('recording-active');
-    pulseBars.forEach(b => b.classList.remove('live'));
-    if (orb) orb.classList.remove('orb-listening');
-  }
+  if (desc) desc.textContent = label;
+  if (recordText) recordText.textContent = listening ? 'Stop listening' : 'Start listening';
+  if (record) record.classList.toggle('recording-active', listening);
+  if (surface) surface.classList.toggle('listening', listening);
+  if (orb) orb.classList.toggle('listening', listening);
+  if (dot) dot.className = `voice-status-dot ${listening ? 'listening' : 'idle'}`;
+  if (pill) pill.textContent = pillText[status] || 'Ready';
 }
 
 function applyVoiceTranscript() {
-  const preview = document.getElementById('voice-transcript-preview');
+  const { preview, dest } = voiceEls();
   const transcriptText = (preview ? preview.value : appState.voice.finalTranscript).trim();
   if (!transcriptText) {
-    showToast('No transcript text to insert.');
+    showToast('There is no text to insert.');
     return;
   }
 
-  const destSelect = document.getElementById('voice-dest-select');
-  const destination = destSelect ? destSelect.value : (appState.voice.destination || 'replace_jd');
+  const destination = dest ? dest.value : (appState.voice.destination || 'replace_jd');
+  let focusTarget = null;
 
-  if (destination === 'replace_jd') {
+  if (destination === 'replace_jd' || destination === 'append_jd') {
     const jdTextarea = document.getElementById('jd-textarea');
     if (jdTextarea) {
-      jdTextarea.value = transcriptText;
+      jdTextarea.value = destination === 'append_jd' && jdTextarea.value
+        ? `${jdTextarea.value}\n\n${transcriptText}`
+        : transcriptText;
       jdTextarea.dispatchEvent(new Event('input', { bubbles: true }));
-      showToast('Inserted transcript into Job Description (Replaced).');
-    }
-  } else if (destination === 'append_jd') {
-    const jdTextarea = document.getElementById('jd-textarea');
-    if (jdTextarea) {
-      jdTextarea.value = (jdTextarea.value ? jdTextarea.value + '\n\n' : '') + transcriptText;
-      jdTextarea.dispatchEvent(new Event('input', { bubbles: true }));
-      showToast('Appended transcript to Job Description.');
+      focusTarget = jdTextarea;
+      showToast(destination === 'append_jd' ? 'Text added to the job description.' : 'Text placed in the job description.');
     }
   } else if (destination === 'coach_message') {
     const coachInput = document.getElementById('coach-query-input');
     if (coachInput) {
       coachInput.value = transcriptText;
       switchResultsTab('pane-career-coach');
-      showToast('Inserted transcript into Career Coach.');
+      focusTarget = coachInput;
+      showToast('Text placed in the Career Coach question box. Press Ask to send it.');
     }
   }
 
-  // Close drawer after successful apply
-  const drawer = document.getElementById('voice-assistant-drawer');
-  if (drawer) drawer.classList.remove('open');
+  stopVoiceRecognition();
   discardVoiceTranscript();
+  setVoiceDrawerOpen(false);
+  if (focusTarget) {
+    focusTarget.focus({ preventScroll: true });
+    focusTarget.scrollIntoView({ block: 'center', behavior: appState.motionMode === 'reduced' ? 'auto' : 'smooth' });
+  }
 }
 
 function discardVoiceTranscript() {
   appState.voice.finalTranscript = '';
   appState.voice.interimTranscript = '';
-  const preview = document.getElementById('voice-transcript-preview');
+  const { preview, source } = voiceEls();
   if (preview) preview.value = '';
-  const applyBtn = document.getElementById('voice-apply-btn');
-  if (applyBtn) applyBtn.disabled = true;
-  updateVoiceUI('idle', 'Microphone ready. Click Start Listening to dictate.');
+  if (source) source.textContent = appState.voice.sttSupport === 'unsupported' ? 'Typing only' : 'Typed or dictated';
+  syncVoiceApplyButton();
+  if (appState.voice.status !== 'listening') {
+    appState.voice.status = 'idle';
+    updateVoiceUI('idle', appState.voice.sttSupport === 'unsupported'
+      ? 'This browser has no speech recognition. Type your text below, then press Insert.'
+      : 'Press Start listening to dictate, or type below.');
+  }
 }
 
 // --- 16.5 SPEECH SYNTHESIS (TTS) CONTROLLER ---
@@ -5288,20 +5303,32 @@ function initSpeechSynthesisController() {
   if (drawerPauseBtn) drawerPauseBtn.addEventListener('click', pauseSpokenBriefing);
   if (drawerStopBtn) drawerStopBtn.addEventListener('click', stopSpokenBriefing);
 
+  // Speech must not outlive the page, and a browser without it should not offer it.
+  window.addEventListener('pagehide', () => {
+    if (window.speechSynthesis) window.speechSynthesis.cancel();
+  });
+  if (!window.speechSynthesis) {
+    const panel = document.querySelector('.voice-tts-panel');
+    if (panel) panel.hidden = true;
+    if (quickTtsBtn) quickTtsBtn.hidden = true;
+  }
+
   speedBtns.forEach(btn => {
     btn.addEventListener('click', () => {
-      speedBtns.forEach(b => b.classList.remove('active'));
-      btn.classList.add('active');
+      speedBtns.forEach(b => {
+        b.classList.toggle('active', b === btn);
+        b.setAttribute('aria-pressed', String(b === btn));
+      });
       const rate = parseFloat(btn.getAttribute('data-rate')) || 1.0;
       appState.voice.ttsRate = rate;
-      showToast(`Spoken Briefing Speed: ${rate}x`);
+      showToast(`The briefing will play at ${rate}x.`);
     });
   });
 }
 
 function toggleSpokenBriefing() {
   if (!window.speechSynthesis) {
-    showToast('Browser SpeechSynthesis is not supported on this device.');
+    showToast('This browser cannot read text aloud.');
     return;
   }
 
@@ -5328,11 +5355,11 @@ function toggleSpokenBriefing() {
   const reaction = review?.reaction_summary ? `Top impression: ${review.reaction_summary}.` : '';
 
   const spokenBriefingText = `
-    Executive diagnostic briefing from your ${personaTitle}.
-    Your resume-to-job evidence alignment score is ${score} out of 100.
-    Please note: this is an evidence alignment score, not a guarantee of employment.
+    Spoken briefing, written from the point of view of a simulated ${personaTitle}.
+    Your resume's alignment score against this job description is ${score} out of 100.
+    This measures how well the text matches. It is not a hiring probability.
     ${reaction}
-    For concrete improvements, open the In-Document Tailoring tab to review actionable replacements.
+    For suggested changes, open the Resume Tailoring tab.
   `;
 
   speakText(spokenBriefingText);
@@ -5397,8 +5424,8 @@ function updateTTSPlayButtons(isPlaying, isPaused = false) {
   const pauseBtn = document.getElementById('voice-tts-pause-btn');
   const stopBtn = document.getElementById('voice-tts-stop-btn');
 
-  if (quickLabel) quickLabel.textContent = isPlaying ? 'Pause Briefing' : (isPaused ? 'Resume Briefing' : 'Spoken Briefing');
-  if (drawerLabel) drawerLabel.textContent = isPlaying ? 'Pause' : (isPaused ? 'Resume' : 'Play Briefing');
+  if (quickLabel) quickLabel.textContent = isPlaying ? 'Pause briefing' : (isPaused ? 'Resume briefing' : 'Spoken briefing');
+  if (drawerLabel) drawerLabel.textContent = isPlaying ? 'Pause' : (isPaused ? 'Resume' : 'Play briefing');
   if (pauseBtn) pauseBtn.disabled = !isPlaying && !isPaused;
   if (stopBtn) stopBtn.disabled = !isPlaying && !isPaused;
 }
@@ -5436,10 +5463,9 @@ function initCareerCoachController() {
 
   if (voiceBtn) {
     voiceBtn.addEventListener('click', () => {
-      const drawer = document.getElementById('voice-assistant-drawer');
       const destSelect = document.getElementById('voice-dest-select');
-      if (drawer) drawer.classList.add('open');
       if (destSelect) destSelect.value = 'coach_message';
+      setVoiceDrawerOpen(true);
       startVoiceRecognition();
     });
   }
