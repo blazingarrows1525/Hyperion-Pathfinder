@@ -23,6 +23,17 @@ const REPORT = (score) => ({
   ],
   document_snapshot: { document_id: 'd', revision_id: 'rev_0', text_hash: 'h', canonical_display_text: 'Built APIs in Python.' },
   resume_markups: [],
+  matched_skills: [
+    { canonical: 'Python', evidence_status: 'demonstrated' },
+    { canonical: 'Docker', evidence_status: 'used' },
+    { canonical: 'SQL', evidence_status: 'mentioned' },
+    { canonical: '<img src=x onerror="window.__xss=1">', evidence_status: 'used' },
+  ],
+  missing_required_skills: ['Kubernetes'],
+  missing_preferred_skills: ['Kafka'],
+  alumni_precedents_used: 5,
+  detected_archetype: 'General CS & Software Development',
+  is_archetype_uncertain: true,
 });
 const BODY = (score) => `## Report for run ${score}\n\nFeedback text ${score}.\n\n<!-- STRUCTURED_REPORT_START -->\n${JSON.stringify(REPORT(score))}\n<!-- STRUCTURED_REPORT_END -->`;
 const streamOf = (text) => new Response(new Blob([text]).stream(), { status: 200, headers: { 'Content-Type': 'text/plain; charset=utf-8' } });
@@ -109,6 +120,22 @@ check('the internal JSON is not shown', !reportText().includes('STRUCTURED'));
 check('the toast states the true score', /70 of 100/.test(toastText()), toastText());
 check('the button label is restored', $('btn-analyze-text').textContent === 'Analyze resume');
 
+// --- What the report shows besides the number ------------------------------------
+const evidenceText = $('skill-evidence-panel').textContent;
+check('the score has its scale beside it', $('mini-score-of').textContent === 'of 100');
+check('the ring is one named image', document.querySelector('.mini-score-ring').getAttribute('role') === 'img' && document.querySelector('.mini-score-ring').getAttribute('aria-labelledby').includes('mini-score-val'));
+check('skill evidence appears with the report', visible($('skill-evidence-panel')));
+check('demonstrated skills are told apart', /Demonstrated with results\s*1/.test(evidenceText) && evidenceText.includes('Python'), evidenceText.slice(0, 100));
+check('used skills are told apart', /Used in projects\s*2/.test(evidenceText) && evidenceText.includes('Docker'));
+check('mentioned skills are told apart', /Mentioned only\s*1/.test(evidenceText) && evidenceText.includes('SQL'));
+check('a missing required skill is named', /Required, not found in this document\s*1/.test(evidenceText) && evidenceText.includes('Kubernetes'));
+check('a missing preferred skill is named', /Preferred, not found in this document\s*1/.test(evidenceText) && evidenceText.includes('Kafka'));
+check('not found is not called lacking the skill', /may still be one you have/.test(evidenceText) && !/you lack|do not have|missing skill/i.test(evidenceText));
+check('skill names cannot inject markup', !$('skill-evidence-panel').querySelector('img') && !window.__xss);
+check('the comparison is stated', /Compared with 5 alumni resumes/.test($('skill-evidence-context').textContent), $('skill-evidence-context').textContent);
+check('an uncertain archetype says so', /General CS & Software Development \(uncertain\)/.test($('skill-evidence-context').textContent));
+check('missing skills read differently without colour', getComputedStyle(document.querySelector('.skill-evidence-group.is-missing .skill-chips li')).borderTopStyle === 'dashed');
+
 // --- Failures must not erase that report --------------------------------------
 await run(() => Promise.reject(new TypeError('Failed to fetch')));
 check('a failure keeps the earlier report', appState.analyzer.streamBuffer.includes('run 70') && /Report for run 70/.test(reportText()));
@@ -180,6 +207,9 @@ enableDemoAndRun();
 for (let i = 0; i < 60 && appState.analyzer.status !== 'complete'; i++) await sleep(250);
 check('the demo sends nothing to /analyze', analyzeCalls === callsBeforeDemo, analyzeCalls - callsBeforeDemo);
 check('the demo is labelled', /illustrative/i.test($('provenance-tag').textContent), $('provenance-tag').textContent);
+check('its skill evidence is labelled too', /Illustrative sample/.test($('skill-evidence-context').textContent), $('skill-evidence-context').textContent);
+check('its narrative matches its sample resume', reportText().includes('240ms to 125ms') && !/Microsoft|Amazon|placed engineers/i.test(reportText()), reportText().slice(0, 120));
+check('its score and rubric agree', $('mini-score-val').textContent === '86');
 check('one demo does not leave demo mode switched on', appState.analyzer.demoMode === false && !$('demo-mode-toggle').checked);
 
 let copied = null;

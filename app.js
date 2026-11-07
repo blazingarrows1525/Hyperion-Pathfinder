@@ -2813,18 +2813,17 @@ function runDemoAnalysis(run) {
 **1. Overall Score (out of 100):** 86/100
 
 **2. What's Good:**
-* **Strong Algorithmic & Systems Foundation:** Your demonstrated experience in backend API development (FastAPI/Python) and containerization mirrors top-tier placement profiles in the **General CS & Software Development** alumni archetype.
-* **Quantifiable Metrics:** Including achievements like *"reduced response latency by 35%"* directly parallels successful candidates placed at **Microsoft** and **Amazon**.
+* **Measured results:** The search project states a baseline and a result, reducing p95 latency from 240ms to 125ms across 100k documents, with the tools named.
+* **Test evidence:** The unit test suite gives a count and a coverage figure, which is easier to check than a claim of quality.
 
 **3. Actionable Recommendations:**
-* **Highlight High-Throughput & Distributed Cache Patterns:** Placed engineers in this cluster heavily emphasize distributed memory caching (Redis, Memcached) and message broker decoupling (Kafka / RabbitMQ). Add these to your primary project descriptions.
-* **Deepen Cloud Infrastructure Context:** Emphasize container orchestration (Kubernetes or AWS ECS) rather than basic Docker standalone usage, reflecting the target role's production deployment requirements.
-* **Quantify Architectural Impact:** Explicitly link system architectural choices to business throughput (e.g., *"Scaled database queries to 10k+ QPS with read-replicas"*).
+* **Replace the vague bullets:** "Worked on data loading" and "team player responsible for deployment" do not say what you did. Name the task, the tool and the result.
+* **Remove the buzzword bullet:** The line about blockchain and quantum algorithms has no dataset, baseline or result behind it.
+* **Name the cloud service:** "AWS cloud infrastructure" could mean many things. Say which service you used and what you configured.
 
-**4. Key Skills to Add:**
-* **Distributed Systems Concurrency & Goroutines/AsyncIO Patterns**
-* **Kafka Event-Driven Architecture & Message Streaming**
-* **CI/CD Automated Deployment Pipelines (GitHub Actions / Terraform)**
+**4. Key Skills to Add, If You Have Used Them:**
+* **Kubernetes:** the sample job description asks for container orchestration.
+* **Kafka:** preferred by the sample job description.
 `;
 
   const finish = () => {
@@ -2964,11 +2963,7 @@ function updateScoreRingFromNumber(score) {
     const offset = circumference - (score / 100) * circumference;
     ring.style.strokeDasharray = `${circumference} ${circumference}`;
     ring.style.strokeDashoffset = offset;
-
-    if (score >= 80) ring.style.stroke = 'var(--accent-emerald)';
-    else if (score >= 65) ring.style.stroke = 'var(--accent-cyan)';
-    else if (score >= 50) ring.style.stroke = 'var(--accent-amber)';
-    else ring.style.stroke = 'var(--accent-coral)';
+    ring.style.stroke = 'var(--color-forest)';
   }
 }
 
@@ -4382,8 +4377,15 @@ function renderExecutiveReview(review) {
   const questionsList = document.getElementById('exec-questions-list');
   const prioritiesList = document.getElementById('exec-priorities-list');
 
-  if (titleElem) titleElem.textContent = review.persona_title || 'Executive Reviewer';
-  if (roleElem) roleElem.textContent = `Target Role: ${review.target_role || 'Software Engineer'}`;
+  if (titleElem) titleElem.textContent = review.persona_title || 'Simulated reviewer';
+  if (roleElem) roleElem.textContent = review.target_role ? `Target role: ${review.target_role}` : '';
+  const lensNote = document.getElementById('exec-lens-note');
+  if (lensNote) {
+    // Only a real run inferred anything; the demo's lens is part of its fixture.
+    const auto = appState.executiveReview.selectedPersonaId === 'auto' && !appState.analyzer.reportIsDemo;
+    lensNote.hidden = !auto || !review.persona_title;
+    lensNote.textContent = auto ? 'Auto chose this lens from keywords in the job description.' : '';
+  }
 
   if (verdictElem) {
     verdictElem.className = 'verdict-badge';
@@ -4395,7 +4397,7 @@ function renderExecutiveReview(review) {
     } else {
       verdictElem.classList.add('verdict-needs-proof');
     }
-    verdictElem.textContent = (review.verdict || 'EVALUATING').replace(/_/g, ' ').toUpperCase();
+    verdictElem.textContent = (review.verdict || 'not stated').replace(/_/g, ' ');
   }
 
   if (reactionElem) {
@@ -4406,7 +4408,7 @@ function renderExecutiveReview(review) {
   if (attentionList) {
     const items = review.what_catches_attention || [];
     if (items.length === 0) {
-      attentionList.innerHTML = '<p class="empty-hint">No high-impact metrics verified yet.</p>';
+      attentionList.innerHTML = '<p class="empty-hint">Nothing stood out in this review.</p>';
     } else {
       attentionList.innerHTML = items.map(obs => `
         <div class="exec-obs-item obs-positive">
@@ -4421,12 +4423,12 @@ function renderExecutiveReview(review) {
   if (skepticismList) {
     const items = review.skepticism_points || [];
     if (items.length === 0) {
-      skepticismList.innerHTML = '<p class="empty-hint">No major red-flag evidence gaps flagged.</p>';
+      skepticismList.innerHTML = '<p class="empty-hint">This review raised no questions.</p>';
     } else {
       skepticismList.innerHTML = items.map(obs => `
         <div class="exec-obs-item obs-skeptical">
           <div class="obs-bullet-title">${escapeHTML(obs.statement)}</div>
-          <div class="obs-why-it-matters"><strong>Senior scrutiny:</strong> ${escapeHTML(obs.why_it_matters || '')}</div>
+          <div class="obs-why-it-matters"><strong>Why it would be questioned:</strong> ${escapeHTML(obs.why_it_matters || '')}</div>
         </div>
       `).join('');
     }
@@ -4454,7 +4456,7 @@ function renderExecutiveReview(review) {
           <div class="priority-info">
             <div class="priority-action">${escapeHTML(p.action || p.priority || '')}</div>
             <div class="priority-meta">
-              <span class="meta-tag tag-impact">${escapeHTML(p.expected_improvement || p.impact || 'High Impact')}</span>
+              ${p.expected_improvement || p.impact ? `<span class="meta-tag tag-impact">${escapeHTML(p.expected_improvement || p.impact)}</span>` : ''}
               ${p.prerequisites ? `<span class="meta-tag tag-prereq">Prereq: ${escapeHTML(p.prerequisites)}</span>` : ''}
             </div>
           </div>
@@ -4565,6 +4567,7 @@ function hydrateResumeTailoring(report) {
     markups: markups,
     score: report.overall_score,
     breakdown: report.score_breakdown || null,
+    evidence: report.evidence || null,
     scored: true,
     rescored: false,
     edits: []
@@ -4794,6 +4797,7 @@ function applyMarkupReplacement() {
     markups,
     score: previous ? previous.score : null,
     breakdown: previous ? previous.breakdown : null,
+    evidence: previous ? previous.evidence : null,
     scored: false,
     rescored: false,
     edits: [...(previous ? previous.edits : []), { before: item.original_text, after: newSegment }]
@@ -4824,6 +4828,7 @@ function restoreDraftRevision(index, verb) {
   // The ring and rubric follow the revision they belong to.
   if (typeof entry.score === 'number') updateScoreRingFromNumber(entry.score);
   updateRubricBreakdown(entry.breakdown);
+  renderSkillEvidence(entry.evidence);
 
   closeMarkupPopover({ restoreFocus: false });
   renderDocumentViewer(entry.text, draft.markupItems);
@@ -4973,6 +4978,7 @@ async function recalculateDraftFit() {
       entry.markups = markups;
       entry.score = data.overall_score;
       entry.breakdown = data.score_breakdown;
+      entry.evidence = skillEvidenceFrom(data);
       entry.scored = true;
       entry.rescored = true;
     }
@@ -4980,6 +4986,7 @@ async function recalculateDraftFit() {
     // The ring and the rubric follow the re-scored draft together, so the total matches its parts.
     updateScoreRingFromNumber(data.overall_score);
     updateRubricBreakdown(data.score_breakdown);
+    renderSkillEvidence(entry ? entry.evidence : skillEvidenceFrom(data));
 
     closeMarkupPopover({ restoreFocus: false });
     renderDocumentViewer(text, markups);
@@ -5692,6 +5699,61 @@ function updateRubricBreakdown(breakdown) {
   });
 }
 
+// What the server found per skill (models.SkillEvidenceItem). The wording keeps "not found in this
+// document" apart from "does not have the skill", and nothing here affects the score.
+const SKILL_EVIDENCE_GROUPS = [
+  { status: 'demonstrated', label: 'Demonstrated with results' },
+  { status: 'used', label: 'Used in projects' },
+  { status: 'mentioned', label: 'Mentioned only' }
+];
+
+function skillEvidenceFrom(source) {
+  return {
+    matched: Array.isArray(source.matched_skills) ? source.matched_skills : [],
+    missingRequired: Array.isArray(source.missing_required_skills) ? source.missing_required_skills : [],
+    missingPreferred: Array.isArray(source.missing_preferred_skills) ? source.missing_preferred_skills : []
+  };
+}
+
+function renderSkillEvidence(evidence) {
+  const panel = document.getElementById('skill-evidence-panel');
+  const groups = document.getElementById('skill-evidence-groups');
+  const context = document.getElementById('skill-evidence-context');
+  if (!panel || !groups) return;
+
+  const hasAny = evidence && (evidence.matched.length || evidence.missingRequired.length || evidence.missingPreferred.length);
+  panel.hidden = !hasAny;
+  if (!hasAny) return;
+
+  const row = (label, names, variant) => `
+    <div class="skill-evidence-group${variant ? ` ${variant}` : ''}">
+      <dt>${escapeHTML(label)} <span class="skill-evidence-count">${names.length}</span></dt>
+      <dd><ul class="skill-chips">${names.map(name => `<li>${escapeHTML(String(name))}</li>`).join('')}</ul></dd>
+    </div>`;
+  const rows = SKILL_EVIDENCE_GROUPS
+    .map(group => [group.label, evidence.matched.filter(s => s.evidence_status === group.status).map(s => s.canonical)])
+    .filter(([, names]) => names.length)
+    .map(([label, names]) => row(label, names));
+  if (evidence.missingRequired.length) rows.push(row('Required, not found in this document', evidence.missingRequired, 'is-missing'));
+  if (evidence.missingPreferred.length) rows.push(row('Preferred, not found in this document', evidence.missingPreferred, 'is-missing'));
+  groups.innerHTML = rows.join('');
+
+  if (context) {
+    const report = appState.reportData || {};
+    const parts = [];
+    if (appState.analyzer.reportIsDemo) {
+      parts.push('Illustrative sample, not computed from a resume.');
+    } else {
+      if (typeof report.alumni_precedents_used === 'number') parts.push(`Compared with ${report.alumni_precedents_used} alumni resumes for reference.`);
+      if (report.detected_archetype) {
+        parts.push(`Closest archetype: ${report.detected_archetype}${report.is_archetype_uncertain ? ' (uncertain)' : ''}.`);
+      }
+    }
+    context.textContent = parts.join(' ');
+    context.hidden = !parts.length;
+  }
+}
+
 // The backend nests the canonical text and its revision in document_snapshot
 // (models.ResumeDocumentSnapshot); markup offsets refer to that text.
 function tailoringSourceFromReport(report) {
@@ -5704,7 +5766,8 @@ function tailoringSourceFromReport(report) {
     document_id: snapshot.document_id,
     resume_markups: report.resume_markups || [],
     overall_score: report.overall_score,
-    score_breakdown: report.score_breakdown
+    score_breakdown: report.score_breakdown,
+    evidence: skillEvidenceFrom(report)
   };
 }
 
@@ -5724,11 +5787,13 @@ function readStructuredReport(streamBuffer) {
 
 function hydrateStructuredReport(report) {
   appState.reportData = report;
+  appState.analyzer.reportIsDemo = false;
   updateScoreRingFromNumber(report.overall_score);
   updateRubricBreakdown(report.score_breakdown);
   if (report.persona_review) renderExecutiveReview(report.persona_review);
   const tailoringSource = tailoringSourceFromReport(report);
   if (tailoringSource) hydrateResumeTailoring(tailoringSource);
+  renderSkillEvidence(skillEvidenceFrom(report));
 }
 
 function hydrateDemoStructuredReport() {
@@ -5878,13 +5943,24 @@ Distributed RAG & Embedding Search Engine
       canonical_display_text: demoResumeText
     },
     resume_markups: demoMarkups,
-    persona_review: demoReview
+    persona_review: demoReview,
+    matched_skills: [
+      { canonical: 'FastAPI', evidence_status: 'demonstrated' },
+      { canonical: 'FAISS', evidence_status: 'demonstrated' },
+      { canonical: 'PyTorch', evidence_status: 'demonstrated' },
+      { canonical: 'Docker', evidence_status: 'used' },
+      { canonical: 'AWS', evidence_status: 'mentioned' }
+    ],
+    missing_required_skills: ['Kubernetes'],
+    missing_preferred_skills: ['Kafka']
   };
 
   appState.reportData = mockReport;
+  appState.analyzer.reportIsDemo = true;
   updateRubricBreakdown(mockReport.score_breakdown);
   renderExecutiveReview(demoReview);
   hydrateResumeTailoring(tailoringSourceFromReport(mockReport));
+  renderSkillEvidence(skillEvidenceFrom(mockReport));
 }
 
 function escapeHTML(str) {

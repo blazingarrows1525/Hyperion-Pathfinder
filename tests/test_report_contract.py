@@ -57,3 +57,20 @@ def test_demo_breakdown_adds_up_to_the_demo_score():
     score = int(re.search(r"overall_score: (\d+)", block).group(1))
     points = [int(p) for p in re.findall(r"points_earned: (\d+)", block)]
     assert len(points) == 5 and sum(points) == score
+
+
+def test_persona_labels_are_the_registry_titles():
+    source = (ROOT / "services" / "executive_personas.py").read_text(encoding="utf-8")
+    titles = dict(re.findall(r'"id": "([a-z_]+)",\s*"title": "([^"]+)"', source))
+    assert titles, "could not read the persona registry"
+    for persona_id, title in titles.items():
+        chip = HTML[HTML.index(f'data-persona="{persona_id}"'):]
+        chip = chip[:chip.index("</label>")]
+        assert title.replace("&", "&amp;") in chip, persona_id
+
+
+def test_report_copy_makes_no_unsupported_claim():
+    for phrase in ("Verified Proof", "Deterministic Scoring Invariant", "Executive impression will populate"):
+        assert phrase not in HTML, phrase
+    assert "|| 84" not in JS
+    assert "'Software Engineer'" not in JS[JS.index("function renderExecutiveReview"):JS.index("function initResumeTailoringController")]

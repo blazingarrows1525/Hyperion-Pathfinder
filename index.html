@@ -556,9 +556,9 @@
                       <input type="radio" name="executive_persona" value="auto" checked class="sr-only">
                       <div class="persona-chip-head">
                         <i data-lucide="sparkles" style="width:15px;height:15px;color:var(--accent-cyan);"></i>
-                        <strong>Auto (Inferred)</strong>
+                        <strong>Auto</strong>
                       </div>
-                      <p class="persona-chip-desc">Infers lens from role &amp; JD requirements.</p>
+                      <p class="persona-chip-desc">Chooses a lens from keywords in the job description.</p>
                     </label>
 
                     <label class="persona-chip neu-card" data-persona="director_ai_research">
@@ -574,7 +574,7 @@
                       <input type="radio" name="executive_persona" value="principal_sde" class="sr-only">
                       <div class="persona-chip-head">
                         <i data-lucide="terminal" style="width:15px;height:15px;color:var(--color-lagoon);"></i>
-                        <strong>Principal SDE / VP Eng</strong>
+                        <strong>Principal SDE / VP of Engineering</strong>
                       </div>
                       <p class="persona-chip-desc">Audits API contracts, concurrency, error semantics, and scale.</p>
                     </label>
@@ -583,7 +583,7 @@
                       <input type="radio" name="executive_persona" value="cloud_infrastructure_director" class="sr-only">
                       <div class="persona-chip-head">
                         <i data-lucide="server" style="width:15px;height:15px;color:var(--color-forest);"></i>
-                        <strong>Cloud Infrastructure Dir.</strong>
+                        <strong>Cloud Infrastructure Director</strong>
                       </div>
                       <p class="persona-chip-desc">Audits cloud targets, CI/CD, Kubernetes, and reliability.</p>
                     </label>
@@ -680,12 +680,15 @@
                 <!-- Score & Provenance Banner -->
                 <div class="score-banner-box" id="score-banner-box" hidden>
                   <div class="score-banner-left">
-                    <div class="mini-score-ring">
-                      <svg width="86" height="86" viewBox="0 0 86 86" style="transform:rotate(-90deg);">
+                    <div class="mini-score-ring" role="img" aria-labelledby="mini-score-val mini-score-of">
+                      <svg width="86" height="86" viewBox="0 0 86 86" style="transform:rotate(-90deg);" aria-hidden="true" focusable="false">
                         <circle cx="43" cy="43" r="38" fill="none" stroke="var(--color-surface-inset)" stroke-width="8" />
-                        <circle id="mini-progress-ring" cx="43" cy="43" r="38" fill="none" stroke="var(--accent-emerald)" stroke-width="8" stroke-linecap="round" style="transition: stroke-dashoffset 1.2s ease;" />
+                        <circle id="mini-progress-ring" cx="43" cy="43" r="38" fill="none" stroke="var(--color-forest)" stroke-width="8" stroke-linecap="round" style="transition: stroke-dashoffset 0.7s ease;" />
                       </svg>
-                      <div id="mini-score-val" class="mini-score-val">--</div>
+                      <div class="mini-score-readout">
+                        <span id="mini-score-val" class="mini-score-val">—</span>
+                        <span id="mini-score-of" class="mini-score-of">of 100</span>
+                      </div>
                     </div>
                     <div class="score-banner-meta">
                       <h4>Alignment score</h4>
@@ -761,6 +764,13 @@
                       </div>
                     </div>
                   </div>
+                  <!-- What the server found for each skill. Absence from the document is stated as just that. -->
+                  <section id="skill-evidence-panel" class="skill-evidence" aria-labelledby="skill-evidence-title" hidden>
+                    <h4 id="skill-evidence-title" class="rubric-title">Skill evidence</h4>
+                    <p id="skill-evidence-context" class="skill-evidence-context"></p>
+                    <dl id="skill-evidence-groups" class="skill-evidence-groups"></dl>
+                    <p class="skill-evidence-note">A skill not found in this document may still be one you have. Add it only where you can show the work behind it.</p>
+                  </section>
                   <div id="markdown-stream-output" class="markdown-body"></div>
                 </div>
 
@@ -769,18 +779,19 @@
                   <div class="exec-review-container">
                     <div class="exec-disclaimer-banner">
                       <i data-lucide="info" style="width:16px;height:16px;flex-shrink:0;"></i>
-                      <span><strong>Simulated Executive Review Lens:</strong> This review simulates the skeptical scrutiny of a senior hiring leader based strictly on submitted resume evidence. It does not reflect official employer decisions or a hiring probability.</span>
+                      <span><strong>A simulated review.</strong> It imagines how a senior reviewer might read this resume, from its text alone. No employer or real person reviewed it, and it does not change the score.</span>
                     </div>
 
                     <div class="exec-header-card neu-card">
                       <div class="exec-title-row">
                         <div>
-                          <span class="exec-persona-label" id="exec-persona-title">Senior Engineering Reviewer</span>
-                          <h4 class="exec-role-subtitle" id="exec-target-role-label">Target Role: Software Engineer</h4>
+                          <span class="exec-persona-label" id="exec-persona-title"></span>
+                          <h4 class="exec-role-subtitle" id="exec-target-role-label"></h4>
                         </div>
-                        <div id="exec-verdict-badge" class="verdict-badge verdict-promising">Evaluating...</div>
+                        <div id="exec-verdict-badge" class="verdict-badge verdict-promising"></div>
                       </div>
-                      <p class="exec-reaction-text" id="exec-reaction-summary">Executive impression will populate after analysis completes.</p>
+                      <p class="exec-reaction-text" id="exec-reaction-summary"></p>
+                      <p class="exec-lens-note" id="exec-lens-note" hidden></p>
                     </div>
 
                     <!-- 4 Diagnostic Dimensions -->
@@ -789,7 +800,7 @@
                       <div class="exec-section-card neu-card">
                         <div class="exec-sec-header">
                           <i data-lucide="check-circle-2" style="color:var(--mark-green-border);width:16px;height:16px;"></i>
-                          <h5>What Catches Attention (Verified Proof)</h5>
+                          <h5>What stands out, from your resume</h5>
                         </div>
                         <div id="exec-attention-list" class="exec-obs-list">
                           <p class="empty-hint">Evidence items will appear here.</p>
@@ -800,7 +811,7 @@
                       <div class="exec-section-card neu-card">
                         <div class="exec-sec-header">
                           <i data-lucide="alert-triangle" style="color:var(--mark-yellow-border);width:16px;height:16px;"></i>
-                          <h5>Senior Skepticism &amp; Evidence Gaps</h5>
+                          <h5>What a reviewer would question</h5>
                         </div>
                         <div id="exec-skepticism-list" class="exec-obs-list">
                           <p class="empty-hint">Skepticism points will appear here.</p>
@@ -811,7 +822,7 @@
                       <div class="exec-section-card neu-card">
                         <div class="exec-sec-header">
                           <i data-lucide="help-circle" style="color:var(--accent-blue-light);width:16px;height:16px;"></i>
-                          <h5>Expected Technical Interview Questions</h5>
+                          <h5>Questions a reviewer might ask</h5>
                         </div>
                         <ul id="exec-questions-list" class="exec-questions-ul">
                           <li class="empty-hint">Expected questions will appear here.</li>
@@ -822,7 +833,7 @@
                       <div class="exec-section-card neu-card">
                         <div class="exec-sec-header">
                           <i data-lucide="list-ordered" style="color:var(--accent-cyan);width:16px;height:16px;"></i>
-                          <h5>Strategic Next Actions (Highest Impact)</h5>
+                          <h5>Suggested next steps</h5>
                         </div>
                         <div id="exec-priorities-list" class="exec-priorities-list">
                           <p class="empty-hint">Priorities will appear here.</p>
