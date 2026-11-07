@@ -1073,7 +1073,7 @@ class CareerAtlas {
     this.reducedMotion = appState.motionMode === 'reduced';
     this.pauseReasons = new Set();
     this.frame = null;
-    this.lastRenderAt = 0;
+    this.frameTimer = null;
     this.disposed = false;
     this.listeners = [];
     this.dragging = false;
@@ -1556,8 +1556,23 @@ class CareerAtlas {
 
   // ---- loop: one frame per request, more only while something is easing ---------
   requestRender() {
+    // State changes and direct input request an immediate frame.
     if (this.disposed || this.frame || this.pauseReasons.size) return;
+    if (this.frameTimer) {
+      clearTimeout(this.frameTimer);
+      this.frameTimer = null;
+    }
     this.frame = requestAnimationFrame(() => this.tick());
+  }
+
+  scheduleContinuousRender() {
+    if (this.disposed || this.frame || this.frameTimer || this.pauseReasons.size) return;
+    const interval = this.lowDetail ? (1000 / 24) : (1000 / 30);
+    this.frameTimer = window.setTimeout(() => {
+      this.frameTimer = null;
+      if (this.disposed || this.pauseReasons.size) return;
+      this.frame = requestAnimationFrame(() => this.tick());
+    }, interval);
   }
 
   pause(reason) {
@@ -1565,6 +1580,10 @@ class CareerAtlas {
     if (this.frame) {
       cancelAnimationFrame(this.frame);
       this.frame = null;
+    }
+    if (this.frameTimer) {
+      clearTimeout(this.frameTimer);
+      this.frameTimer = null;
     }
   }
 
@@ -1576,17 +1595,6 @@ class CareerAtlas {
   tick() {
     this.frame = null;
     if (this.disposed || this.pauseReasons.size) return;
-
-    // Keep the scene cinematic without forcing a 60 Hz GPU render on every display.
-    // Low-detail/mobile devices use a lower cap; reduced-motion remains one-shot.
-    const now = performance.now();
-    const frameInterval = this.lowDetail ? (1000 / 24) : (1000 / 30);
-    if (!this.reducedMotion && this.lastRenderAt && now - this.lastRenderAt < frameInterval) {
-      this.frame = requestAnimationFrame(() => this.tick());
-      return;
-    }
-    this.lastRenderAt = now;
-
     const dt = this.clock ? Math.min(0.05, this.clock.getDelta()) : 0.016;
     this.elapsed += dt;
     const k = this.reducedMotion ? 1 : 0.16;
@@ -1715,7 +1723,7 @@ class CareerAtlas {
     this.updateCamera();
     this.renderer.render(this.scene, this.camera);
     if (!this.reducedMotion) moving = true;
-    if (moving) this.requestRender();
+    if (moving) this.scheduleContinuousRender();
   }
 
   clampRotation() {
@@ -1910,7 +1918,9 @@ class CareerAtlas {
   dispose() {
     this.disposed = true;
     if (this.frame) cancelAnimationFrame(this.frame);
+    if (this.frameTimer) clearTimeout(this.frameTimer);
     this.frame = null;
+    this.frameTimer = null;
     this.listeners.forEach(off => off());
     this.listeners = [];
     if (this.resizeObserver) this.resizeObserver.disconnect();
