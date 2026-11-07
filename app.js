@@ -1428,7 +1428,10 @@ class CareerAtlas {
 
   setReducedMotion(reduced) {
     this.reducedMotion = reduced;
-    if (reduced) this.ambientUntil = 0;
+    if (reduced) {
+      this.ambientUntil = 0;
+      this.ambientMix = 0;
+    }
     this.armAmbient();
   }
 
@@ -3421,6 +3424,7 @@ function renderCompanyDirectory() {
 
   const sourceDate = snap && snap.source_snapshot_date ? formatSnapshotDate(snap.source_snapshot_date) : '';
   container.innerHTML = `
+    <div class="company-table-scroll" role="region" tabindex="0" aria-label="Company directory table">
     <table class="company-table">
       <caption class="sr-only">Curated companies, with figures from the 2026 placement snapshot where the company appears in it</caption>
       <thead>
@@ -3457,7 +3461,8 @@ function renderCompanyDirectory() {
         </tr>`;
         }).join('')}
       </tbody>
-    </table>`;
+    </table>
+    </div>`;
 }
 
 function resetCompanyFilters() {

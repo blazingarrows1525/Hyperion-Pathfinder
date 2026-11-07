@@ -404,7 +404,6 @@ body {
   color: var(--text-primary);
   min-height: 100vh;
   line-height: 1.65;
-  overflow-x: hidden;
   position: relative;
 }
 
@@ -1768,12 +1767,20 @@ main section[id] {
   outline: none;
 }
 
+/* The directory table scrolls inside itself rather than pushing the page wide. */
+.company-table-scroll {
+  position: relative; /* keeps the absolutely positioned sr-only header inside the scroller */
+  overflow-x: auto;
+  border-radius: var(--radius-md);
+}
+
 .table-filter:focus-within {
   outline: var(--focus-width) solid var(--color-focus);
   outline-offset: 2px;
 }
 
 .recruiters-table-wrapper {
+  position: relative;
   max-height: 560px;
   overflow: auto;
   border-radius: var(--radius-md);
@@ -6059,6 +6066,8 @@ main section[id] {
 .atlas-modes,
 .spatial-zoom-controls {
   display: inline-flex;
+  flex-wrap: wrap;
+  max-width: 100%;
   gap: 2px;
   padding: 3px;
   border-radius: var(--radius-sm);
@@ -6066,9 +6075,9 @@ main section[id] {
 }
 
 .btn-3d-mode {
+  flex: 1 1 auto;
   min-height: 36px;
   padding: 0 12px;
-  white-space: nowrap;
   border: 0;
   border-radius: 6px;
   background: transparent;
@@ -6746,6 +6755,63 @@ main section[id] {
 
   .footer-nav-links {
     gap: 0 16px;
+  }
+}
+
+/* ==============================================================================
+   FORCED COLOURS — backgrounds and shadows are replaced by the system palette, so anything
+   that carried meaning through them gets a system colour or an outline instead.
+   ============================================================================== */
+@media (forced-colors: active) {
+  .meter-fill,
+  .band-fill,
+  .offer-spark i,
+  .share-bar span {
+    forced-color-adjust: none;
+    background: CanvasText;
+  }
+
+  .meter-bar,
+  .band-track,
+  .offer-spark,
+  .share-bar {
+    border: 1px solid CanvasText;
+  }
+
+  /* Silhouettes keep their cluster colours: shape and label carry the meaning as well. */
+  .legend-swatch,
+  .archetype-node {
+    forced-color-adjust: none;
+  }
+
+  .atlas-legend-item.is-selected,
+  .fb-node.is-selected,
+  .archetype-tab.active,
+  .framework-item-btn.active,
+  .persona-chip.active,
+  .btn-filter-pill.active,
+  .btn-3d-mode.active,
+  .designhead-btn.active,
+  .neu-segmented-btn.active,
+  .btn-scenario-chip.active,
+  .btn-tts-speed.active {
+    outline: 3px solid Highlight;
+    outline-offset: -3px;
+  }
+
+  .analyzer-results-card .results-tab-btn[aria-selected="true"],
+  .nav-link-btn.active,
+  .nav-link-btn[aria-current="true"] {
+    border-bottom: 3px solid Highlight;
+  }
+
+  .genome-field-seg.active {
+    outline: 3px solid Highlight;
+    outline-offset: -3px;
+  }
+
+  .spatial-canvas-wrapper {
+    border: 1px solid CanvasText;
   }
 }
 
