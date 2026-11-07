@@ -19,14 +19,17 @@ import pytest
 ROOT = Path(__file__).resolve().parent.parent
 BASE_URL = os.environ.get("UI_BROWSER_BASE_URL", "")
 
-# probe file, query string, widths
+# probe file, query string, widths, extra harness arguments
 PROBES = [
-    ("analyzer_inputs.js", "", "1440,375"),
-    ("analyzer_states.js", "", "1440,375"),
-    ("coach_and_sound.js", "", "1440,375"),
-    ("tailoring.js", "", "1440,375"),
-    ("reveal_motion.js", "", "1440,375"),
-    ("atlas_lifecycle.js", "", "1440,375"),
+    ("analyzer_inputs.js", "", "1440,375", []),
+    ("analyzer_states.js", "", "1440,375", []),
+    ("coach_and_sound.js", "", "1440,375", []),
+    ("tailoring.js", "", "1440,375", []),
+    ("reveal_motion.js", "", "1440,375", []),
+    ("reveal_motion.js", "", "1440,375", ["--reduced-motion"]),
+    ("atlas_lifecycle.js", "", "1440,375", []),
+    ("contrast_scan.js", "?scan=demo", "1440,375", ["--theme", "terra"]),
+    ("contrast_scan.js", "?scan=demo", "1440,375", ["--theme", "grove"]),
 ]
 
 pytestmark = pytest.mark.skipif(
@@ -35,20 +38,20 @@ pytestmark = pytest.mark.skipif(
 )
 
 
-def run_probe(probe, query, widths, out_dir):
+def run_probe(probe, query, widths, extra, out_dir):
     url = BASE_URL.rstrip("/") + "/" + query
     done = subprocess.run(
         ["node", "scripts/ui_audit.mjs", "--no-shots", "--url", url, "--widths", widths,
-         "--out", str(out_dir), "--eval-file", f"scripts/ui_probes/{probe}"],
+         "--out", str(out_dir), "--eval-file", f"scripts/ui_probes/{probe}", *extra],
         cwd=ROOT, capture_output=True, text=True, timeout=600,
     )
     assert done.returncode == 0, done.stderr[-1500:]
     return json.loads((out_dir / "audit.json").read_text(encoding="utf-8"))["viewports"]
 
 
-@pytest.mark.parametrize("probe,query,widths", PROBES, ids=[p[0] for p in PROBES])
-def test_probe_reports_no_failures(probe, query, widths, tmp_path):
-    viewports = run_probe(probe, query, widths, tmp_path)
+@pytest.mark.parametrize("probe,query,widths,extra", PROBES, ids=[" ".join([p[0], *p[3]]) for p in PROBES])
+def test_probe_reports_no_failures(probe, query, widths, extra, tmp_path):
+    viewports = run_probe(probe, query, widths, extra, tmp_path)
     problems = []
     for width, entry in viewports.items():
         if entry["consoleErrors"]:

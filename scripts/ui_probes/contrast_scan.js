@@ -128,4 +128,9 @@ if (new URLSearchParams(location.search).get('scan') === 'demo') {
     results.push(scan(tab));
   }
 }
-return { theme, results };
+const checks = results.map((r) => ({
+  name: `${theme}, ${r.label}: rendered text meets its contrast requirement`,
+  ok: r.failCount === 0,
+  detail: r.failures.slice(0, 6).map((f) => `${f.el} ${f.fg} on ${f.bg} ${f.ratio}<${f.need} "${f.text.slice(0, 24)}"`).join('; '),
+}));
+return { theme, results, checks };

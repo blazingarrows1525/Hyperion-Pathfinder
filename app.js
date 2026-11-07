@@ -2191,30 +2191,12 @@ function init3DCardTilt() {
   });
 }
 
+// Icon buttons give the optional interface click when sound is on.
+// Nothing moves under the pointer: a target that shifts is harder to hit.
 function initHoverButtons() {
-  if (appState.motionMode === 'reduced') return;
-  const canHover = window.matchMedia('(hover: hover) and (pointer: fine)').matches;
-  if (!canHover) return;
-
-  const magneticBtns = document.querySelectorAll('.btn-magnetic-glow, .btn-icon-circle');
-  magneticBtns.forEach(btn => {
-    if (btn.dataset.magneticBound) return;
-    btn.dataset.magneticBound = 'true';
-
-    btn.addEventListener('mousemove', (e) => {
-      if (appState.motionMode === 'reduced') return;
-      const rect = btn.getBoundingClientRect();
-      const x = e.clientX - rect.left - rect.width / 2;
-      const y = e.clientY - rect.top - rect.height / 2;
-      const clampedX = Math.max(-5.0, Math.min(5.0, x * 0.15));
-      const clampedY = Math.max(-5.0, Math.min(5.0, y * 0.15));
-      btn.style.transform = `translate(${clampedX.toFixed(1)}px, ${clampedY.toFixed(1)}px) scale(1.02)`;
-    }, { passive: true });
-
-    btn.addEventListener('mouseleave', () => {
-      btn.style.transform = 'translate(0px, 0px) scale(1)';
-    });
-
+  document.querySelectorAll('.btn-magnetic-glow, .btn-icon-circle').forEach(btn => {
+    if (btn.dataset.clickSoundBound) return;
+    btn.dataset.clickSoundBound = 'true';
     btn.addEventListener('click', () => {
       if (window.spatialAudio) window.spatialAudio.click();
     });
@@ -2230,77 +2212,63 @@ function initNeumorphicLightingPuck() {
   const angleLabel = document.getElementById('neu-light-angle-label');
   if (!well || !puck) return;
 
-  let isPuckDragging = false;
+  const COMPASS = ['east', 'south-east', 'south', 'south-west', 'west', 'north-west', 'north', 'north-east'];
+  const SHORT = ['E', 'SE', 'S', 'SW', 'W', 'NW', 'N', 'NE'];
+  let degrees = 225;
+  let reach = 0.8;
 
-  function updatePuck(clientX, clientY) {
-    const rect = well.getBoundingClientRect();
-    const centerX = rect.left + rect.width / 2;
-    const centerY = rect.top + rect.height / 2;
-
-    const dx = clientX - centerX;
-    const dy = clientY - centerY;
-    const maxR = rect.width / 2 - 18;
-
-    const distance = Math.min(maxR, Math.sqrt(dx * dx + dy * dy));
-    const angleRad = Math.atan2(dy, dx);
-
-    const px = Math.cos(angleRad) * distance;
-    const py = Math.sin(angleRad) * distance;
-
-    puck.style.transform = `translate(${px}px, ${py}px)`;
-
-    let degrees = Math.round((angleRad * 180) / Math.PI);
-    if (degrees < 0) degrees += 360;
-
-    const shadowDist = Math.max(3, Math.round((distance / maxR) * 14));
-    const shadowX = Math.round(Math.cos(angleRad) * shadowDist);
-    const shadowY = Math.round(Math.sin(angleRad) * shadowDist);
-
-    document.documentElement.style.setProperty('--neu-shadow-x', `${shadowX}px`);
-    document.documentElement.style.setProperty('--neu-shadow-y', `${shadowY}px`);
-
-    const compass = ['E', 'SE', 'S', 'SW', 'W', 'NW', 'N', 'NE'];
-    const compassIdx = Math.round(degrees / 45) % 8;
-    if (angleLabel) {
-      angleLabel.textContent = `${degrees}° (${compass[compassIdx]})`;
-    }
+  // Draws the puck and moves the sample card's shadow. Nothing outside that card changes.
+  function apply() {
+    const radians = (degrees * Math.PI) / 180;
+    const maxReach = well.clientWidth / 2 - 18;
+    puck.style.transform = `translate(${(Math.cos(radians) * maxReach * reach).toFixed(1)}px, ${(Math.sin(radians) * maxReach * reach).toFixed(1)}px)`;
+    sampleShadow.degrees = degrees;
+    renderSampleShadow();
+    const index = Math.round(degrees / 45) % 8;
+    if (angleLabel) angleLabel.textContent = `${degrees}° (${SHORT[index]})`;
+    puck.setAttribute('aria-valuenow', String(degrees));
+    puck.setAttribute('aria-valuetext', `${degrees} degrees, ${COMPASS[index]}`);
   }
 
-  well.addEventListener('mousedown', (e) => {
-    isPuckDragging = true;
-    updatePuck(e.clientX, e.clientY);
+  function fromPointer(clientX, clientY) {
+    const rect = well.getBoundingClientRect();
+    const dx = clientX - (rect.left + rect.width / 2);
+    const dy = clientY - (rect.top + rect.height / 2);
+    const maxReach = rect.width / 2 - 18;
+    reach = Math.min(1, Math.hypot(dx, dy) / maxReach);
+    degrees = (Math.round((Math.atan2(dy, dx) * 180) / Math.PI) + 360) % 360;
+    apply();
+  }
+
+  // Pointer capture ties the drag to this control, so nothing listens on the window between drags
+  // and touch scrolling elsewhere on the page is never held up.
+  well.addEventListener('pointerdown', (e) => {
+    well.setPointerCapture(e.pointerId);
+    fromPointer(e.clientX, e.clientY);
+    puck.focus({ preventScroll: true });
+  });
+  well.addEventListener('pointermove', (e) => {
+    if (well.hasPointerCapture(e.pointerId)) fromPointer(e.clientX, e.clientY);
+  });
+  well.addEventListener('pointerup', () => {
+    if (window.spatialAudio) window.spatialAudio.click();
   });
 
-  window.addEventListener('mousemove', (e) => {
-    if (isPuckDragging) {
-      updatePuck(e.clientX, e.clientY);
+  puck.addEventListener('keydown', (e) => {
+    const steps = { ArrowRight: 15, ArrowUp: 15, ArrowLeft: -15, ArrowDown: -15 };
+    if (e.key in steps) {
+      degrees = (degrees + steps[e.key] + 360) % 360;
+    } else if (e.key === 'Home') {
+      degrees = 0;
+    } else if (e.key === 'End') {
+      degrees = 359;
+    } else {
+      return;
     }
+    e.preventDefault();
+    apply();
   });
-
-  window.addEventListener('mouseup', () => {
-    if (isPuckDragging) {
-      isPuckDragging = false;
-      if (window.spatialAudio) window.spatialAudio.click();
-    }
-  });
-
-  well.addEventListener('touchstart', (e) => {
-    if (e.touches.length === 1) {
-      isPuckDragging = true;
-      updatePuck(e.touches[0].clientX, e.touches[0].clientY);
-      e.preventDefault();
-    }
-  }, { passive: false });
-
-  window.addEventListener('touchmove', (e) => {
-    if (isPuckDragging && e.touches.length === 1) {
-      updatePuck(e.touches[0].clientX, e.touches[0].clientY);
-    }
-  }, { passive: false });
-
-  window.addEventListener('touchend', () => {
-    isPuckDragging = false;
-  });
+  apply();
 }
 
 
@@ -2983,7 +2951,7 @@ function renderSafeMarkdown(rawText, isDemo) {
   if (provenanceTag) {
     if (isDemo) {
       provenanceTag.className = 'provenance-tag provenance-demo';
-      provenanceTag.textContent = 'Illustrative Demo Output — Not Generated from Live Resume';
+      provenanceTag.textContent = 'Illustrative demo. Not generated from a resume.';
     } else {
       provenanceTag.className = 'provenance-tag provenance-live';
       const writer = activeEngine
@@ -4069,7 +4037,7 @@ function initInteractionLab() {
   if (samplePill) {
     samplePill.addEventListener('click', () => {
       samplePill.classList.toggle('active');
-      showToast(samplePill.classList.contains('active') ? 'Filter Tag: Active' : 'Filter Tag: Inactive');
+      showToast(`Sample filter ${samplePill.classList.contains('active') ? 'on' : 'off'}. No data is filtered.`);
     });
   }
 
@@ -4077,7 +4045,7 @@ function initInteractionLab() {
   const samplePreset = document.getElementById('lab-preset-chip');
   if (samplePreset) {
     samplePreset.addEventListener('click', () => {
-      showToast('Loaded preset template into buffer.');
+      showToast('Sample chip pressed. Nothing was loaded.');
     });
   }
 }
@@ -4208,6 +4176,19 @@ function initEditorialRevealSystem() {
   });
 }
 
+// The one thing the preview controls change: the shadow of the sample card.
+const sampleShadow = { depth: 8, degrees: 225 };
+
+function renderSampleShadow() {
+  const surface = document.getElementById('neu-preview-surface');
+  if (!surface) return;
+  // The shadow falls away from the light.
+  const radians = ((sampleShadow.degrees + 180) * Math.PI) / 180;
+  const x = Math.round(Math.cos(radians) * sampleShadow.depth);
+  const y = Math.round(Math.sin(radians) * sampleShadow.depth);
+  surface.style.boxShadow = `${x}px ${y}px ${Math.round(sampleShadow.depth * 2.2)}px var(--neu-shadow-dark)`;
+}
+
 function initNeumorphicWorkbench() {
   const depthSlider = document.getElementById('neu-depth-range');
   const depthValLabel = document.getElementById('neu-depth-val');
@@ -4219,14 +4200,8 @@ function initNeumorphicWorkbench() {
       const depth = parseInt(e.target.value, 10);
       depthValLabel.textContent = `${depth}px`;
 
-      const darkBlur = Math.round(depth * 2.2);
-      const lightOffset = Math.max(2, Math.round(depth * 0.75));
-      const lightBlur = Math.round(depth * 1.8);
-
-      const previewSurface = document.getElementById('neu-preview-surface');
-      if (previewSurface) {
-        previewSurface.style.boxShadow = `${depth}px ${depth}px ${darkBlur}px var(--neu-shadow-dark), -${lightOffset}px -${lightOffset}px ${lightBlur}px var(--neu-shadow-light)`;
-      }
+      sampleShadow.depth = depth;
+      renderSampleShadow();
     });
   }
 
@@ -4235,9 +4210,9 @@ function initNeumorphicWorkbench() {
       const isChecked = toggleWrapper.classList.toggle('checked');
       toggleWrapper.setAttribute('aria-checked', isChecked);
       if (toggleLabel) {
-        toggleLabel.textContent = isChecked ? 'State: Active (Glow)' : 'State: Inactive (Sunken)';
+        toggleLabel.textContent = isChecked ? 'On' : 'Off';
       }
-      showToast(isChecked ? 'Tactile Switch: Active' : 'Tactile Switch: Inactive');
+      showToast(`Sample switch ${isChecked ? 'on' : 'off'}. Nothing else changes.`);
     });
 
     toggleWrapper.addEventListener('keydown', (e) => {
@@ -4259,24 +4234,16 @@ function setNeuPreviewShape(shape) {
   if (!surface) return;
 
   surface.classList.remove('neu-card-convex', 'neu-card-concave', 'neu-inset-panel');
-  document.querySelectorAll('.neu-segmented-btn').forEach(b => b.classList.remove('active'));
+  if (shape === 'inset') surface.classList.add('neu-inset-panel');
+  if (shape === 'convex') surface.classList.add('neu-card-convex');
 
-  const btnRaised = document.getElementById('btn-neu-shape-raised');
-  const btnInset = document.getElementById('btn-neu-shape-inset');
-  const btnConvex = document.getElementById('btn-neu-shape-convex');
-
-  if (shape === 'inset') {
-    surface.classList.add('neu-inset-panel');
-    if (btnInset) btnInset.classList.add('active');
-    showToast('Applied Inset Recessed Surface');
-  } else if (shape === 'convex') {
-    surface.classList.add('neu-card-convex');
-    if (btnConvex) btnConvex.classList.add('active');
-    showToast('Applied Convex Extruded Surface');
-  } else {
-    if (btnRaised) btnRaised.classList.add('active');
-    showToast('Applied Raised Pill Surface');
-  }
+  const buttons = { raised: 'btn-neu-shape-raised', inset: 'btn-neu-shape-inset', convex: 'btn-neu-shape-convex' };
+  Object.entries(buttons).forEach(([name, id]) => {
+    const btn = document.getElementById(id);
+    if (!btn) return;
+    btn.classList.toggle('active', name === shape);
+    btn.setAttribute('aria-pressed', String(name === shape));
+  });
 }
 
 // Motion preference: System (follows prefers-reduced-motion), Calm or Full.
@@ -4308,7 +4275,7 @@ function applyMotionSetting(setting, { persist = true, announce = false } = {}) 
   if (typeof careerAtlas !== 'undefined' && careerAtlas) careerAtlas.setReducedMotion(calm);
   if (calm) {
     // drop any tilt or magnetic offset already applied
-    document.querySelectorAll('[data-tilt-bound], [data-magnetic-bound]').forEach(el => { el.style.transform = ''; });
+    document.querySelectorAll('[data-tilt-bound]').forEach(el => { el.style.transform = ''; });
   } else {
     init3DCardTilt();
     initHoverButtons();

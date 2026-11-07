@@ -501,7 +501,7 @@
                     <i data-lucide="shield-check" style="width:15px;height:15px;"></i>
                     <span>The app reads your PDF in memory and does not save the file. When an AI provider is configured, the extracted text is sent to it to write the feedback.</span>
                   </p>
-                  <div id="resume-dropzone" class="dropzone-container neu-dropzone">
+                  <div id="resume-dropzone" class="dropzone-container">
                     <input type="file" id="resume-file-input" class="dropzone-input-hidden" accept=".pdf,application/pdf" aria-describedby="resume-file-hint file-error-msg" title="Choose a resume PDF">
                     <div class="dropzone-icon">
                       <i data-lucide="upload-cloud" style="width:26px;height:26px;"></i>
@@ -702,17 +702,17 @@
 
                 <!-- TAB PANE 1: MARKDOWN DIAGNOSTIC REPORT -->
                 <div id="pane-diagnostic-report" class="results-tab-pane active" role="tabpanel" aria-labelledby="tab-btn-report" tabindex="0">
-                  <!-- Prismatic Deterministic Rubric Breakdown -->
+                  <!-- Deterministic rubric breakdown -->
                   <div id="diagnostic-rubric-canvas" class="diagnostic-rubric-canvas">
                     <div class="rubric-summary-card">
                       <div class="rubric-summary-header">
                         <div>
-                          <span class="rubric-kicker">100-Point Deterministic Rubric</span>
-                          <h4 class="rubric-title">Evidence-to-Job Alignment Breakdown</h4>
+                          <span class="rubric-kicker">100-point fixed rubric</span>
+                          <h4 class="rubric-title">How the score breaks down</h4>
                         </div>
                         <div class="rubric-provenance-pill" id="rubric-provenance-pill">
                           <i data-lucide="shield-check" style="width:14px;height:14px;"></i>
-                          <span>Deterministic Scoring Invariant</span>
+                          <span>Computed by rules, not by a language model</span>
                         </div>
                       </div>
                       <div class="rubric-meters-grid" id="rubric-meters-grid">
@@ -1175,7 +1175,7 @@
               <h2 id="lab-heading" class="section-title">Preferences and control samples</h2>
             </div>
             <div>
-              <p class="section-lede">Theme, motion, sound and 3D detail live in Preferences at the top of the page. The control samples below are a reference for the tactile buttons, toggles and sliders used across the product.</p>
+              <p class="section-lede">Theme, motion, sound and 3D detail live in Preferences at the top of the page. The samples below only show how the controls look and respond: they change nothing else in the product.</p>
               <button type="button" id="btn-open-prefs" class="btn-secondary showcase-prefs-btn">
                 <i data-lucide="sliders-horizontal" style="width:16px;height:16px;"></i> Open preferences
               </button>
@@ -1194,7 +1194,7 @@
               <div class="btn-lab-item">
                 <span class="btn-lab-label">Primary</span>
                 <button type="button" class="btn-magnetic-glow" onclick="showToast('Primary button pressed (sample)')">
-                  <i data-lucide="sparkles" style="width:16px;height:16px;"></i> Analyze
+                  <i data-lucide="scan-search" style="width:16px;height:16px;"></i> Analyze
                 </button>
               </div>
 
@@ -1267,18 +1267,19 @@
               <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:16px;margin-bottom:24px;border-bottom:1px solid rgba(var(--tint-rgb),0.06);padding-bottom:16px;">
                 <div>
                   <span class="neu-badge">
-                    <i data-lucide="layers" style="width:14px;height:14px;"></i>
-                    <span>Tactile surfaces</span>
+                    <i data-lucide="layers" style="width:14px;height:14px;" aria-hidden="true"></i>
+                    <span>Preview only</span>
                   </span>
-                  <h3 style="font-family:var(--font-display);font-size:1.4rem;font-weight:700;color:var(--text-primary);margin-top:8px;">
-                    Shadow depth, toggles and 3D camera controls
+                  <h3 style="font-family:var(--font-display);font-size:1.4rem;font-weight:400;color:var(--text-primary);margin-top:8px;">
+                    Surface preview
                   </h3>
+                  <p style="font-size:0.88rem;color:var(--text-secondary);margin-top:2px;">These controls change the sample card below and nothing else.</p>
                 </div>
-              
-                <div class="neu-segmented">
-                  <button type="button" class="neu-segmented-btn active" id="btn-neu-shape-raised" onclick="setNeuPreviewShape('raised')">Raised Pill</button>
-                  <button type="button" class="neu-segmented-btn" id="btn-neu-shape-inset" onclick="setNeuPreviewShape('inset')">Sunken Recessed</button>
-                  <button type="button" class="neu-segmented-btn" id="btn-neu-shape-convex" onclick="setNeuPreviewShape('convex')">Convex Surface</button>
+
+                <div class="neu-segmented" role="group" aria-label="Sample card shape">
+                  <button type="button" class="neu-segmented-btn active" id="btn-neu-shape-raised" aria-pressed="true">Raised</button>
+                  <button type="button" class="neu-segmented-btn" id="btn-neu-shape-inset" aria-pressed="false">Sunken</button>
+                  <button type="button" class="neu-segmented-btn" id="btn-neu-shape-convex" aria-pressed="false">Convex</button>
                 </div>
               </div>
 
@@ -1288,25 +1289,25 @@
                 <div class="neu-inset-panel">
                   <div style="display:flex;justify-content:space-between;margin-bottom:8px;">
                     <label for="neu-depth-range" style="font-size:0.85rem;font-weight:600;color:var(--text-primary);">
-                      Dynamic Shadow Depth: <span id="neu-depth-val" style="color:var(--accent-cyan);">8px</span>
+                      Shadow depth: <span id="neu-depth-val" style="color:var(--color-lagoon-ink);">8px</span>
                     </label>
-                    <span style="font-size:0.75rem;color:var(--text-muted);">Real-time CSS Shadow</span>
+                    
                   </div>
-                  <input type="range" id="neu-depth-range" class="neu-slider" min="2" max="20" value="8" aria-label="Dynamic shadow depth">
+                  <input type="range" id="neu-depth-range" class="neu-slider" min="2" max="20" value="8" aria-label="Shadow depth of the sample card">
                   <div style="display:flex;justify-content:space-between;font-size:0.7rem;color:var(--text-dim);margin-top:6px;">
-                    <span>Subtle (2px)</span>
-                    <span>Balanced (8px)</span>
-                    <span>Deep Extrusion (20px)</span>
+                    <span>2px</span>
+                    <span>8px</span>
+                    <span>20px</span>
                   </div>
                 </div>
 
                 <!-- Control 2: Tactile Soft Toggle Switch -->
                 <div class="neu-inset-panel" style="display:flex;justify-content:space-between;align-items:center;">
                   <div>
-                    <div style="font-size:0.85rem;font-weight:600;color:var(--text-primary);">Tactile Soft Switch</div>
-                    <div style="font-size:0.75rem;color:var(--text-muted);" id="neu-toggle-status-label">State: Active (Glow)</div>
+                    <div style="font-size:0.85rem;font-weight:600;color:var(--text-primary);" id="neu-tactile-toggle-name">Sample switch</div>
+                    <div style="font-size:0.75rem;color:var(--text-muted);" id="neu-toggle-status-label">On</div>
                   </div>
-                  <div class="neu-toggle-wrapper checked" id="neu-tactile-toggle" role="switch" aria-checked="true" tabindex="0">
+                  <div class="neu-toggle-wrapper checked" id="neu-tactile-toggle" role="switch" aria-checked="true" aria-labelledby="neu-tactile-toggle-name" tabindex="0">
                     <div class="neu-toggle-track">
                       <div class="neu-toggle-thumb"></div>
                     </div>
@@ -1317,13 +1318,13 @@
                 <div class="neu-inset-panel" style="display:flex;flex-direction:column;gap:8px;">
                   <div style="display:flex;justify-content:space-between;align-items:center;">
                     <span style="font-size:0.85rem;font-weight:600;color:var(--text-primary);display:flex;align-items:center;gap:6px;">
-                      <i data-lucide="sun" style="width:14px;height:14px;color:var(--accent-amber);"></i>
-                      <span>3D Light Vector Puck</span>
+                      <i data-lucide="sun" style="width:14px;height:14px;color:var(--color-ochre-ink);" aria-hidden="true"></i>
+                      <span>Light direction</span>
                     </span>
-                    <span id="neu-light-angle-label" style="font-size:0.75rem;color:var(--accent-cyan);font-weight:700;">135° (NW)</span>
+                    <span id="neu-light-angle-label" style="font-size:0.75rem;color:var(--color-lagoon-ink);font-weight:700;">225° (NW)</span>
                   </div>
-                  <div class="neu-light-puck-container" id="neu-light-well" title="Drag puck to rotate 3D shadows across all surfaces">
-                    <div class="neu-light-puck" id="neu-light-puck" tabindex="0" role="slider" aria-label="3D Lighting Direction Puck">
+                  <div class="neu-light-puck-container" id="neu-light-well" title="Drag to move the sample card's shadow">
+                    <div class="neu-light-puck" id="neu-light-puck" tabindex="0" role="slider" aria-label="Light direction for the sample card" aria-valuemin="0" aria-valuemax="359" aria-valuenow="225" aria-valuetext="225 degrees, north-west">
                       <span class="puck-center-glow"></span>
                     </div>
                     <span class="puck-axis-label axis-n">N</span>
@@ -1338,18 +1339,18 @@
 
               <!-- Tactile Interactive Preview Box -->
               <div id="neu-preview-surface" class="neu-card" style="margin-top:24px;text-align:center;padding:28px;transition:all 0.3s ease;">
-                <div style="font-size:0.8rem;text-transform:uppercase;letter-spacing:0.1em;color:var(--accent-cyan);font-weight:700;margin-bottom:8px;">
-                  Live Neumorphic Surface Preview
+                <div style="font-size:0.8rem;text-transform:uppercase;letter-spacing:0.1em;color:var(--color-lagoon-ink);font-weight:700;margin-bottom:8px;">
+                  Sample card
                 </div>
                 <p style="color:var(--text-secondary);font-size:0.92rem;max-width:540px;margin:0 auto 18px;line-height:1.6;">
-                  Notice how the soft highlights and shadows dynamically dance based on depth and light angles without harsh borders.
+                  Its shadow follows the depth and light direction you set above. The buttons here are samples too.
                 </p>
                 <div style="display:inline-flex;gap:12px;flex-wrap:wrap;justify-content:center;">
-                  <button type="button" class="neu-btn" onclick="showToast('Pressed Raised Soft Button')">
-                    <i data-lucide="fingerprint" style="width:16px;height:16px;"></i> Tactile Push
+                  <button type="button" class="neu-btn" onclick="showToast('Sample button pressed. Nothing else changes.')">
+                    <i data-lucide="fingerprint" style="width:16px;height:16px;"></i> Sample
                   </button>
-                  <button type="button" class="neu-btn neu-btn-primary" onclick="showToast('Pressed Accent Soft Button')">
-                    <i data-lucide="sparkles" style="width:16px;height:16px;"></i> Accent Pulse
+                  <button type="button" class="neu-btn neu-btn-primary" onclick="showToast('Sample button pressed. Nothing else changes.')">
+                    <i data-lucide="check" style="width:16px;height:16px;"></i> Accent sample
                   </button>
                 </div>
               </div>
@@ -1486,8 +1487,8 @@
 
   <!-- Toast Notification Container -->
   <div id="toast-notification" class="toast-notification" role="status" aria-live="polite">
-    <i data-lucide="sparkles" style="color:var(--accent-cyan);width:18px;height:18px;"></i>
-    <span id="toast-message">Notification message here</span>
+    <i data-lucide="info" style="width:17px;height:17px;flex-shrink:0;" aria-hidden="true"></i>
+    <span id="toast-message"></span>
   </div>
 
   <!-- ===========================================================================
