@@ -71,6 +71,7 @@ html[data-theme="terra"] {
   --color-muted: #625D69; /* ≥4.5:1 on canvas, alternate canvas and inset wells */
   --color-border: #D5CDBF;
   --color-border-strong: #B7AD9D;
+  --color-border-control: #877D6E; /* ≥3:1 on canvas, surfaces, inset, sage and lilac */
   --color-forest: #1E6655;
   --color-forest-deep: #154B40;
   --color-terracotta: #C85E47;
@@ -130,6 +131,7 @@ html[data-theme="grove"] {
   --color-muted: #B3AAB5;
   --color-border: #4B4658;
   --color-border-strong: #716A7B;
+  --color-border-control: #8A8296; /* ≥3:1 on canvas, surfaces, inset, sage and lilac */
   --color-forest: #80C9A9;
   --color-forest-deep: #A4DEC4;
   --color-terracotta: #F18A70;
@@ -282,7 +284,7 @@ html[data-theme="grove"] {
 
   /* Form fields: a quiet well with a clear edge, in both themes. */
   --field-bg: var(--color-canvas);
-  --field-border: var(--color-border-strong);
+  --field-border: var(--color-border-control);
 
   /* Motion */
   --motion-fast: 120ms;
@@ -1999,7 +2001,7 @@ main section[id] {
   position: relative;
   width: 40px;
   height: 22px;
-  border: 1px solid var(--color-border-strong);
+  border: 1px solid var(--color-border-control);
   border-radius: var(--radius-full);
   background: var(--color-surface-inset);
   transition: background var(--motion-control) var(--ease-standard);
@@ -2013,17 +2015,18 @@ main section[id] {
   width: 16px;
   height: 16px;
   border-radius: 50%;
-  background: var(--color-surface-raised);
-  box-shadow: var(--neu-raised-sm);
-  transition: transform var(--motion-control) var(--ease-standard);
+  background: var(--color-border-control);
+  transition: transform var(--motion-control) var(--ease-standard), background var(--motion-control) var(--ease-standard);
 }
 
 .demo-switch input:checked + .demo-switch-track {
   background: var(--color-ochre);
+  border-color: var(--color-ochre);
 }
 
 .demo-switch input:checked + .demo-switch-track::after {
   transform: translateX(18px);
+  background: var(--color-surface-raised);
 }
 
 .demo-switch input:focus-visible + .demo-switch-track {
@@ -4698,7 +4701,7 @@ main section[id] {
   width: 54px;
   height: 28px;
   background: var(--color-surface);
-  border: 1px solid var(--color-border-strong);
+  border: 1px solid var(--color-border-control);
   border-radius: var(--radius-full);
   position: relative;
   transition: background var(--motion-control) var(--ease-standard);

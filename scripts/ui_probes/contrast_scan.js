@@ -133,4 +133,28 @@ const checks = results.map((r) => ({
   ok: r.failCount === 0,
   detail: r.failures.slice(0, 6).map((f) => `${f.el} ${f.fg} on ${f.bg} ${f.ratio}<${f.need} "${f.text.slice(0, 24)}"`).join('; '),
 }));
-return { theme, results, checks };
+
+// Non-text contrast (WCAG 1.4.11): the edge that identifies a field, and the switch's knob,
+// need 3:1 against what is next to them.
+const edgeFailures = [];
+const fields = [...document.querySelectorAll('input:not([type="hidden"]):not([type="checkbox"]):not([type="radio"]):not([type="file"]):not([type="range"]), select, textarea')]
+  .filter((el) => el.getClientRects().length && getComputedStyle(el).visibility !== 'hidden' && !el.classList.contains('sr-only'));
+for (const el of fields) {
+  const cs = getComputedStyle(el);
+  const edge = parse(cs.borderTopColor);
+  if (!edge || parseFloat(cs.borderTopWidth) < 1) continue;
+  const outside = backgrounds(el.parentElement);
+  const inside = backgrounds(el);
+  if (!outside || !inside) continue;
+  const worst = Math.min(...outside.map((b) => ratio(over(edge, b), b)), ...inside.map((b) => ratio(over(edge, b), b)));
+  if (worst < 3) edgeFailures.push(`${describe(el)} ${hex(edge)} ${worst.toFixed(2)}`);
+}
+const knob = document.querySelector('.demo-switch-track');
+if (knob && knob.getClientRects().length) {
+  const track = backgrounds(knob)[0];
+  const dot = parse(getComputedStyle(knob, '::after').backgroundColor);
+  const value = dot ? ratio(over(dot, track), track) : 0;
+  if (value < 3) edgeFailures.push(`demo switch knob ${dot ? hex(dot) : '?'} on ${hex(track)} ${value.toFixed(2)}`);
+}
+checks.push({ name: `${theme}: field edges and the switch knob meet 3:1`, ok: edgeFailures.length === 0, detail: `${fields.length} fields; ${edgeFailures.slice(0, 6).join('; ')}` });
+return { theme, results, checks, edgeFailures };
