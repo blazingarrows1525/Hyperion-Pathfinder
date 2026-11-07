@@ -3871,6 +3871,71 @@ function initSpatialScrollReveals() {
   });
 }
 
+
+/* ==============================================================================
+   Editorial reveal system
+   Small, staggered entrances give the long-form page a deliberate rhythm.
+   The observer unhooks each element after revealing it; reduced-motion users
+   receive the complete content immediately with no entrance transition.
+   ==============================================================================
+*/
+function initEditorialRevealSystem() {
+  const selector = [
+    '.atlas-hero-copy', '.atlas-stage', '.evidence-panel', '.process-step',
+    '.kpi', '.story-panel', '.analyzer-form-card', '.analyzer-results-card',
+    '.archetype-card', '.company-directory', '.company-card',
+    '.prompt-composer', '.prompt-preview-card', '.faq-item'
+  ].join(',');
+
+  const reduced = appState.motionMode === 'reduced'
+    || (window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches);
+  const collect = (root) => {
+    const found = [];
+    if (root.nodeType === 1 && root.matches(selector)) found.push(root);
+    if (root.querySelectorAll) found.push(...root.querySelectorAll(selector));
+    return found;
+  };
+
+  const initial = collect(document);
+  if (reduced || typeof IntersectionObserver === 'undefined') {
+    initial.forEach(el => el.classList.add('hp-reveal-visible'));
+    return;
+  }
+
+  const observer = new IntersectionObserver((entries) => {
+    entries.forEach(entry => {
+      if (!entry.isIntersecting) return;
+      entry.target.classList.add('hp-reveal-visible');
+      observer.unobserve(entry.target);
+    });
+  }, { threshold: 0.12, rootMargin: '0px 0px -36px 0px' });
+
+  const seen = new WeakSet();
+  let sequence = 0;
+  const register = (root) => {
+    collect(root).forEach(el => {
+      if (seen.has(el)) return;
+      seen.add(el);
+      el.classList.add('hp-reveal');
+      el.style.setProperty('--hp-reveal-delay', `${(sequence % 4) * 55}ms`);
+      sequence += 1;
+      observer.observe(el);
+    });
+  };
+
+  register(document);
+  // Company rows/cards and framework results are hydrated after initial load.
+  // Observe only inserted subtrees so they receive the same entrance treatment.
+  if (typeof MutationObserver !== 'undefined' && document.body) {
+    const additions = new MutationObserver(records => {
+      records.forEach(record => record.addedNodes.forEach(node => {
+        if (node.nodeType === 1) register(node);
+      }));
+    });
+    additions.observe(document.body, { childList: true, subtree: true });
+  }
+}
+
 function initNeumorphicWorkbench() {
   const depthSlider = document.getElementById('neu-depth-range');
   const depthValLabel = document.getElementById('neu-depth-val');
@@ -5825,6 +5890,7 @@ document.addEventListener('DOMContentLoaded', () => {
   init3DCardTilt();
   initHoverButtons();
   initSpatialScrollReveals();
+  initEditorialRevealSystem();
 
   // 4. Backend Health Check & LLM Hub
   checkBackendHealth();
