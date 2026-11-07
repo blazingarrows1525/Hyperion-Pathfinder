@@ -7,6 +7,52 @@
    ============================================================================== */
 
 /* ==============================================================================
+   0. METRIC-MATCHED FALLBACK FACES
+   Local fonts sized to the web fonts, so text does not reflow when the web fonts
+   arrive (font-display: swap). Values measured in Chrome with canvas measureText
+   on a sentence of the hero copy: size-adjust = web width / local width, and the
+   overrides are the web font's ascent and descent divided by that factor.
+   Where the local font is missing (Android), the next font in the stack is used.
+   ============================================================================== */
+@font-face {
+  font-family: 'DM Serif Display Fallback';
+  src: local('Georgia');
+  size-adjust: 99.68%;
+  ascent-override: 104.33%;
+  descent-override: 34.11%;
+  line-gap-override: 0%;
+}
+
+@font-face {
+  font-family: 'DM Sans Fallback';
+  font-weight: 400;
+  src: local('Arial'), local('ArialMT');
+  size-adjust: 92.31%;
+  ascent-override: 107.25%;
+  descent-override: 33.58%;
+  line-gap-override: 0%;
+}
+
+@font-face {
+  font-family: 'DM Sans Fallback';
+  font-weight: 700;
+  src: local('Arial Bold'), local('Arial-BoldMT');
+  size-adjust: 93.04%;
+  ascent-override: 106.41%;
+  descent-override: 33.32%;
+  line-gap-override: 0%;
+}
+
+@font-face {
+  font-family: 'JetBrains Mono Fallback';
+  src: local('Courier New'), local('CourierNewPSMT');
+  size-adjust: 99.98%;
+  ascent-override: 102.02%;
+  descent-override: 30%;
+  line-gap-override: 0%;
+}
+
+/* ==============================================================================
    1. THEME TOKENS
    ============================================================================== */
 :root,
@@ -219,9 +265,9 @@ html[data-theme="grove"] {
   --mark-red-text: var(--color-terracotta-ink);
 
   /* Typography */
-  --font-display: 'DM Serif Display', Georgia, 'Times New Roman', serif;
-  --font-body: 'DM Sans', system-ui, -apple-system, 'Segoe UI', sans-serif;
-  --font-mono: 'JetBrains Mono', ui-monospace, 'Cascadia Mono', monospace;
+  --font-display: 'DM Serif Display', 'DM Serif Display Fallback', Georgia, 'Times New Roman', serif;
+  --font-body: 'DM Sans', 'DM Sans Fallback', system-ui, -apple-system, 'Segoe UI', sans-serif;
+  --font-mono: 'JetBrains Mono', 'JetBrains Mono Fallback', ui-monospace, 'Cascadia Mono', monospace;
 
   /* Radii */
   /* Four working radii and a pill. lg and xl are one value: every panel shares a corner. */
@@ -1094,8 +1140,9 @@ main section[id] {
   color: var(--color-muted);
 }
 
+/* Its own line, so the count arriving after load cannot re-wrap the sentence before it. */
 .atlas-provenance {
-  display: inline;
+  display: block;
 }
 
 .atlas-provenance strong {
