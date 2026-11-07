@@ -4449,24 +4449,25 @@ function renderExecutiveReview(review) {
     }
   }
 
-  // Strategic priorities list
+  // Next steps, in the reviewer's order. The server's ActionablePriority sends
+  // expected_impact and acceptance_condition (models.py); the older names are still read.
   if (prioritiesList) {
-    const priorities = review.strategic_priorities || [];
+    const priorities = [...(review.strategic_priorities || [])]
+      .sort((a, b) => (a.priority_rank ?? Infinity) - (b.priority_rank ?? Infinity));
     if (priorities.length === 0) {
       prioritiesList.innerHTML = '<p class="empty-hint">No next actions specified.</p>';
     } else {
-      prioritiesList.innerHTML = priorities.map((p, idx) => `
-        <div class="exec-priority-card">
-          <div class="priority-step-num">0${idx + 1}</div>
+      const detail = (label, value) => (value ? `<p class="priority-detail"><span>${label}</span> ${escapeHTML(value)}</p>` : '');
+      prioritiesList.innerHTML = `<ol class="exec-priority-steps">${priorities.map((p, idx) => `
+        <li class="exec-priority-card">
+          <span class="priority-step-num" aria-hidden="true">${String(idx + 1).padStart(2, '0')}</span>
           <div class="priority-info">
-            <div class="priority-action">${escapeHTML(p.action || p.priority || '')}</div>
-            <div class="priority-meta">
-              ${p.expected_improvement || p.impact ? `<span class="meta-tag tag-impact">${escapeHTML(p.expected_improvement || p.impact)}</span>` : ''}
-              ${p.prerequisites ? `<span class="meta-tag tag-prereq">Prereq: ${escapeHTML(p.prerequisites)}</span>` : ''}
-            </div>
+            <p class="priority-action">${escapeHTML(p.action || p.priority || '')}</p>
+            ${detail('Expected effect', p.expected_impact || p.expected_improvement || p.impact)}
+            ${detail('Before you start', p.prerequisites)}
+            ${detail('Done when', p.acceptance_condition)}
           </div>
-        </div>
-      `).join('');
+        </li>`).join('')}</ol>`;
     }
   }
 
@@ -5926,14 +5927,16 @@ Distributed RAG & Embedding Search Engine
     ],
     strategic_priorities: [
       {
+        priority_rank: 1,
         action: 'Replace buzzword bullet with concrete evaluation metrics and dataset split details',
-        expected_improvement: 'High Impact — Eliminates red flags in senior interview panels',
-        prerequisites: 'Identify actual test dataset and metric'
+        expected_impact: 'High impact: removes the claim a senior panel would challenge first',
+        prerequisites: 'Identify the actual test dataset and metric'
       },
       {
+        priority_rank: 2,
         action: 'Specify AWS service (ECS/EKS/Lambda) and Docker containerization parameters',
-        expected_improvement: 'Medium Impact — Solidifies cloud engineering credibility',
-        prerequisites: 'Review actual deployment configuration'
+        expected_impact: 'Medium impact: makes the cloud experience checkable',
+        prerequisites: 'Review the actual deployment configuration'
       }
     ]
   };

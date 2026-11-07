@@ -5125,6 +5125,59 @@ main section[id] {
   gap: 8px;
 }
 
+.exec-priority-steps {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.exec-priority-card {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr);
+  gap: 12px;
+  padding: 10px 12px;
+  border-radius: var(--radius-sm);
+  background: rgba(var(--shade-rgb), 0.08);
+  border: 1px solid rgba(var(--tint-rgb), 0.06);
+}
+
+.priority-step-num {
+  font-family: var(--font-mono);
+  font-size: 0.78rem;
+  font-weight: 600;
+  line-height: 1.6;
+  color: var(--color-terracotta-ink);
+}
+
+.priority-info {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.priority-action {
+  margin: 0;
+  font-size: 0.9rem;
+  font-weight: 600;
+  line-height: 1.45;
+  color: var(--color-ink);
+}
+
+.priority-detail {
+  margin: 0;
+  font-size: 0.82rem;
+  line-height: 1.45;
+  color: var(--color-ink-soft);
+}
+
+.priority-detail span {
+  font-weight: 700;
+  color: var(--color-ink);
+}
+
 /* --- In-Document Tailoring Pane --- */
 .tailoring-container {
   display: flex;
