@@ -6841,7 +6841,12 @@ button:disabled, [aria-disabled="true"] {
   will-change: auto;
 }
 [data-motion="reduced"] .hp-reveal,
-[data-motion="reduced"] .hp-reveal.hp-reveal-visible,
+[data-motion="reduced"] .hp-reveal.hp-reveal-visible {
+  opacity: 1 !important;
+  transform: none !important;
+  transition: none !important;
+  will-change: auto !important;
+}
 @media (prefers-reduced-motion: reduce) {
   .hp-reveal, .hp-reveal.hp-reveal-visible {
     opacity: 1 !important;
