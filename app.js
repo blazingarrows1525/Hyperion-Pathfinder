@@ -2500,6 +2500,9 @@ async function executeAnalysis() {
   appState.analyzer.status = 'analyzing';
   appState.analyzer.streamBuffer = '';
   appState.analyzer.abortController = new AbortController();
+  appState.reportData = null;
+  clearScoreRing();
+  resetRubricBreakdown();
 
   if (alertCard) alertCard.style.display = 'none';
   if (placeholder) placeholder.style.display = 'none';
@@ -2559,7 +2562,7 @@ async function executeAnalysis() {
     // Finished streaming: Parse structured report and safe render Markdown
     parseAndHydrateStructuredReport(appState.analyzer.streamBuffer);
     renderSafeMarkdown(appState.analyzer.streamBuffer, false);
-    updateScoreRing(appState.analyzer.streamBuffer);
+    updateScoreRing();
     showToast('Analysis complete.');
 
   } catch (err) {
@@ -2641,7 +2644,7 @@ function runDemoAnalysis() {
       appState.analyzer.streamBuffer = demoText;
       hydrateDemoStructuredReport();
       renderSafeMarkdown(demoText, true);
-      updateScoreRing(demoText);
+      updateScoreRing();
       showToast('Illustrative demo report loaded.');
       resetAnalyzerButtons();
     }
@@ -2737,17 +2740,11 @@ function sanitizeHtmlSafe(dirtyHtml) {
   return escapeHtml(dirtyHtml);
 }
 
-function updateScoreRing(text) {
-  if (appState.reportData && typeof appState.reportData.deterministic_score === 'number') {
-    return updateScoreRingFromNumber(appState.reportData.deterministic_score);
-  }
-  // Fallback when the structured report has no deterministic_score. Match the
-  // "N/100" form: a bare "Score…N" pattern captures the denominator in
-  // "Overall Score (out of 100): 86/100" and reports 100.
-  const match = text.match(/Overall Score[^\n]*?(\d{1,3})\s*\/\s*100/i) ||
-                text.match(/\b(\d{1,3})\s*\/\s*100\b/);
-  const score = match ? parseInt(match[1], 10) : NaN;
-  if (Number.isFinite(score) && score >= 0 && score <= 100) {
+// The ring shows only the structured report's overall_score (models.PlacementBenchmarkingReport).
+// Numbers in the narrative text are never parsed: a provider can write any "N/100" in prose.
+function updateScoreRing() {
+  const score = appState.reportData ? appState.reportData.overall_score : null;
+  if (typeof score === 'number' && score >= 0 && score <= 100) {
     updateScoreRingFromNumber(score);
   } else {
     clearScoreRing(); // never display an invented score
@@ -4586,22 +4583,26 @@ async function recalculateDraftFit() {
     }
 
     const data = await response.json();
-    appState.resumeDraft.currentRevisionId = data.new_revision_id;
-    appState.resumeDraft.textHash = data.text_hash;
-    appState.resumeDraft.markupItems = data.active_markups || [];
+    const snapshot = data.document_snapshot || {};
+    // Markup offsets refer to the snapshot's canonical text, which may differ from the
+    // edited text after normalization and redaction.
+    const text = typeof snapshot.canonical_display_text === 'string' ? snapshot.canonical_display_text : editedText;
+    const markups = data.resume_markups || [];
+    appState.resumeDraft.currentRevisionId = snapshot.revision_id || appState.resumeDraft.currentRevisionId;
+    appState.resumeDraft.textHash = snapshot.text_hash || '';
+    appState.resumeDraft.displayText = text;
+    appState.resumeDraft.markupItems = markups;
 
     // Update revision badge
     const revBadge = document.getElementById('draft-revision-badge');
-    if (revBadge) revBadge.textContent = `Draft: ${data.new_revision_id} (Re-scored: ${data.recalculated_score}/100)`;
+    if (revBadge) revBadge.textContent = `Draft: ${appState.resumeDraft.currentRevisionId} (Re-scored: ${data.overall_score}/100)`;
 
-    // Update score ring
-    appState.analyzer.extractedScore = data.recalculated_score;
-    const scoreVal = document.getElementById('mini-score-val');
-    if (scoreVal) scoreVal.textContent = data.recalculated_score;
+    // The ring and the rubric follow the re-scored draft together, so the total matches its parts.
+    updateScoreRingFromNumber(data.overall_score);
+    updateRubricBreakdown(data.score_breakdown);
 
-    // Update tailoring view
-    renderDocumentViewer(editedText, data.active_markups || []);
-    showToast(`Recalculation complete! Fit score: ${data.recalculated_score}/100.`);
+    renderDocumentViewer(text, markups);
+    showToast(`Recalculation complete. Alignment score: ${data.overall_score}/100.`);
 
   } catch (err) {
     console.error('Recalculation error:', err);
@@ -5236,37 +5237,57 @@ function generateGroundedCoachReply(question, framework = '') {
 }
 
 
-function updateRubricBreakdown(breakdown, overallScore) {
-  if (!breakdown && typeof overallScore === 'number') {
-    const r = overallScore / 100;
-    breakdown = [
-      { key: 'required_skills', points_earned: Math.round(35 * r), max_points: 35 },
-      { key: 'project_evidence', points_earned: Math.round(25 * r), max_points: 25 },
-      { key: 'domain_responsibilities', points_earned: Math.round(20 * r), max_points: 20 },
-      { key: 'metrics_density', points_earned: Math.round(10 * r), max_points: 10 },
-      { key: 'completeness_readability', points_earned: Math.round(10 * r), max_points: 10 }
-    ];
-  }
+// Rubric meters, keyed by the component keys services/scoring.py emits. Caps come from
+// each component's max_points; nothing is shown until a report supplies the values.
+const RUBRIC_METERS = {
+  required_skills: { id: 'skills', max: 35 },
+  project_evidence: { id: 'projects', max: 25 },
+  domain_responsibilities: { id: 'domain', max: 20 },
+  metrics_density: { id: 'metrics', max: 10 },
+  completeness_readability: { id: 'structure', max: 10 }
+};
+
+function formatRubricPoints(points) {
+  return Number.isInteger(points) ? String(points) : points.toFixed(1);
+}
+
+function setRubricMeter(meter, points, max, detail) {
+  const valEl = document.getElementById(`meter-val-${meter.id}`);
+  const fillEl = document.getElementById(`meter-fill-${meter.id}`);
+  const detailEl = document.getElementById(`meter-detail-${meter.id}`);
+  const known = typeof points === 'number';
+  if (valEl) valEl.innerHTML = `${known ? formatRubricPoints(points) : '—'}<small>/${max}</small>`;
+  if (fillEl) fillEl.style.width = known && max > 0 ? `${Math.min(100, (points / max) * 100)}%` : '0%';
+  if (detailEl) detailEl.textContent = known && detail ? detail : '';
+}
+
+function resetRubricBreakdown() {
+  Object.values(RUBRIC_METERS).forEach(meter => setRubricMeter(meter, null, meter.max, ''));
+}
+
+// Components missing from the report stay "—": a total is never split into invented parts.
+function updateRubricBreakdown(breakdown) {
+  resetRubricBreakdown();
   if (!Array.isArray(breakdown)) return;
-
-  const mapping = {
-    required_skills: { val: 'meter-val-skills', fill: 'meter-fill-skills' },
-    project_evidence: { val: 'meter-val-projects', fill: 'meter-fill-projects' },
-    domain_responsibilities: { val: 'meter-val-domain', fill: 'meter-fill-domain' },
-    metrics_density: { val: 'meter-val-metrics', fill: 'meter-fill-metrics' },
-    completeness_readability: { val: 'meter-val-structure', fill: 'meter-fill-structure' }
-  };
-
   breakdown.forEach(item => {
-    const target = mapping[item.key];
-    if (!target) return;
-    const valEl = document.getElementById(target.val);
-    const fillEl = document.getElementById(target.fill);
-    const pts = Math.round(item.points_earned);
-    const max = item.max_points || 10;
-    if (valEl) valEl.innerHTML = `${pts}<small>/${max}</small>`;
-    if (fillEl) fillEl.style.width = `${Math.min(100, Math.round((pts / max) * 100))}%`;
+    const meter = RUBRIC_METERS[item.key];
+    if (!meter || typeof item.points_earned !== 'number') return;
+    setRubricMeter(meter, item.points_earned, item.max_points || meter.max, item.detail);
   });
+}
+
+// The backend nests the canonical text and its revision in document_snapshot
+// (models.ResumeDocumentSnapshot); markup offsets refer to that text.
+function tailoringSourceFromReport(report) {
+  const snapshot = report && report.document_snapshot;
+  if (!snapshot || typeof snapshot.canonical_display_text !== 'string') return null;
+  return {
+    canonical_display_text: snapshot.canonical_display_text,
+    revision_id: snapshot.revision_id,
+    text_hash: snapshot.text_hash,
+    resume_markups: report.resume_markups || [],
+    overall_score: report.overall_score
+  };
 }
 
 // --- 16.7 STRUCTURED REPORT PARSING & DEMO HYDRATION ---
@@ -5279,16 +5300,17 @@ function parseAndHydrateStructuredReport(streamBuffer) {
     const report = JSON.parse(match[1]);
     appState.reportData = report;
 
-    if (typeof report.deterministic_score === 'number') {
-      updateScoreRingFromNumber(report.deterministic_score);
-      updateRubricBreakdown(report.deterministic_score_breakdown, report.deterministic_score);
+    if (typeof report.overall_score === 'number') {
+      updateScoreRingFromNumber(report.overall_score);
+      updateRubricBreakdown(report.score_breakdown);
     }
 
     if (report.persona_review) {
       renderExecutiveReview(report.persona_review);
     }
-    if (report.canonical_display_text) {
-      hydrateResumeTailoring(report);
+    const tailoringSource = tailoringSourceFromReport(report);
+    if (tailoringSource) {
+      hydrateResumeTailoring(tailoringSource);
     }
   } catch (err) {
     console.error('Failed to parse structured report JSON:', err);
@@ -5422,20 +5444,33 @@ Distributed RAG & Embedding Search Engine
     ]
   };
 
+  // Same shape as the backend report. The breakdown is an illustrative fixture whose
+  // components add up to the demo score; nothing here is computed from a resume.
+  const demoDetail = 'Illustrative demo value, not computed from a resume.';
   const mockReport = {
     analysis_id: 'demo_analysis_' + Date.now(),
     overall_score: 86,
-    canonical_display_text: demoResumeText,
+    score_breakdown: [
+      { key: 'required_skills', name: 'Required Skills Coverage', points_earned: 30, max_points: 35, detail: demoDetail },
+      { key: 'project_evidence', name: 'Practical Project Evidence', points_earned: 22, max_points: 25, detail: demoDetail },
+      { key: 'domain_responsibilities', name: 'Role Domain Responsibilities', points_earned: 17, max_points: 20, detail: demoDetail },
+      { key: 'metrics_density', name: 'Quantified Achievement Metrics', points_earned: 9, max_points: 10, detail: demoDetail },
+      { key: 'completeness_readability', name: 'Completeness & Readability', points_earned: 8, max_points: 10, detail: demoDetail }
+    ],
+    document_snapshot: {
+      document_id: 'demo_document',
+      revision_id: 'rev_0',
+      text_hash: 'demo_sha256_hash',
+      canonical_display_text: demoResumeText
+    },
     resume_markups: demoMarkups,
-    persona_review: demoReview,
-    revision_id: 'rev_0',
-    text_hash: 'demo_sha256_hash'
+    persona_review: demoReview
   };
 
   appState.reportData = mockReport;
-  updateRubricBreakdown(null, 86);
+  updateRubricBreakdown(mockReport.score_breakdown);
   renderExecutiveReview(demoReview);
-  hydrateResumeTailoring(mockReport);
+  hydrateResumeTailoring(tailoringSourceFromReport(mockReport));
 }
 
 function escapeHTML(str) {

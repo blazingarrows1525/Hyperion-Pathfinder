@@ -6442,6 +6442,18 @@ main section[id] {
   transition: width 0.6s cubic-bezier(0.2, 0.7, 0.2, 1);
 }
 
+/* The backend's explanation of each component; empty until a report arrives. */
+.meter-detail {
+  margin: 0;
+  font-size: 0.75rem;
+  line-height: 1.4;
+  color: var(--color-muted);
+}
+
+.meter-detail:empty {
+  display: none;
+}
+
 #meter-fill-skills { background: var(--color-forest); }
 #meter-fill-projects { background: var(--color-lagoon); }
 #meter-fill-domain { background: var(--color-orchid); }
