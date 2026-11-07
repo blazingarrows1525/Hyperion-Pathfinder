@@ -154,6 +154,7 @@ const appState = {
     abortController: null,
     activeRun: null, // the one run allowed to change anything; see startAnalysisRun
     streamBuffer: '', // the report on screen; only a validated new report replaces it
+    reportJobDescription: '', // the job description that report was made for
     extractedScore: null,
     demoMode: false,
     reportIsDemo: false, // provenance of the report currently in streamBuffer
@@ -226,8 +227,12 @@ const appState = {
     originalText: '',
     markupItems: [],
     selectedMarkupId: null,
-    draftHistory: [], // [{ revisionId, text, markups, score }]
+    // [{ revisionId, text, markups, score, breakdown, scored, edits: [{ before, after }] }]
+    // score and breakdown belong to the revision; scored is false after an edit until it is re-scored.
+    draftHistory: [],
     historyIndex: -1,
+    lastRevisionNumber: 0,
+    popoverAnchorId: null,
     unsavedChanges: false,
     recalculationStatus: 'idle',
     diffOpen: false
@@ -2849,6 +2854,7 @@ async function executeAnalysis({ demo = false } = {}) {
     }
 
     analyzer.streamBuffer = buffer;
+    analyzer.reportJobDescription = jd;
     hydrateStructuredReport(report);
     renderSafeMarkdown(buffer, false);
     updateScoreRing();
@@ -2904,6 +2910,7 @@ function runDemoAnalysis(run) {
   const finish = () => {
     if (!isCurrentRun(run)) return;
     appState.analyzer.streamBuffer = demoText;
+    appState.analyzer.reportJobDescription = (document.getElementById('jd-textarea') || {}).value || '';
     hydrateDemoStructuredReport();
     renderSafeMarkdown(demoText, true);
     updateScoreRing();
@@ -4126,100 +4133,39 @@ function setTheme(theme, { persist = true } = {}) {
   }
 }
 
-function initSpatialScrollReveals() {
-  if (typeof IntersectionObserver !== 'undefined') {
-    const revealObserver = new IntersectionObserver((entries) => {
-      entries.forEach(entry => {
-        if (entry.isIntersecting) {
-          entry.target.classList.add('in-view');
-        }
-      });
-    }, { threshold: 0.12, rootMargin: '0px 0px -40px 0px' });
-
-    document.querySelectorAll('.reveal-spatial, .step-card, .btn-lab-item, .recruiter-chip').forEach(el => {
-      revealObserver.observe(el);
-    });
-  }
-
-  // Recruiter Logo Fly-By Marquee interactive click interactions
-  document.querySelectorAll('.recruiter-chip').forEach(chip => {
-    chip.addEventListener('click', () => {
-      const companyName = chip.querySelector('strong')?.textContent || 'Company';
-      showToast(`Selected ${companyName} Placement Intelligence`);
-      const searchInput = document.getElementById('company-search-input');
-      if (searchInput) {
-        searchInput.value = companyName;
-        searchInput.dispatchEvent(new Event('input', { bubbles: true }));
-      }
-      const intelSec = document.getElementById('company-intel');
-      if (intelSec) intelSec.scrollIntoView({ behavior: 'smooth' });
-    });
-  });
-}
-
-
 /* ==============================================================================
    Editorial reveal system
-   Small, staggered entrances give the long-form page a deliberate rhythm.
-   The observer unhooks each element after revealing it; reduced-motion users
-   receive the complete content immediately with no entrance transition.
+   One quiet entrance per discovery panel, the first time it scrolls into view.
+   The hero copy and the working tools (analyzer, directories, Prompt Studio) never
+   wait for an animation, and anything already on screen at load is left alone.
+   The observer owns its elements: each is unhooked when revealed, and the observer
+   disconnects with the last one. Reduced-motion readers get everything immediately.
    ==============================================================================
 */
+const REVEAL_SELECTOR = '.section-head, .evidence-panel, .process-step, .story-panel, .faq-item';
+
 function initEditorialRevealSystem() {
-  const selector = [
-    '.atlas-hero-copy', '.atlas-stage', '.evidence-panel', '.process-step',
-    '.kpi', '.story-panel', '.analyzer-form-card', '.analyzer-results-card',
-    '.archetype-card', '.company-directory', '.company-card',
-    '.prompt-composer', '.prompt-preview-card', '.faq-item'
-  ].join(',');
+  if (appState.motionMode === 'reduced' || typeof IntersectionObserver === 'undefined') return;
 
-  const reduced = appState.motionMode === 'reduced'
-    || (window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches);
-  const collect = (root) => {
-    const found = [];
-    if (root.nodeType === 1 && root.matches(selector)) found.push(root);
-    if (root.querySelectorAll) found.push(...root.querySelectorAll(selector));
-    return found;
-  };
-
-  const initial = collect(document);
-  if (reduced || typeof IntersectionObserver === 'undefined') {
-    initial.forEach(el => el.classList.add('hp-reveal-visible'));
-    return;
-  }
+  const targets = [...document.querySelectorAll(REVEAL_SELECTOR)]
+    .filter(el => el.getBoundingClientRect().top > window.innerHeight);
+  let remaining = targets.length;
 
   const observer = new IntersectionObserver((entries) => {
     entries.forEach(entry => {
       if (!entry.isIntersecting) return;
       entry.target.classList.add('hp-reveal-visible');
       observer.unobserve(entry.target);
+      remaining -= 1;
     });
+    if (remaining <= 0) observer.disconnect();
   }, { threshold: 0.12, rootMargin: '0px 0px -36px 0px' });
 
-  const seen = new WeakSet();
-  let sequence = 0;
-  const register = (root) => {
-    collect(root).forEach(el => {
-      if (seen.has(el)) return;
-      seen.add(el);
-      el.classList.add('hp-reveal');
-      el.style.setProperty('--hp-reveal-delay', `${(sequence % 4) * 55}ms`);
-      sequence += 1;
-      observer.observe(el);
-    });
-  };
-
-  register(document);
-  // Company rows/cards and framework results are hydrated after initial load.
-  // Observe only inserted subtrees so they receive the same entrance treatment.
-  if (typeof MutationObserver !== 'undefined' && document.body) {
-    const additions = new MutationObserver(records => {
-      records.forEach(record => record.addedNodes.forEach(node => {
-        if (node.nodeType === 1) register(node);
-      }));
-    });
-    additions.observe(document.body, { childList: true, subtree: true });
-  }
+  targets.forEach((el, index) => {
+    el.classList.add('hp-reveal');
+    el.style.setProperty('--hp-reveal-delay', `${(index % 3) * 50}ms`);
+    observer.observe(el);
+  });
 }
 
 function initNeumorphicWorkbench() {
@@ -4553,17 +4499,67 @@ function initResumeTailoringController() {
   if (undoBtn) undoBtn.addEventListener('click', undoDraftEdit);
   if (redoBtn) redoBtn.addEventListener('click', redoDraftEdit);
   if (diffToggleBtn) diffToggleBtn.addEventListener('click', toggleDiffDrawer);
-  if (diffCloseBtn) diffCloseBtn.addEventListener('click', toggleDiffDrawer);
+  if (diffCloseBtn) diffCloseBtn.addEventListener('click', () => {
+    toggleDiffDrawer();
+    if (diffToggleBtn) diffToggleBtn.focus();
+  });
+  const diffUndoBtn = document.getElementById('btn-diff-undo');
+  if (diffUndoBtn) diffUndoBtn.addEventListener('click', undoDraftEdit);
   if (recalcBtn) recalcBtn.addEventListener('click', recalculateDraftFit);
   if (exportBtn) exportBtn.addEventListener('click', exportDraftAsMarkdown);
-  if (popoverCloseBtn) popoverCloseBtn.addEventListener('click', closeMarkupPopover);
-  if (popoverDismissBtn) popoverDismissBtn.addEventListener('click', closeMarkupPopover);
+  if (popoverCloseBtn) popoverCloseBtn.addEventListener('click', () => closeMarkupPopover());
+  if (popoverDismissBtn) popoverDismissBtn.addEventListener('click', () => closeMarkupPopover());
   if (popoverApplyBtn) popoverApplyBtn.addEventListener('click', applyMarkupReplacement);
 
-  // Close popover on Escape key
+  const rewriteInput = document.getElementById('popover-rewrite-input');
+  if (rewriteInput) rewriteInput.addEventListener('input', () => hideInlineError('popover-error'));
+
   document.addEventListener('keydown', (e) => {
-    if (e.key === 'Escape') closeMarkupPopover();
+    if (e.key === 'Escape' && markupPopoverOpen()) closeMarkupPopover();
   });
+  // A press outside closes it, and a press on another mark goes on to open that one.
+  document.addEventListener('pointerdown', (e) => {
+    if (!markupPopoverOpen()) return;
+    if (e.target.closest('#markup-detail-popover') || e.target.closest('.doc-markup-span')) return;
+    closeMarkupPopover({ restoreFocus: false });
+  });
+}
+
+function markupPopoverOpen() {
+  const popover = document.getElementById('markup-detail-popover');
+  return Boolean(popover) && popover.style.display !== 'none';
+}
+
+function showInlineError(id, message) {
+  const elem = document.getElementById(id);
+  if (!elem) return;
+  elem.textContent = message;
+  elem.classList.add('visible');
+}
+
+function hideInlineError(id) {
+  const elem = document.getElementById(id);
+  if (!elem) return;
+  elem.textContent = '';
+  elem.classList.remove('visible');
+}
+
+// Backend categories (services/markup.py) in the words the legend uses.
+const MARKUP_CATEGORY_LABELS = {
+  metric_highlight: 'Metric proof',
+  passive_verb: 'Passive phrasing',
+  buzzword_gap: 'Critical gap'
+};
+
+function markupCategoryLabel(item) {
+  return MARKUP_CATEGORY_LABELS[item.category]
+    || String(item.category || 'Suggestion').replace(/_/g, ' ').replace(/^\w/, c => c.toUpperCase());
+}
+
+// A green mark praises evidence that is already good. Its text is advice, not replacement
+// wording, so there is nothing to apply.
+function markupIsReplaceable(item) {
+  return item.color_tag !== 'green';
 }
 
 function hydrateResumeTailoring(report) {
@@ -4578,27 +4574,54 @@ function hydrateResumeTailoring(report) {
   appState.resumeDraft.currentRevisionId = report.revision_id || 'rev_0';
   appState.resumeDraft.markupItems = markups;
   appState.resumeDraft.selectedMarkupId = null;
+  appState.resumeDraft.documentId = report.document_id || '';
   appState.resumeDraft.draftHistory = [{
     revisionId: appState.resumeDraft.currentRevisionId,
     text: displayText,
     markups: markups,
-    score: report.overall_score
+    score: report.overall_score,
+    breakdown: report.score_breakdown || null,
+    scored: true,
+    rescored: false,
+    edits: []
   }];
   appState.resumeDraft.historyIndex = 0;
+  appState.resumeDraft.lastRevisionNumber = 0;
 
-  // Update Badge
+  closeMarkupPopover({ restoreFocus: false });
+  const drawer = document.getElementById('draft-diff-drawer');
+  if (drawer && drawer.style.display !== 'none') toggleDiffDrawer();
+
+  renderDraftStatus();
+  renderDocumentViewer(displayText, markups);
+}
+
+function currentDraftEntry() {
+  const draft = appState.resumeDraft;
+  return draft.draftHistory[draft.historyIndex] || null;
+}
+
+// The badge, tab count, undo and redo all read the current revision, so they cannot disagree.
+function renderDraftStatus() {
+  const draft = appState.resumeDraft;
+  const entry = currentDraftEntry();
   const revBadge = document.getElementById('draft-revision-badge');
-  if (revBadge) revBadge.textContent = `Draft: ${appState.resumeDraft.currentRevisionId} (Original)`;
-
-  // Update tab badge count
+  if (revBadge && entry) {
+    if (!entry.scored) {
+      revBadge.textContent = `Draft: ${entry.revisionId}, edited. Score not updated; recalculate to re-score.`;
+    } else if (entry.rescored) {
+      revBadge.textContent = `Draft: ${entry.revisionId}, re-scored ${entry.score} of 100`;
+    } else {
+      revBadge.textContent = `Draft: ${entry.revisionId}, original text`;
+    }
+  }
   const countBadge = document.getElementById('tab-markup-count-badge');
   if (countBadge) {
-    countBadge.textContent = markups.length;
-    countBadge.style.display = markups.length > 0 ? 'inline-block' : 'none';
+    countBadge.textContent = draft.markupItems.length;
+    countBadge.style.display = draft.markupItems.length > 0 ? 'inline-block' : 'none';
   }
-
   updateUndoRedoButtons();
-  renderDocumentViewer(displayText, markups);
+  renderDiffDrawer();
 }
 
 function renderDocumentViewer(text, markups) {
@@ -4633,8 +4656,10 @@ function renderDocumentViewer(text, markups) {
     markEl.setAttribute('tabindex', '0');
     markEl.setAttribute('role', 'button');
     markEl.setAttribute('aria-haspopup', 'dialog');
-    markEl.setAttribute('title', `${item.category}: ${item.critique}`);
+    markEl.setAttribute('title', `${markupCategoryLabel(item)}: ${item.critique}`);
     markEl.textContent = text.substring(item.start_char, item.end_char);
+    // The category is available as text: colour and underline style only repeat it.
+    markEl.setAttribute('aria-label', `${markupCategoryLabel(item)}: ${markEl.textContent}. Open the suggestion.`);
 
     markEl.addEventListener('click', (e) => {
       e.stopPropagation();
@@ -4667,132 +4692,192 @@ function openMarkupPopover(markupId, anchorEl) {
   const popover = document.getElementById('markup-detail-popover');
   if (!item || !popover) return;
 
+  document.querySelectorAll('.doc-markup-span.selected').forEach(el => el.classList.remove('selected'));
+  if (anchorEl) anchorEl.classList.add('selected');
   appState.resumeDraft.selectedMarkupId = markupId;
+  appState.resumeDraft.popoverAnchorId = markupId;
+  hideInlineError('popover-error');
 
-  // Populate data
   const dot = document.getElementById('popover-color-dot');
   const catTag = document.getElementById('popover-category-tag');
   const sevTag = document.getElementById('popover-severity-tag');
   const quoteText = document.getElementById('popover-quoted-text');
   const critiqueText = document.getElementById('popover-critique-text');
   const rewriteInput = document.getElementById('popover-rewrite-input');
+  const rewriteBox = document.getElementById('popover-rewrite-box');
+  const applyBtn = document.getElementById('popover-apply-btn');
+  const closeBtn = document.getElementById('popover-dismiss-btn');
+  const replaceable = markupIsReplaceable(item);
 
   if (dot) dot.className = `legend-dot ${item.color_tag || 'yellow'}`;
-  if (catTag) catTag.textContent = (item.category || 'Feedback').replace(/_/g, ' ').toUpperCase();
-  if (sevTag) sevTag.textContent = (item.severity || 'Review').toUpperCase();
+  if (catTag) catTag.textContent = markupCategoryLabel(item);
+  if (sevTag) sevTag.textContent = String(item.severity || 'Review').replace(/^\w/, c => c.toUpperCase());
   if (quoteText) quoteText.textContent = `"${item.original_text}"`;
-  if (critiqueText) critiqueText.textContent = item.critique;
-  if (rewriteInput) rewriteInput.value = item.suggested_rewrite;
+  if (critiqueText) critiqueText.textContent = replaceable ? item.critique : `${item.critique} ${item.suggested_rewrite}`;
+  if (rewriteInput) rewriteInput.value = replaceable ? item.suggested_rewrite : '';
+  if (rewriteBox) rewriteBox.hidden = !replaceable;
+  if (applyBtn) applyBtn.hidden = !replaceable;
 
-  // Position popover
-  const viewport = document.getElementById('resume-document-viewport');
-  if (viewport && anchorEl) {
-    const vRect = viewport.getBoundingClientRect();
-    const aRect = anchorEl.getBoundingClientRect();
-
-    let top = (aRect.bottom - vRect.top) + viewport.scrollTop + 8;
-    let left = (aRect.left - vRect.left) + viewport.scrollLeft;
-
-    // Constrain within viewport width
-    if (left + 360 > vRect.width) {
-      left = Math.max(16, vRect.width - 380);
-    }
-    popover.style.top = `${top}px`;
-    popover.style.left = `${left}px`;
-  }
-
-  popover.style.display = 'block';
-  if (rewriteInput) rewriteInput.focus();
+  popover.style.display = 'flex';
+  positionMarkupPopover(popover, anchorEl);
+  if (replaceable && rewriteInput) rewriteInput.focus();
+  else if (closeBtn) closeBtn.focus();
 }
 
-function closeMarkupPopover() {
+// Beside the span on wide screens; below 640 px the stylesheet makes it a bottom sheet.
+function positionMarkupPopover(popover, anchorEl) {
+  popover.style.top = '';
+  popover.style.left = '';
+  if (!anchorEl || window.matchMedia('(max-width: 640px)').matches) return;
+  const parent = popover.offsetParent || document.body;
+  const parentRect = parent.getBoundingClientRect();
+  const anchorRect = anchorEl.getBoundingClientRect();
+  const gap = 8;
+  const left = Math.max(gap, Math.min(anchorRect.left - parentRect.left, parentRect.width - popover.offsetWidth - gap));
+  const fitsBelow = anchorRect.bottom + gap + popover.offsetHeight <= window.innerHeight;
+  const fitsAbove = anchorRect.top - gap - popover.offsetHeight >= 0;
+  const top = !fitsBelow && fitsAbove
+    ? anchorRect.top - parentRect.top - popover.offsetHeight - gap
+    : anchorRect.bottom - parentRect.top + gap;
+  popover.style.left = `${left}px`;
+  popover.style.top = `${top}px`;
+}
+
+function closeMarkupPopover({ restoreFocus = true } = {}) {
   const popover = document.getElementById('markup-detail-popover');
+  const wasOpen = markupPopoverOpen();
   if (popover) popover.style.display = 'none';
-  appState.resumeDraft.selectedMarkupId = null;
+  const draft = appState.resumeDraft;
+  const anchorId = draft.popoverAnchorId;
+  draft.selectedMarkupId = null;
+  draft.popoverAnchorId = null;
+  document.querySelectorAll('.doc-markup-span.selected').forEach(el => el.classList.remove('selected'));
+  if (wasOpen && restoreFocus && anchorId) {
+    const anchor = document.querySelector(`.doc-markup-span[data-markup-id="${CSS.escape(anchorId)}"]`);
+    if (anchor) anchor.focus();
+  }
+}
+
+// Marks after the edit move with it; marks that touched the replaced span no longer apply.
+function rebaseMarkups(markups, start, end, delta, appliedId) {
+  return markups
+    .filter(m => m.markup_id !== appliedId && (m.end_char <= start || m.start_char >= end))
+    .map(m => (m.start_char >= end
+      ? { ...m, start_char: m.start_char + delta, end_char: m.end_char + delta }
+      : m));
 }
 
 function applyMarkupReplacement() {
-  const markupId = appState.resumeDraft.selectedMarkupId;
-  const item = appState.resumeDraft.markupItems.find(m => m.markup_id === markupId);
+  const draft = appState.resumeDraft;
+  const item = draft.markupItems.find(m => m.markup_id === draft.selectedMarkupId);
   const rewriteInput = document.getElementById('popover-rewrite-input');
   if (!item || !rewriteInput) return;
 
-  const currentText = appState.resumeDraft.displayText;
+  const currentText = draft.displayText;
   const newSegment = rewriteInput.value.trim();
 
-  // Validate that the target span still matches original_text
-  const existingSlice = currentText.substring(item.start_char, item.end_char);
-  if (existingSlice !== item.original_text) {
-    showToast('Document text was modified since this suggestion was created. Please Recalculate Fit.');
-    closeMarkupPopover();
+  if (!newSegment) {
+    showInlineError('popover-error', 'Enter the replacement text first. Nothing was changed.');
+    rewriteInput.focus();
+    return;
+  }
+  if (/\[insert\b/i.test(newSegment)) {
+    showInlineError('popover-error', 'Replace the text in [brackets] with your own facts first, or remove it. Nothing was changed.');
+    rewriteInput.focus();
+    return;
+  }
+  // The exact span must still hold the text this suggestion was made for. Offsets are the
+  // only way to find it: a similar phrase elsewhere is never touched.
+  if (currentText.substring(item.start_char, item.end_char) !== item.original_text) {
+    showInlineError('popover-error', 'This passage has changed since the suggestion was made, so nothing was applied. Recalculate to get fresh suggestions.');
     return;
   }
 
-  // Exact surgical replacement in browser memory
   const revisedText = currentText.substring(0, item.start_char) + newSegment + currentText.substring(item.end_char);
+  const delta = newSegment.length - (item.end_char - item.start_char);
+  const markups = rebaseMarkups(draft.markupItems, item.start_char, item.end_char, delta, item.markup_id);
+  const previous = currentDraftEntry();
+  draft.lastRevisionNumber += 1;
+  const newRevisionId = `rev_${draft.lastRevisionNumber}`;
 
-  // Increment revision count
-  const nextRevNum = appState.resumeDraft.draftHistory.length;
-  const newRevisionId = `rev_${nextRevNum}`;
-
-  appState.resumeDraft.displayText = revisedText;
-  appState.resumeDraft.currentRevisionId = newRevisionId;
-  appState.resumeDraft.markupItems = []; // Invalidate stale offsets until recalculation
-
-  // Append snapshot to history
-  appState.resumeDraft.draftHistory = appState.resumeDraft.draftHistory.slice(0, appState.resumeDraft.historyIndex + 1);
-  appState.resumeDraft.draftHistory.push({
+  draft.displayText = revisedText;
+  draft.currentRevisionId = newRevisionId;
+  draft.markupItems = markups;
+  draft.draftHistory = draft.draftHistory.slice(0, draft.historyIndex + 1);
+  draft.draftHistory.push({
     revisionId: newRevisionId,
     text: revisedText,
-    markups: [],
-    score: appState.analyzer.extractedScore
+    markups,
+    score: previous ? previous.score : null,
+    breakdown: previous ? previous.breakdown : null,
+    scored: false,
+    rescored: false,
+    edits: [...(previous ? previous.edits : []), { before: item.original_text, after: newSegment }]
   });
-  appState.resumeDraft.historyIndex = appState.resumeDraft.draftHistory.length - 1;
+  draft.historyIndex = draft.draftHistory.length - 1;
 
-  // Update UI revision badge
-  const revBadge = document.getElementById('draft-revision-badge');
-  if (revBadge) revBadge.textContent = `Draft: ${newRevisionId} (Unsaved edits — Recalculate recommended)`;
+  closeMarkupPopover({ restoreFocus: false });
+  renderDocumentViewer(revisedText, markups);
+  renderDraftStatus();
 
-  closeMarkupPopover();
-  renderDocumentViewer(revisedText, []);
-  updateUndoRedoButtons();
-  showToast(`Replacement applied. Revision updated to ${newRevisionId}.`);
+  // Focus moves on to the next suggestion, or back to the document if none is left.
+  const next = [...markups].sort((a, b) => a.start_char - b.start_char).find(m => m.start_char >= item.start_char);
+  const nextEl = next && document.querySelector(`.doc-markup-span[data-markup-id="${CSS.escape(next.markup_id)}"]`);
+  const viewport = document.getElementById('resume-document-viewport');
+  if (nextEl) nextEl.focus();
+  else if (viewport) viewport.focus();
+  showToast(`Replacement applied as ${newRevisionId}. The score is not updated until you recalculate.`);
+}
+
+function restoreDraftRevision(index, verb) {
+  const draft = appState.resumeDraft;
+  draft.historyIndex = index;
+  const entry = draft.draftHistory[index];
+  draft.displayText = entry.text;
+  draft.currentRevisionId = entry.revisionId;
+  draft.markupItems = entry.markups || [];
+
+  // The ring and rubric follow the revision they belong to.
+  if (typeof entry.score === 'number') updateScoreRingFromNumber(entry.score);
+  updateRubricBreakdown(entry.breakdown);
+
+  closeMarkupPopover({ restoreFocus: false });
+  renderDocumentViewer(entry.text, draft.markupItems);
+  renderDraftStatus();
+  showToast(`${verb} to ${entry.revisionId}.`);
+}
+
+// The button that was used can become disabled at the end of the history.
+function keepFocusAfterHistoryMove(usedId, otherId) {
+  const used = document.getElementById(usedId);
+  const other = document.getElementById(otherId);
+  if (used && used.disabled && document.activeElement === used && other) other.focus();
 }
 
 function undoDraftEdit() {
-  if (appState.resumeDraft.historyIndex <= 0) return;
-  appState.resumeDraft.historyIndex -= 1;
-  const snapshot = appState.resumeDraft.draftHistory[appState.resumeDraft.historyIndex];
-
-  appState.resumeDraft.displayText = snapshot.text;
-  appState.resumeDraft.currentRevisionId = snapshot.revisionId;
-  appState.resumeDraft.markupItems = snapshot.markups || [];
-
-  const revBadge = document.getElementById('draft-revision-badge');
-  if (revBadge) revBadge.textContent = `Draft: ${snapshot.revisionId} (Restored via Undo)`;
-
-  renderDocumentViewer(snapshot.text, snapshot.markups || []);
-  updateUndoRedoButtons();
-  closeMarkupPopover();
-  showToast(`Undone to ${snapshot.revisionId}.`);
+  const draft = appState.resumeDraft;
+  if (draft.historyIndex <= 0) return;
+  const usedId = document.activeElement && document.activeElement.id;
+  restoreDraftRevision(draft.historyIndex - 1, 'Undone');
+  if (usedId === 'btn-draft-undo') {
+    const undoBtn = document.getElementById('btn-draft-undo');
+    const redoBtn = document.getElementById('btn-draft-redo');
+    if (undoBtn && undoBtn.disabled && redoBtn) redoBtn.focus();
+  } else if (usedId === 'btn-diff-undo') {
+    const closeDiff = document.getElementById('btn-close-diff');
+    const diffUndo = document.getElementById('btn-diff-undo');
+    if (diffUndo && diffUndo.disabled && closeDiff) closeDiff.focus();
+  }
 }
 
 function redoDraftEdit() {
-  if (appState.resumeDraft.historyIndex >= appState.resumeDraft.draftHistory.length - 1) return;
-  appState.resumeDraft.historyIndex += 1;
-  const snapshot = appState.resumeDraft.draftHistory[appState.resumeDraft.historyIndex];
-
-  appState.resumeDraft.displayText = snapshot.text;
-  appState.resumeDraft.currentRevisionId = snapshot.revisionId;
-  appState.resumeDraft.markupItems = snapshot.markups || [];
-
-  const revBadge = document.getElementById('draft-revision-badge');
-  if (revBadge) revBadge.textContent = `Draft: ${snapshot.revisionId} (Restored via Redo)`;
-
-  renderDocumentViewer(snapshot.text, snapshot.markups || []);
-  updateUndoRedoButtons();
-  closeMarkupPopover();
-  showToast(`Redone to ${snapshot.revisionId}.`);
+  const draft = appState.resumeDraft;
+  if (draft.historyIndex >= draft.draftHistory.length - 1) return;
+  const usedRedo = document.activeElement && document.activeElement.id === 'btn-draft-redo';
+  restoreDraftRevision(draft.historyIndex + 1, 'Redone');
+  const redoBtn = document.getElementById('btn-draft-redo');
+  const undoBtn = document.getElementById('btn-draft-undo');
+  if (usedRedo && redoBtn && redoBtn.disabled && undoBtn) undoBtn.focus();
 }
 
 function updateUndoRedoButtons() {
@@ -4805,28 +4890,57 @@ function updateUndoRedoButtons() {
 
 function toggleDiffDrawer() {
   const drawer = document.getElementById('draft-diff-drawer');
+  const toggle = document.getElementById('btn-toggle-diff');
   if (!drawer) return;
+  const open = drawer.style.display === 'none';
+  drawer.style.display = open ? 'block' : 'none';
+  appState.resumeDraft.diffOpen = open;
+  if (toggle) toggle.setAttribute('aria-expanded', String(open));
+  if (open) renderDiffDrawer();
+}
 
-  const isVisible = drawer.style.display !== 'none';
-  if (isVisible) {
-    drawer.style.display = 'none';
-    appState.resumeDraft.diffOpen = false;
-  } else {
-    // Populate diff
-    const origBox = document.getElementById('diff-original-content');
-    const editBox = document.getElementById('diff-edited-content');
-    if (origBox) origBox.textContent = appState.resumeDraft.originalText;
-    if (editBox) editBox.textContent = appState.resumeDraft.displayText;
+// Lists each applied change in words, beside the two full texts, and follows undo and redo.
+function renderDiffDrawer() {
+  const draft = appState.resumeDraft;
+  const entry = currentDraftEntry();
+  const edits = entry ? entry.edits : [];
 
-    drawer.style.display = 'block';
-    appState.resumeDraft.diffOpen = true;
-    showToast('Opened Revision Diff Drawer');
+  const undoBtn = document.getElementById('btn-diff-undo');
+  if (undoBtn) undoBtn.disabled = draft.historyIndex <= 0;
+  if (!draft.diffOpen) return;
+
+  const summary = document.getElementById('diff-summary');
+  if (summary) {
+    summary.textContent = edits.length
+      ? `${edits.length} ${edits.length === 1 ? 'change' : 'changes'} in this draft, held in this browser only. Your uploaded PDF is not changed.`
+      : 'No changes yet. Apply a suggestion and it will be listed here. Your uploaded PDF is never changed.';
   }
+  const list = document.getElementById('diff-change-list');
+  if (list) {
+    list.hidden = edits.length === 0;
+    list.textContent = '';
+    edits.forEach(edit => {
+      const row = document.createElement('li');
+      const before = document.createElement('del');
+      before.className = 'diff-removal';
+      before.textContent = edit.before;
+      const after = document.createElement('ins');
+      after.className = 'diff-addition';
+      after.textContent = edit.after;
+      row.append(before, ' became ', after);
+      list.appendChild(row);
+    });
+  }
+  const origBox = document.getElementById('diff-original-content');
+  const editBox = document.getElementById('diff-edited-content');
+  if (origBox) origBox.textContent = draft.originalText;
+  if (editBox) editBox.textContent = draft.displayText;
 }
 
 async function recalculateDraftFit() {
   const recalcBtn = document.getElementById('btn-recalculate-draft');
-  const jd = (appState.analyzer.jobDescription || '').trim();
+  // Re-score against the job description this report was made for, not whatever the form holds now.
+  const jd = (appState.analyzer.reportJobDescription || '').trim();
   const editedText = appState.resumeDraft.displayText;
 
   if (!editedText) {
@@ -4842,11 +4956,11 @@ async function recalculateDraftFit() {
 
   try {
     const payload = {
-      analysis_id: appState.reportData?.analysis_id || ('rec_' + Date.now()),
-      target_job_description: jd || 'Software Engineer',
       edited_text: editedText,
-      base_revision_id: appState.resumeDraft.currentRevisionId
+      job_description: jd,
+      revision_id: appState.resumeDraft.currentRevisionId
     };
+    if (appState.resumeDraft.documentId) payload.document_id = appState.resumeDraft.documentId;
 
     const response = await fetch(apiUrl('/api/markup/recalculate'), {
       method: 'POST',
@@ -4864,25 +4978,33 @@ async function recalculateDraftFit() {
     // edited text after normalization and redaction.
     const text = typeof snapshot.canonical_display_text === 'string' ? snapshot.canonical_display_text : editedText;
     const markups = data.resume_markups || [];
-    appState.resumeDraft.currentRevisionId = snapshot.revision_id || appState.resumeDraft.currentRevisionId;
     appState.resumeDraft.textHash = snapshot.text_hash || '';
     appState.resumeDraft.displayText = text;
     appState.resumeDraft.markupItems = markups;
 
-    // Update revision badge
-    const revBadge = document.getElementById('draft-revision-badge');
-    if (revBadge) revBadge.textContent = `Draft: ${appState.resumeDraft.currentRevisionId} (Re-scored: ${data.overall_score}/100)`;
+    // The score now belongs to this revision, so undo and redo can bring it back with the text.
+    const entry = currentDraftEntry();
+    if (entry) {
+      entry.text = text;
+      entry.markups = markups;
+      entry.score = data.overall_score;
+      entry.breakdown = data.score_breakdown;
+      entry.scored = true;
+      entry.rescored = true;
+    }
 
     // The ring and the rubric follow the re-scored draft together, so the total matches its parts.
     updateScoreRingFromNumber(data.overall_score);
     updateRubricBreakdown(data.score_breakdown);
 
+    closeMarkupPopover({ restoreFocus: false });
     renderDocumentViewer(text, markups);
-    showToast(`Recalculation complete. Alignment score: ${data.overall_score}/100.`);
+    renderDraftStatus();
+    showToast(`Draft re-scored: ${data.overall_score} of 100.`);
 
   } catch (err) {
-    console.error('Recalculation error:', err);
-    showToast(`Recalculation note: ${err.message}. Showing local draft changes.`);
+    console.warn('The draft could not be re-scored:', err.message);
+    showToast('The draft could not be re-scored. Your edits are kept. Try again in a moment.');
   } finally {
     if (recalcBtn) {
       recalcBtn.disabled = false;
@@ -4899,12 +5021,18 @@ function exportDraftAsMarkdown() {
     return;
   }
 
-  const score = appState.analyzer.extractedScore || 'N/A';
+  const entry = currentDraftEntry();
   const rev = appState.resumeDraft.currentRevisionId || 'rev_0';
-  const mdContent = `# Resume Checker — Tailored Resume Draft (${rev})
+  const scoreLine = entry && entry.scored && typeof entry.score === 'number'
+    ? `Alignment score for this revision: ${entry.score}/100 (textual alignment, not a hiring probability)`
+    : 'Alignment score: not updated since the last edit';
+  const sourceLine = appState.analyzer.reportIsDemo
+    ? 'Source: illustrative demo text, not a real resume'
+    : 'Source: edited in this browser. Your uploaded PDF was not changed.';
+  const mdContent = `# Hyperion Pathfinder — Tailored Resume Draft (${rev})
 Export Date: ${new Date().toLocaleString()}
-Placement Alignment Score: ${score}/100
-Note: Exported from in-browser tailoring session. Original PDF layout is preserved separately.
+${scoreLine}
+${sourceLine}
 
 ================================================================================
 ${text}
@@ -4920,7 +5048,7 @@ ${text}
   a.click();
   document.body.removeChild(a);
   URL.revokeObjectURL(url);
-  showToast(`Exported tailored draft as resume_tailored_${rev}.md`);
+  showToast(`Download started: resume_tailored_${rev}.md`);
 }
 
 // --- 16.4 VOICE ASSISTANT CONTROLLER (STT & TTS) ---
@@ -5552,8 +5680,10 @@ function tailoringSourceFromReport(report) {
     canonical_display_text: snapshot.canonical_display_text,
     revision_id: snapshot.revision_id,
     text_hash: snapshot.text_hash,
+    document_id: snapshot.document_id,
     resume_markups: report.resume_markups || [],
-    overall_score: report.overall_score
+    overall_score: report.overall_score,
+    score_breakdown: report.score_breakdown
   };
 }
 
@@ -6212,7 +6342,6 @@ document.addEventListener('DOMContentLoaded', () => {
   // 3. Card Parallax Tilt & Specular Glare Physics
   init3DCardTilt();
   initHoverButtons();
-  initSpatialScrollReveals();
   initEditorialRevealSystem();
 
   // 4. Backend Health Check & LLM Hub

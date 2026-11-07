@@ -840,9 +840,9 @@
                       <div class="toolbar-left">
                         <span id="draft-revision-badge" class="revision-pill">Draft: rev_0 (Original)</span>
                         <div class="markup-legend-strip">
-                          <span class="legend-chip legend-green"><span class="legend-dot green"></span> Metric Proof</span>
-                          <span class="legend-chip legend-yellow"><span class="legend-dot yellow"></span> Passive Phrasing</span>
-                          <span class="legend-chip legend-red"><span class="legend-dot red"></span> Critical Gap</span>
+                          <span class="legend-chip legend-green"><span class="legend-dot green" aria-hidden="true"></span> Metric proof</span>
+                          <span class="legend-chip legend-yellow"><span class="legend-dot yellow" aria-hidden="true"></span> Passive phrasing</span>
+                          <span class="legend-chip legend-red"><span class="legend-dot red" aria-hidden="true"></span> Critical gap</span>
                         </div>
                       </div>
 
@@ -853,7 +853,7 @@
                         <button type="button" id="btn-draft-redo" class="neu-btn btn-sm" disabled title="Redo last replacement">
                           <i data-lucide="redo" style="width:13px;height:13px;"></i> Redo
                         </button>
-                        <button type="button" id="btn-toggle-diff" class="neu-btn btn-sm" title="Toggle before/after revision diff">
+                        <button type="button" id="btn-toggle-diff" class="neu-btn btn-sm" title="Toggle before/after revision diff" aria-expanded="false" aria-controls="draft-diff-drawer">
                           <i data-lucide="git-commit" style="width:13px;height:13px;"></i> Diff
                         </button>
                         <button type="button" id="btn-recalculate-draft" class="neu-btn neu-btn-primary btn-sm" title="Stateless diagnostic recalculation on in-memory draft">
@@ -868,12 +868,17 @@
                     <!-- Side-by-Side Diff Drawer (Collapsible) -->
                     <div id="draft-diff-drawer" class="diff-drawer neu-card" style="display:none;">
                       <div class="diff-header-row">
-                        <div style="font-size:0.8rem;font-weight:700;color:var(--text-primary);">
-                          <i data-lucide="git-compare" style="width:14px;height:14px;margin-right:6px;"></i>
-                          Revision Diff (Original vs Current In-Memory Draft)
+                        <div class="diff-title">
+                          <i data-lucide="git-compare" style="width:14px;height:14px;" aria-hidden="true"></i>
+                          Revision diff: original text and current draft
                         </div>
-                        <button type="button" id="btn-close-diff" class="btn-text-action">Close Diff</button>
+                        <div class="diff-header-actions">
+                          <button type="button" id="btn-diff-undo" class="btn-text-action" disabled>Undo last change</button>
+                          <button type="button" id="btn-close-diff" class="btn-text-action">Close diff</button>
+                        </div>
                       </div>
+                      <p id="diff-summary" class="diff-summary"></p>
+                      <ol id="diff-change-list" class="diff-change-list" hidden></ol>
                       <div class="diff-columns-grid">
                         <div class="diff-col">
                           <h6>Original Extracted Text</h6>
@@ -894,44 +899,45 @@
                     </div>
 
                     <!-- Floating Interactive Popover Card -->
-                    <div id="markup-detail-popover" class="markup-popover-card neu-card spatial-floating" style="display:none;" role="dialog" aria-modal="false" aria-labelledby="popover-category-tag">
+                    <div id="markup-detail-popover" class="markup-popover-card neu-card" style="display:none;" role="dialog" aria-modal="false" aria-labelledby="popover-category-tag" aria-describedby="popover-critique-text">
                       <div class="popover-header">
                         <div style="display:flex;align-items:center;gap:6px;">
-                          <span id="popover-color-dot" class="legend-dot green"></span>
+                          <span id="popover-color-dot" class="legend-dot green" aria-hidden="true"></span>
                           <span id="popover-category-tag" class="popover-category-badge">Metric Highlight</span>
                           <span id="popover-severity-tag" class="popover-severity-badge">Review</span>
                         </div>
-                        <button type="button" id="btn-close-popover" class="btn-icon-circle" aria-label="Close popover">
+                        <button type="button" id="btn-close-popover" class="btn-icon-circle" aria-label="Close this suggestion">
                           <i data-lucide="x" style="width:12px;height:12px;"></i>
                         </button>
                       </div>
 
                       <div class="popover-body">
                         <div class="popover-quoted-box">
-                          <span class="sub-label">Original Text:</span>
+                          <span class="sub-label">Original text</span>
                           <p id="popover-quoted-text">"..."</p>
                         </div>
                         
                         <div class="popover-critique-box">
-                          <span class="sub-label">Diagnosis:</span>
+                          <span class="sub-label">Why it is marked</span>
                           <p id="popover-critique-text">Explanation here...</p>
                         </div>
 
-                        <div class="popover-rewrite-box">
-                          <div style="display:flex;justify-content:space-between;align-items:center;">
-                            <span class="sub-label">Suggested Truthful Rewrite:</span>
-                            <span class="sub-hint">Placeholders preserve facts</span>
+                        <div class="popover-rewrite-box" id="popover-rewrite-box">
+                          <div style="display:flex;justify-content:space-between;align-items:center;gap:8px;flex-wrap:wrap;">
+                            <label class="sub-label" for="popover-rewrite-input">Suggested rewrite</label>
+                            <span class="sub-hint" id="popover-rewrite-hint">Replace anything in [brackets] with your own facts</span>
                           </div>
-                          <textarea id="popover-rewrite-input" class="popover-textarea neu-textarea"></textarea>
+                          <textarea id="popover-rewrite-input" class="popover-textarea neu-textarea" aria-describedby="popover-rewrite-hint popover-error"></textarea>
                         </div>
+                        <div id="popover-error" class="field-error-msg" role="alert"></div>
                       </div>
 
                       <div class="popover-actions">
                         <button type="button" id="popover-apply-btn" class="neu-btn neu-btn-primary btn-sm">
-                          <i data-lucide="check" style="width:13px;height:13px;"></i> Apply Replacement
+                          <i data-lucide="check" style="width:13px;height:13px;"></i> Apply replacement
                         </button>
                         <button type="button" id="popover-dismiss-btn" class="neu-btn btn-sm">
-                          Dismiss
+                          Close
                         </button>
                       </div>
                     </div>

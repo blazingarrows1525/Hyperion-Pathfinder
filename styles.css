@@ -4782,16 +4782,6 @@ main section[id] {
 }
 
 /* --- Spatial Scroll Reveals (IntersectionObserver) --- */
-.reveal-spatial {
-  opacity: 0;
-  transform: perspective(1000px) translate3d(0, 40px, -40px);
-  transition: opacity 0.7s cubic-bezier(0.16, 1, 0.3, 1), transform 0.7s cubic-bezier(0.16, 1, 0.3, 1);
-  will-change: opacity, transform;
-}
-
-.reveal-spatial.in-view {
-  opacity: 1;
-  transform: perspective(1000px) translate3d(0, 0, 0);
 }
 
 /* Theme Toggle Button in Navigation */
@@ -5209,7 +5199,8 @@ main section[id] {
 .markup-legend-strip {
   display: flex;
   align-items: center;
-  gap: 10px;
+  flex-wrap: wrap;
+  gap: 4px 12px;
 }
 
 .legend-chip {
@@ -5221,15 +5212,17 @@ main section[id] {
   font-weight: 600;
 }
 
+/* The legend samples the marks' underlines: solid, dashed and double read without colour. */
 .legend-dot {
-  width: 8px;
-  height: 8px;
-  border-radius: 50%;
+  display: inline-block;
+  width: 18px;
+  height: 0;
+  border-bottom: 2px solid;
 }
 
-.legend-dot.green { background: var(--mark-green-border); box-shadow: 0 0 6px var(--mark-green-border); }
-.legend-dot.yellow { background: var(--mark-yellow-border); box-shadow: 0 0 6px var(--mark-yellow-border); }
-.legend-dot.red { background: var(--mark-red-border); box-shadow: 0 0 6px var(--mark-red-border); }
+.legend-dot.green { border-bottom-color: var(--mark-green-border); }
+.legend-dot.yellow { border-bottom-style: dashed; border-bottom-color: var(--mark-yellow-border); }
+.legend-dot.red { border-bottom-width: 4px; border-bottom-style: double; border-bottom-color: var(--mark-red-border); }
 
 .toolbar-actions {
   display: flex;
@@ -5255,12 +5248,49 @@ main section[id] {
   display: flex;
   justify-content: space-between;
   align-items: center;
+  flex-wrap: wrap;
+  gap: 8px;
   margin-bottom: 10px;
+}
+
+.diff-title {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 0.8rem;
+  font-weight: 700;
+  color: var(--color-ink);
+}
+
+.diff-header-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+}
+
+.diff-summary {
+  margin-bottom: 10px;
+  font-size: 0.82rem;
+  color: var(--color-ink-soft);
+}
+
+.diff-change-list {
+  display: grid;
+  gap: 6px;
+  margin: 0 0 12px;
+  padding-left: 18px;
+  font-size: 0.82rem;
+  line-height: 1.5;
+  color: var(--color-ink-soft);
+}
+
+.diff-change-list ins {
+  text-decoration: none;
 }
 
 .diff-columns-grid {
   display: grid;
-  grid-template-columns: 1fr 1fr;
+  grid-template-columns: repeat(auto-fit, minmax(min(260px, 100%), 1fr));
   gap: 12px;
 }
 
@@ -5327,9 +5357,8 @@ main section[id] {
   border-radius: 3px;
   cursor: pointer;
   border-bottom: 2px solid transparent;
-  transition: all 0.15s ease;
+  transition: background-color var(--motion-fast) var(--ease-standard);
   font-weight: 500;
-  outline: none;
 }
 
 .doc-markup-span:focus-visible {
@@ -5345,24 +5374,27 @@ main section[id] {
 
 .doc-markup-span.mark-yellow {
   background: var(--mark-yellow-bg);
+  border-bottom-style: dashed;
   border-bottom-color: var(--mark-yellow-border);
   color: var(--mark-yellow-text);
 }
 
 .doc-markup-span.mark-red {
   background: var(--mark-red-bg);
+  border-bottom-width: 4px;
+  border-bottom-style: double;
   border-bottom-color: var(--mark-red-border);
   color: var(--mark-red-text);
 }
 
 .doc-markup-span:hover {
-  filter: brightness(1.25);
-  box-shadow: 0 0 10px rgba(255, 255, 255, 0.2);
+  outline: 1px solid currentColor;
+  outline-offset: 1px;
 }
 
 .doc-markup-span.selected {
   outline: 2px solid var(--color-focus);
-  box-shadow: 0 0 14px rgba(255, 255, 255, 0.4);
+  outline-offset: 2px;
 }
 
 /* Detail Popover Card */
@@ -5370,12 +5402,12 @@ main section[id] {
   position: absolute;
   width: 340px;
   max-width: 90vw;
-  background: rgba(var(--surface-rgb), 0.96);
-  border: 1px solid rgba(var(--tint-rgb), 0.2);
+  background: var(--color-surface-raised);
+  border: 1px solid var(--color-border-strong);
   border-radius: var(--radius-md);
   padding: 16px;
   z-index: 100;
-  box-shadow: 0 20px 40px rgba(var(--shade-rgb), 0.41), 0 0 1px 1px rgba(255, 255, 255, 0.2);
+  box-shadow: 0 20px 40px rgba(var(--shade-rgb), 0.3);
   display: flex;
   flex-direction: column;
   gap: 12px;
@@ -7019,29 +7051,34 @@ button:disabled, [aria-disabled="true"] {
 /* Editorial reveal primitives (content remains visible when motion is reduced). */
 .hp-reveal {
   opacity: 0;
-  transform: translate3d(0,16px,0);
+  transform: translateY(16px);
   transition:
     opacity .62s var(--hp-ease-out) var(--hp-reveal-delay,0ms),
     transform .62s var(--hp-ease-out) var(--hp-reveal-delay,0ms);
-  will-change: opacity, transform;
 }
+/* The end state is transform: none. Any other transform, even an identity one, would make the
+   panel the containing block for position: fixed children such as the phone bottom sheet. */
 .hp-reveal.hp-reveal-visible {
   opacity: 1;
-  transform: translate3d(0,0,0);
-  will-change: auto;
+  transform: none;
+}
+@media print {
+  .hp-reveal {
+    opacity: 1 !important;
+    transform: none !important;
+    transition: none !important;
+  }
 }
 [data-motion="reduced"] .hp-reveal,
 [data-motion="reduced"] .hp-reveal.hp-reveal-visible {
   opacity: 1 !important;
   transform: none !important;
   transition: none !important;
-  will-change: auto !important;
 }
 @media (prefers-reduced-motion: reduce) {
   .hp-reveal, .hp-reveal.hp-reveal-visible {
     opacity: 1 !important;
     transform: none !important;
     transition: none !important;
-    will-change: auto !important;
   }
 }

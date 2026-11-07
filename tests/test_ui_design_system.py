@@ -70,6 +70,17 @@ def test_editorial_reveal_system_respects_reduced_motion():
     assert "@media (prefers-reduced-motion: reduce)" in CSS
 
 
+def test_reveal_system_only_touches_static_discovery_panels():
+    start = JS.index("function initEditorialRevealSystem()")
+    body = JS[start:JS.index("function initNeumorphicWorkbench()")]
+    assert "MutationObserver" not in body  # re-rendered rows must not animate on every keystroke
+    assert "observer.unobserve(entry.target)" in body
+    assert "observer.disconnect()" in body
+    selector = JS[JS.index("const REVEAL_SELECTOR"):start]
+    for tool in (".analyzer-form-card", ".analyzer-results-card", ".company-directory", ".prompt-composer", ".atlas-hero-copy"):
+        assert tool not in selector
+
+
 def test_career_atlas_has_adaptive_continuous_render_scheduling():
     assert "scheduleContinuousRender()" in JS
     assert "const interval = this.lowDetail ? (1000 / 24) : (1000 / 30);" in JS

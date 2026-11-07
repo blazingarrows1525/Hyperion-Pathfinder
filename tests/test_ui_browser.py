@@ -24,6 +24,8 @@ PROBES = [
     ("analyzer_inputs.js", "", "1440,375"),
     ("analyzer_states.js", "", "1440,375"),
     ("coach_and_sound.js", "", "1440,375"),
+    ("tailoring.js", "", "1440,375"),
+    ("reveal_motion.js", "", "1440,375"),
 ]
 
 pytestmark = pytest.mark.skipif(
