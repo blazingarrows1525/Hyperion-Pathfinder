@@ -313,10 +313,9 @@ html[data-theme="grove"] {
   top: 16px;
 }
 
-/* Focus Visible Styling - High Contrast Accessible Rings */
-:focus-visible {
-  outline: var(--focus-width) solid var(--focus-ring);
-  outline-offset: var(--focus-offset);
+/* The content is the target; it needs no ring of its own. */
+main:focus {
+  outline: none;
 }
 
 /* Editorial reveal: one quiet entrance per discovery panel (see initEditorialRevealSystem).
@@ -1865,6 +1864,13 @@ main section[id] {
   color: var(--color-on-accent);
 }
 
+.snapshot-empty {
+  margin-top: 12px;
+  font-size: 0.88rem;
+  line-height: 1.5;
+  color: var(--color-ink-soft);
+}
+
 .snapshot-caveats {
   margin-top: 24px;
   padding: 20px 24px;
@@ -3158,6 +3164,13 @@ main section[id] {
   font-family: inherit;
   font-size: 0.88rem;
   color: var(--color-ink);
+}
+
+.compare-same {
+  margin-bottom: 12px;
+  font-size: 0.86rem;
+  font-weight: 600;
+  color: var(--color-ochre-ink);
 }
 
 .comparison-table {
@@ -4598,33 +4611,32 @@ main section[id] {
 .neu-toggle-track {
   width: 54px;
   height: 28px;
-  background: var(--neu-base-inset);
-  box-shadow: var(--neu-inset);
+  background: var(--color-surface);
+  border: 1px solid var(--color-border-strong);
   border-radius: var(--radius-full);
   position: relative;
-  transition: background 0.3s ease;
+  transition: background var(--motion-control) var(--ease-standard);
 }
 
 .neu-toggle-thumb {
-  width: 22px;
-  height: 22px;
-  background: var(--neu-base);
-  box-shadow: var(--neu-raised-sm);
+  width: 20px;
+  height: 20px;
+  background: var(--color-ink-soft);
   border-radius: 50%;
   position: absolute;
   top: 3px;
   left: 3px;
-  transition: transform 0.25s var(--ease-spring), background 0.25s;
+  transition: transform var(--motion-control) var(--ease-standard), background var(--motion-control) var(--ease-standard);
 }
 
 .neu-toggle-wrapper.checked .neu-toggle-track {
-  background: rgba(var(--tint-rgb), 0.2);
+  background: var(--color-forest);
+  border-color: var(--color-forest-deep);
 }
 
 .neu-toggle-wrapper.checked .neu-toggle-thumb {
   transform: translateX(26px);
-  background: var(--color-surface-raised);
-  box-shadow: 0 0 14px rgba(255, 255, 255, 0.7);
+  background: var(--color-on-accent);
 }
 
 /* --- Neumorphic Segmented Tab Pill --- */
@@ -4679,31 +4691,45 @@ main section[id] {
 /* --- Neumorphic Tactile Sliders --- */
 .neu-slider {
   -webkit-appearance: none;
+  appearance: none;
   width: 100%;
-  height: 10px;
-  background: var(--neu-base-inset);
-  box-shadow: var(--neu-inset);
+  height: 24px;
+  background: transparent;
+  cursor: pointer;
+}
+
+.neu-slider::-webkit-slider-runnable-track {
+  height: 8px;
+  border: 1px solid var(--color-border-strong);
   border-radius: var(--radius-full);
-  outline: none;
-  transition: opacity 0.2s;
+  background: var(--color-surface);
+}
+
+.neu-slider::-moz-range-track {
+  height: 8px;
+  border: 1px solid var(--color-border-strong);
+  border-radius: var(--radius-full);
+  background: var(--color-surface);
+}
+
+.neu-slider::-moz-range-thumb {
+  width: 18px;
+  height: 18px;
+  border-radius: 50%;
+  background: var(--color-surface-raised);
+  border: 2px solid var(--color-ink-soft);
 }
 
 .neu-slider::-webkit-slider-thumb {
   -webkit-appearance: none;
   appearance: none;
-  width: 24px;
-  height: 24px;
+  width: 22px;
+  height: 22px;
+  margin-top: -8px;
   border-radius: 50%;
-  background: var(--neu-base);
-  box-shadow: var(--neu-raised-sm);
+  background: var(--color-surface-raised);
   cursor: pointer;
-  border: 2px solid var(--color-border-strong);
-  transition: transform 0.15s, box-shadow 0.15s;
-}
-
-.neu-slider::-webkit-slider-thumb:hover {
-  transform: scale(1.15);
-  box-shadow: var(--neu-raised), 0 0 14px rgba(255, 255, 255, 0.5);
+  border: 2px solid var(--color-ink-soft);
 }
 
 /* --- Spatial UI 3D Tilt & Specular Dynamic Glare --- */
@@ -5172,12 +5198,6 @@ main section[id] {
   align-items: center;
   gap: 6px;
   flex-wrap: wrap;
-}
-
-.btn-sm {
-  padding: 6px 10px;
-  font-size: 0.76rem;
-  gap: 4px;
 }
 
 /* Diff Drawer */
@@ -5778,20 +5798,6 @@ main section[id] {
   gap: 4px;
 }
 
-.neu-select-compact {
-  padding: 6px 10px;
-  font-size: 0.78rem;
-  border-radius: var(--radius-sm);
-  background: var(--neu-base);
-  border: 1px solid rgba(var(--tint-rgb), 0.12);
-  color: var(--color-ink);
-  outline: none;
-}
-
-.neu-select-compact:focus {
-  border-color: var(--color-border-strong);
-}
-
 .voice-preview-area {
   min-height: 60px;
   max-height: 110px;
@@ -5877,16 +5883,15 @@ main section[id] {
 }
 
 .neu-select-compact {
-  background: var(--neu-base);
-  box-shadow: var(--neu-raised-sm);
-  border: 1px solid rgba(var(--tint-rgb), 0.12);
+  background: var(--field-bg);
+  border: 1px solid var(--field-border);
   border-radius: var(--radius-sm);
   color: var(--text-primary);
   font-family: inherit;
   font-size: 0.8rem;
-  padding: 6px 10px;
+  min-height: 32px;
+  padding: 4px 8px;
   cursor: pointer;
-  outline: none;
   max-width: 280px;
 }
 
@@ -6601,6 +6606,77 @@ main section[id] {
 .prompt-composer {
   border: 1px solid var(--color-border);
   box-shadow: var(--shadow-card);
+}
+
+/* ==============================================================================
+   TOUCH TARGETS — one rule for everything a finger has to hit
+   It comes after the component rules on purpose, and applies only at these sizes.
+   ============================================================================== */
+@media (max-width: 640px), (pointer: coarse) {
+  .btn-primary,
+  .btn-secondary,
+  .btn-sm,
+  .btn-lg,
+  .btn-text-action,
+  .btn-preset-chip,
+  .presets-strip .btn-preset-chip,
+  .btn-filter-pill,
+  .btn-scenario-chip,
+  .btn-3d-mode,
+  .btn-use-context,
+  .neu-btn,
+  .neu-segmented-btn,
+  .pref-toggle,
+  .designhead-btn,
+  .btn-tts-speed,
+  .btn-coach-chip,
+  .btn-coach-action,
+  .sort-select,
+  .table-filter,
+  .neu-select-compact,
+  .neu-toggle-wrapper,
+  .wordmark {
+    min-height: 44px;
+  }
+
+  .btn-filter-pill {
+    min-width: 44px;
+  }
+
+  .demo-switch {
+    display: inline-flex;
+    align-items: center;
+    min-height: 44px;
+  }
+
+  .btn-3d-icon-sm,
+  .btn-icon-circle,
+  .modal-close-btn,
+  .btn-prefs {
+    width: 44px;
+    height: 44px;
+  }
+
+  .btn-clear-file {
+    width: 40px;
+    height: 40px;
+  }
+
+  .neu-slider {
+    height: 44px;
+  }
+
+  .atlas-legend-link,
+  .atlas-provenance a,
+  .footer-nav-links a {
+    display: inline-flex;
+    align-items: center;
+    min-height: 44px;
+  }
+
+  .footer-nav-links {
+    gap: 0 16px;
+  }
 }
 
 /* Last on purpose: no component's outline reset can remove the keyboard focus ring. */

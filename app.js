@@ -3213,6 +3213,7 @@ function renderComparisonModalContent() {
         <select class="sort-select" data-compare-index="1">${options(archB.id)}</select>
       </label>
     </div>
+    ${archA.id === archB.id ? '<p class="compare-same" role="status">Both sides show the same archetype. Choose a different one to compare.</p>' : ''}
 
     <table class="comparison-table">
       <caption class="sr-only">Comparison of two career archetypes</caption>
@@ -6056,9 +6057,13 @@ function initPlacementSnapshot() {
 
 function filterSnapshotTable(query) {
   const q = (query || '').toLowerCase().trim();
+  let shown = 0;
   document.querySelectorAll('#snapshot-table-body tr').forEach(row => {
     row.hidden = q !== '' && !(row.getAttribute('data-company') || '').toLowerCase().includes(q);
+    if (!row.hidden) shown += 1;
   });
+  const empty = document.getElementById('snapshot-empty');
+  if (empty) empty.hidden = shown > 0;
 }
 
 // Hand a recruiter from the snapshot to the analyzer as the target context.

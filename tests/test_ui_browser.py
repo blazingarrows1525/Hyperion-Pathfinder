@@ -30,6 +30,8 @@ PROBES = [
     ("atlas_lifecycle.js", "", "1440,375", []),
     ("prompt_studio.js", "", "1440,375", []),
     ("voice.js", "", "1440,375", []),
+    ("navigation_and_data.js", "", "1440,1024,375", []),
+    ("target_sizes.js", "", "1440,768,430,375,320", []),
     ("contrast_scan.js", "?scan=demo", "1440,375", ["--theme", "terra"]),
     ("contrast_scan.js", "?scan=demo", "1440,375", ["--theme", "grove"]),
 ]

@@ -48,7 +48,8 @@
 <body data-motion="full">
 
   <!-- Accessible Skip Link -->
-  <a href="#analyzer" class="skip-link">Skip to Resume Analyzer</a>
+  <a href="#main-content" class="skip-link">Skip to main content</a>
+  <a href="#analyzer" class="skip-link">Skip to the resume analyzer</a>
 
   <!-- Main Application Wrapper -->
   <div class="app-wrapper">
@@ -148,7 +149,7 @@
       </div>
     </header>
 
-    <main id="main-content" role="main">
+    <main id="main-content" role="main" tabindex="-1">
 
       <!-- =======================================================================
            SECTION 1: HERO & PRODUCT STATEMENT
@@ -449,6 +450,7 @@
                   <tbody id="snapshot-table-body"></tbody>
                 </table>
               </div>
+              <p id="snapshot-empty" class="snapshot-empty" role="status" hidden>No company in this list matches. It shows the top recruiters by offers, so a company missing here may still have made offers.</p>
             </article>
           </div>
 
