@@ -988,8 +988,8 @@
                       <button type="button" id="btn-coach-voice-input" class="neu-btn btn-icon-round" title="Ask question with voice dictation" aria-label="Dictate voice question">
                         <i data-lucide="mic" style="width:16px;height:16px;color:var(--accent-cyan);"></i>
                       </button>
-                      <input type="text" id="coach-query-input" class="neu-textarea coach-text-input" maxlength="2000" aria-label="Question for the career coach" placeholder="For example: How should I explain my Docker experience?">
-                      <button type="button" id="btn-send-coach-msg" class="neu-btn neu-btn-primary" style="padding:10px 18px;font-size:0.85rem;">
+                      <textarea id="coach-query-input" class="neu-textarea coach-text-input" rows="1" aria-label="Question for the career coach" placeholder="For example: How should I explain my Docker experience?"></textarea>
+                      <button type="button" id="btn-send-coach-msg" class="neu-btn neu-btn-primary">
                         <i data-lucide="send" style="width:15px;height:15px;"></i>
                         <span>Ask</span>
                       </button>
@@ -1096,12 +1096,12 @@
           <div class="studio-recommender">
             <p id="recommender-title" class="recommender-title">Not sure which framework to use? Pick what you are doing:</p>
             <div class="scenario-buttons-row" role="group" aria-labelledby="recommender-title">
-              <button type="button" class="btn-scenario-chip" data-scenario="research">Technical Research</button>
-              <button type="button" class="btn-scenario-chip" data-scenario="resume">Resume Bullet Point</button>
-              <button type="button" class="btn-scenario-chip" data-scenario="planning">Placement Plan</button>
-              <button type="button" class="btn-scenario-chip" data-scenario="interview">Behavioral Interview</button>
-              <button type="button" class="btn-scenario-chip" data-scenario="email">Alumni Outreach Email</button>
-              <button type="button" class="btn-scenario-chip" data-scenario="experiment">AI / ML Experiment</button>
+              <button type="button" class="btn-scenario-chip" data-scenario="research" aria-pressed="false">Technical Research</button>
+              <button type="button" class="btn-scenario-chip" data-scenario="resume" aria-pressed="false">Resume Bullet Point</button>
+              <button type="button" class="btn-scenario-chip" data-scenario="planning" aria-pressed="false">Placement Plan</button>
+              <button type="button" class="btn-scenario-chip" data-scenario="interview" aria-pressed="false">Behavioral Interview</button>
+              <button type="button" class="btn-scenario-chip" data-scenario="email" aria-pressed="false">Alumni Outreach Email</button>
+              <button type="button" class="btn-scenario-chip" data-scenario="experiment" aria-pressed="false">AI / ML Experiment</button>
             </div>
             <div id="recommendation-explanation-box" class="recommendation-explanation-box" role="status" aria-live="polite"></div>
           </div>
@@ -1155,10 +1155,10 @@
                   <i data-lucide="copy" style="width:16px;height:16px;"></i> Copy prompt
                 </button>
                 <button type="button" id="btn-prompt-to-coach" class="btn-secondary">
-                  <i data-lucide="messages-square" style="width:16px;height:16px;"></i> Use as Career Coach lens
+                  <i data-lucide="messages-square" style="width:16px;height:16px;"></i> Send to Career Coach
                 </button>
               </div>
-              <p class="preview-note">Copy puts the text on your clipboard only. "Use as Career Coach lens" switches the coach in the analyzer to this framework.</p>
+              <p class="preview-note">Copy puts the text on your clipboard only. "Send to Career Coach" sets the coach to this framework and puts your filled-in fields in its question box. Nothing is sent until you press Ask.</p>
             </div>
           </div>
         </div>

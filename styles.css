@@ -3702,6 +3702,10 @@ main section[id] {
   color: var(--color-muted);
 }
 
+.frameworks-list-scroll .btn-registry-retry {
+  margin-top: 10px;
+}
+
 .frameworks-list-scroll {
   max-height: 560px;
   overflow-y: auto;
@@ -5571,16 +5575,19 @@ main section[id] {
 
 .coach-input-bar {
   display: flex;
-  align-items: center;
+  align-items: flex-end;
   gap: 8px;
 }
 
 .coach-text-input {
   flex: 1;
-  min-height: 42px;
-  height: 42px;
-  font-size: 0.85rem;
-  padding: 10px 14px;
+  min-height: 44px;
+  max-height: 180px;
+  resize: vertical;
+  field-sizing: content;
+  font-size: 0.88rem;
+  line-height: 1.45;
+  padding: 10px 12px;
 }
 
 .btn-icon-round {

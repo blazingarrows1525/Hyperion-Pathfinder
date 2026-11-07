@@ -257,15 +257,12 @@ const appState = {
 // registry by normalised field name; their other fields are a fallback used
 // only if the registry cannot be loaded.
 // ==============================================================================
+// Writing help only: a sample and a placeholder and hint per field. The registry served by
+// GET /api/frameworks (prompt_frameworks.json) owns every name, definition, group and field order.
 const promptFrameworksRegistry = [
   // --- POSTER A: RESEARCH & STRUCTURED WORK ---
   {
     id: 'CLEAR',
-    name: 'CLEAR Framework',
-    acronym: 'CLEAR',
-    category: 'research',
-    expansion: 'Context, Logic, Expectations, Action, Restriction',
-    bestFor: 'Detailed, structured research with fewer ambiguities.',
     sample: {
       Context: 'Senior year CSE student targeting Tier-1 AI Research/ML Engineer campus placements.',
       Logic: 'Need to isolate metric-driven project bullet points that distinguish academic prototypes from production-ready systems.',
@@ -274,20 +271,15 @@ const promptFrameworksRegistry = [
       Restriction: 'Do not use buzzwords like "spearheaded" or "passionate". Focus strictly on measurable throughput, latency, or accuracy.'
     },
     fields: [
-      { key: 'Context', label: 'C — Context', placeholder: 'Describe your background, domain, and objective...', hint: 'Who are you and what is the situation?' },
-      { key: 'Logic', label: 'L — Logic', placeholder: 'Explain the reasoning, rationale, or necessity...', hint: 'Why are you seeking this specific output?' },
-      { key: 'Expectations', label: 'E — Expectations', placeholder: 'Detail the format, depth, and output structure...', hint: 'What exactly must the result look like?' },
-      { key: 'Action', label: 'A — Action', placeholder: 'Specify the direct task for the AI to execute...', hint: 'What command or analysis should be run?' },
-      { key: 'Restriction', label: 'R — Restriction', placeholder: 'List constraints, taboos, or negative rules...', hint: 'What should be avoided or excluded?' }
+      { key: 'Context', placeholder: 'Describe your background, domain, and objective...', hint: 'Who are you and what is the situation?' },
+      { key: 'Logic', placeholder: 'Explain the reasoning, rationale, or necessity...', hint: 'Why are you seeking this specific output?' },
+      { key: 'Expectations', placeholder: 'Detail the format, depth, and output structure...', hint: 'What exactly must the result look like?' },
+      { key: 'Action', placeholder: 'Specify the direct task for the AI to execute...', hint: 'What command or analysis should be run?' },
+      { key: 'Restriction', placeholder: 'List constraints, taboos, or negative rules...', hint: 'What should be avoided or excluded?' }
     ]
   },
   {
     id: 'SMART',
-    name: 'SMART Framework',
-    acronym: 'SMART',
-    category: 'goal',
-    expansion: 'Specific, Measurable, Achievable, Relevant, Time-bound',
-    bestFor: 'Focused, measurable placement and learning objectives.',
     sample: {
       Specific: 'Upskill in Distributed Systems and System Design for Microsoft SDE-1 placement rounds.',
       Measurable: 'Implement an in-memory Redis-compatible distributed cache and complete 40 LeetCode Medium graph problems.',
@@ -296,20 +288,15 @@ const promptFrameworksRegistry = [
       TimeBound: 'Complete within 4 weeks before campus hiring drives begin.'
     },
     fields: [
-      { key: 'Specific', label: 'S — Specific', placeholder: 'What precise goal are you setting?' },
-      { key: 'Measurable', label: 'M — Measurable', placeholder: 'How will success and completion be quantified?' },
-      { key: 'Achievable', label: 'A — Achievable', placeholder: 'Is this realistic within your current bandwidth?' },
-      { key: 'Relevant', label: 'R — Relevant', placeholder: 'Why does this matter to your placement trajectory?' },
-      { key: 'TimeBound', label: 'T — Time-bound', placeholder: 'What is the strict deadline or schedule?' }
+      { key: 'Specific', placeholder: 'What precise goal are you setting?' },
+      { key: 'Measurable', placeholder: 'How will success and completion be quantified?' },
+      { key: 'Achievable', placeholder: 'Is this realistic within your current bandwidth?' },
+      { key: 'Relevant', placeholder: 'Why does this matter to your placement trajectory?' },
+      { key: 'TimeBound', placeholder: 'What is the strict deadline or schedule?' }
     ]
   },
   {
     id: 'QUEST',
-    name: 'QUEST Framework',
-    acronym: 'QUEST',
-    category: 'research',
-    expansion: 'Question, Understanding, Expectation, Scope, Time',
-    bestFor: 'Narrowing a broad technical topic into manageable focus.',
     sample: {
       Question: 'How does FAISS IndexFlatL2 compare with HNSW indexing for 100k resume embeddings on memory-constrained servers?',
       Understanding: 'I understand cosine similarity and basic Euclidean distance search.',
@@ -318,20 +305,15 @@ const promptFrameworksRegistry = [
       Time: 'Evaluate for deployment in the current sprint.'
     },
     fields: [
-      { key: 'Question', label: 'Q — Question', placeholder: 'What core question are you investigating?' },
-      { key: 'Understanding', label: 'U — Understanding', placeholder: 'What is your current level of knowledge?' },
-      { key: 'Expectation', label: 'E — Expectation', placeholder: 'What deliverable are you expecting?' },
-      { key: 'Scope', label: 'S — Scope', placeholder: 'What boundaries, technologies, or limits apply?' },
-      { key: 'Time', label: 'T — Time', placeholder: 'What time horizon or timeframe is relevant?' }
+      { key: 'Question', placeholder: 'What core question are you investigating?' },
+      { key: 'Understanding', placeholder: 'What is your current level of knowledge?' },
+      { key: 'Expectation', placeholder: 'What deliverable are you expecting?' },
+      { key: 'Scope', placeholder: 'What boundaries, technologies, or limits apply?' },
+      { key: 'Time', placeholder: 'What time horizon or timeframe is relevant?' }
     ]
   },
   {
     id: 'GUIDE',
-    name: 'GUIDE Framework',
-    acronym: 'GUIDE',
-    category: 'planning',
-    expansion: 'Goal, Understanding, Information, Direction, Evaluation',
-    bestFor: 'Step-by-step research breakdown and curriculum planning.',
     sample: {
       Goal: 'Master Spring Boot microservices architecture for Goldman Sachs technical interviews.',
       Understanding: 'Proficient in Core Java, basic SQL, and REST principles.',
@@ -340,20 +322,15 @@ const promptFrameworksRegistry = [
       Evaluation: 'Include self-check verification questions at each milestone.'
     },
     fields: [
-      { key: 'Goal', label: 'G — Goal', placeholder: 'State the primary end objective...' },
-      { key: 'Understanding', label: 'U — Understanding', placeholder: 'Current familiarity and prerequisites...' },
-      { key: 'Information', label: 'I — Information', placeholder: 'What knowledge components are needed?' },
-      { key: 'Direction', label: 'D — Direction', placeholder: 'How should the instruction proceed?' },
-      { key: 'Evaluation', label: 'E — Evaluation', placeholder: 'How will comprehension be validated?' }
+      { key: 'Goal', placeholder: 'State the primary end objective...' },
+      { key: 'Understanding', placeholder: 'Current familiarity and prerequisites...' },
+      { key: 'Information', placeholder: 'What knowledge components are needed?' },
+      { key: 'Direction', placeholder: 'How should the instruction proceed?' },
+      { key: 'Evaluation', placeholder: 'How will comprehension be validated?' }
     ]
   },
   {
     id: 'FOCUS',
-    name: 'FOCUS Framework',
-    acronym: 'FOCUS',
-    category: 'research',
-    expansion: 'Function, Outcome, Criteria, Underlying Assumptions, Strategy',
-    bestFor: 'Cutting unnecessary details to build high-efficiency prompts.',
     sample: {
       Function: 'Technical resume bullet points optimization.',
       Outcome: 'A set of 5 concise, high-impact bullet points for a Cloud/DevOps internship.',
@@ -362,20 +339,15 @@ const promptFrameworksRegistry = [
       Strategy: 'Use Google XYZ formula: Accomplished [X] as measured by [Y], by doing [Z].'
     },
     fields: [
-      { key: 'Function', label: 'F — Function', placeholder: 'What is the operational function?' },
-      { key: 'Outcome', label: 'O — Outcome', placeholder: 'What is the desired end outcome?' },
-      { key: 'Criteria', label: 'C — Criteria', placeholder: 'What mandatory criteria must be met?' },
-      { key: 'UnderlyingAssumptions', label: 'U — Underlying Assumptions', placeholder: 'What assumptions are in play?' },
-      { key: 'Strategy', label: 'S — Strategy', placeholder: 'What execution strategy should be followed?' }
+      { key: 'Function', placeholder: 'What is the operational function?' },
+      { key: 'Outcome', placeholder: 'What is the desired end outcome?' },
+      { key: 'Criteria', placeholder: 'What mandatory criteria must be met?' },
+      { key: 'UnderlyingAssumptions', placeholder: 'What assumptions are in play?' },
+      { key: 'Strategy', placeholder: 'What execution strategy should be followed?' }
     ]
   },
   {
     id: 'IDEA',
-    name: 'IDEA Framework',
-    acronym: 'IDEA',
-    category: 'writing',
-    expansion: 'Intent, Details, Examples, Adjustments',
-    bestFor: 'Iterative refinement and stylistic fine-tuning.',
     sample: {
       Intent: 'Rewrite a bland capstone project summary into an industry-grade portfolio description.',
       Details: 'Full-stack e-commerce project with Next.js, Stripe, Redis, and PostgreSQL.',
@@ -383,19 +355,14 @@ const promptFrameworksRegistry = [
       Adjustments: 'Keep tone technical, authoritative, and concise.'
     },
     fields: [
-      { key: 'Intent', label: 'I — Intent', placeholder: 'What are you trying to accomplish?' },
-      { key: 'Details', label: 'D — Details', placeholder: 'Provide the raw facts, components, and tools...' },
-      { key: 'Examples', label: 'E — Examples', placeholder: 'Supply positive or negative reference examples...' },
-      { key: 'Adjustments', label: 'A — Adjustments', placeholder: 'What stylistic tweaks should be applied?' }
+      { key: 'Intent', placeholder: 'What are you trying to accomplish?' },
+      { key: 'Details', placeholder: 'Provide the raw facts, components, and tools...' },
+      { key: 'Examples', placeholder: 'Supply positive or negative reference examples...' },
+      { key: 'Adjustments', placeholder: 'What stylistic tweaks should be applied?' }
     ]
   },
   {
     id: 'RISEN',
-    name: 'RISEN Framework',
-    acronym: 'RISEN',
-    category: 'research',
-    expansion: 'Requirement, Information, Strategy, Evaluation, Negotiation',
-    bestFor: 'Complex multi-criteria planning with trade-off negotiation.',
     sample: {
       Requirement: 'Choose between accepting a ₹12 LPA Fintech offer or continuing into Super Dream hiring drives.',
       Information: 'Have strong algorithmic foundation (400+ LC), CGPA 8.9, 2 top-tier internships.',
@@ -404,20 +371,15 @@ const promptFrameworksRegistry = [
       Negotiation: 'Determine possible start-date deferral or competing offer negotiation strategies.'
     },
     fields: [
-      { key: 'Requirement', label: 'R — Requirement', placeholder: 'What is the core decision requirement?' },
-      { key: 'Information', label: 'I — Information', placeholder: 'What background data and facts are known?' },
-      { key: 'Strategy', label: 'S — Strategy', placeholder: 'What evaluation strategy should be used?' },
-      { key: 'Evaluation', label: 'E — Evaluation', placeholder: 'How should outcomes be judged?' },
-      { key: 'Negotiation', label: 'N — Negotiation', placeholder: 'What trade-offs or negotiation room exist?' }
+      { key: 'Requirement', placeholder: 'What is the core decision requirement?' },
+      { key: 'Information', placeholder: 'What background data and facts are known?' },
+      { key: 'Strategy', placeholder: 'What evaluation strategy should be used?' },
+      { key: 'Evaluation', placeholder: 'How should outcomes be judged?' },
+      { key: 'Negotiation', placeholder: 'What trade-offs or negotiation room exist?' }
     ]
   },
   {
     id: 'RHODES',
-    name: 'RHODES Framework',
-    acronym: 'RHODES',
-    category: 'experiment',
-    expansion: 'Research, Hypothesis, Objectives, Development, Execution, Synthesis',
-    bestFor: 'Hypothesis-based technical research and experiment design.',
     sample: {
       Research: 'Investigating impact of fine-tuning small LLMs (Llama 3 8B) for automated resume skill gap extraction.',
       Hypothesis: 'LoRA fine-tuning will outperform zero-shot GPT-4o-mini on proprietary university resume phrasing by >15% F1.',
@@ -427,21 +389,16 @@ const promptFrameworksRegistry = [
       Synthesis: 'Summarize deployment trade-offs in an academic conference format.'
     },
     fields: [
-      { key: 'Research', label: 'R — Research', placeholder: 'What domain or phenomenon is being studied?' },
-      { key: 'Hypothesis', label: 'H — Hypothesis', placeholder: 'What testable hypothesis is proposed?' },
-      { key: 'Objectives', label: 'O — Objectives', placeholder: 'What specific targets define success?' },
-      { key: 'Development', label: 'D — Development', placeholder: 'What dataset, methodology, or pipeline is built?' },
-      { key: 'Execution', label: 'E — Execution', placeholder: 'How will the trial be executed?' },
-      { key: 'Synthesis', label: 'S — Synthesis', placeholder: 'How should findings be reported?' }
+      { key: 'Research', placeholder: 'What domain or phenomenon is being studied?' },
+      { key: 'Hypothesis', placeholder: 'What testable hypothesis is proposed?' },
+      { key: 'Objectives', placeholder: 'What specific targets define success?' },
+      { key: 'Development', placeholder: 'What dataset, methodology, or pipeline is built?' },
+      { key: 'Execution', placeholder: 'How will the trial be executed?' },
+      { key: 'Synthesis', placeholder: 'How should findings be reported?' }
     ]
   },
   {
     id: 'CREATE',
-    name: 'CREATE Framework',
-    acronym: 'CREATE',
-    category: 'experiment',
-    expansion: 'Conceptualize, Research, Experiment, Analyze, Transform, Evaluate',
-    bestFor: 'End-to-end project ideation and prototype development.',
     sample: {
       Conceptualize: 'A real-time voice interview simulator for technical campus interviews.',
       Research: 'Inspect WebRTC, Whisper speech-to-text, and low-latency LLM streaming.',
@@ -451,23 +408,18 @@ const promptFrameworksRegistry = [
       Evaluate: 'Validate candidate stress levels and feedback quality against real mock interviews.'
     },
     fields: [
-      { key: 'Conceptualize', label: 'C — Conceptualize', placeholder: 'Initial concept or idea...' },
-      { key: 'Research', label: 'R — Research', placeholder: 'Technical references and prior art...' },
-      { key: 'Experiment', label: 'E — Experiment', placeholder: 'Test scenario or prototype...' },
-      { key: 'Analyze', label: 'A — Analyze', placeholder: 'Metrics and bottlenecks to observe...' },
-      { key: 'Transform', label: 'T — Transform', placeholder: 'How the prototype is optimized...' },
-      { key: 'Evaluate', label: 'E — Evaluate', placeholder: 'Final validation against success criteria...' }
+      { key: 'Conceptualize', placeholder: 'Initial concept or idea...' },
+      { key: 'Research', placeholder: 'Technical references and prior art...' },
+      { key: 'Experiment', placeholder: 'Test scenario or prototype...' },
+      { key: 'Analyze', placeholder: 'Metrics and bottlenecks to observe...' },
+      { key: 'Transform', placeholder: 'How the prototype is optimized...' },
+      { key: 'Evaluate', placeholder: 'Final validation against success criteria...' }
     ]
   },
 
   // --- POSTER B: TASK & RESPONSE STRUCTURE ---
   {
     id: 'RACE',
-    name: 'RACE Framework',
-    acronym: 'RACE',
-    category: 'task',
-    expansion: 'Role, Action, Context, Expectation',
-    bestFor: 'Clear role-guided instruction with bounded output expectations.',
     sample: {
       Role: 'Principal Software Architect at a Big Tech company conducting candidate screening.',
       Action: 'Critique my system design project (Scalable Distributed Log Aggregator).',
@@ -475,37 +427,27 @@ const promptFrameworksRegistry = [
       Expectation: 'List 3 critical failure points in high-concurrency partitions and recommend resilient patterns.'
     },
     fields: [
-      { key: 'Role', label: 'R — Role', placeholder: 'Who should the AI act as?' },
-      { key: 'Action', label: 'A — Action', placeholder: 'What specific task must be executed?' },
-      { key: 'Context', label: 'C — Context', placeholder: 'What is the background or situation?' },
-      { key: 'Expectation', label: 'E — Expectation', placeholder: 'What is the expected deliverable?' }
+      { key: 'Role', placeholder: 'Who should the AI act as?' },
+      { key: 'Action', placeholder: 'What specific task must be executed?' },
+      { key: 'Context', placeholder: 'What is the background or situation?' },
+      { key: 'Expectation', placeholder: 'What is the expected deliverable?' }
     ]
   },
   {
     id: 'TAG',
-    name: 'TAG Framework',
-    acronym: 'TAG',
-    category: 'task',
-    expansion: 'Task, Action, Goal',
-    bestFor: 'Quick, ultra-concise operational assignments.',
     sample: {
       Task: 'Extract required technical keywords from a Google Cloud Architect JD.',
       Action: 'Categorize keywords into Infrastructure, Networking, Databases, and CI/CD.',
       Goal: 'Identify missing competencies in my resume before applying.'
     },
     fields: [
-      { key: 'Task', label: 'T — Task', placeholder: 'What is the primary task?' },
-      { key: 'Action', label: 'A — Action', placeholder: 'What action should be performed?' },
-      { key: 'Goal', label: 'G — Goal', placeholder: 'What is the ultimate goal?' }
+      { key: 'Task', placeholder: 'What is the primary task?' },
+      { key: 'Action', placeholder: 'What action should be performed?' },
+      { key: 'Goal', placeholder: 'What is the ultimate goal?' }
     ]
   },
   {
     id: 'TRACE',
-    name: 'TRACE Framework',
-    acronym: 'TRACE',
-    category: 'task',
-    expansion: 'Task, Request, Action, Context, Example',
-    bestFor: 'Comprehensive task definition with grounding reference examples.',
     sample: {
       Task: 'Draft cold outreach LinkedIn messages to industry engineers at Microsoft.',
       Request: 'Write 3 personalized message variants under 300 characters each.',
@@ -514,20 +456,15 @@ const promptFrameworksRegistry = [
       Example: 'Reference example: "Hi [Name], inspired by your work on Azure networking..."'
     },
     fields: [
-      { key: 'Task', label: 'T — Task', placeholder: 'What task is being tackled?' },
-      { key: 'Request', label: 'R — Request', placeholder: 'What exact output are you requesting?' },
-      { key: 'Action', label: 'A — Action', placeholder: 'What specific direction must be followed?' },
-      { key: 'Context', label: 'C — Context', placeholder: 'What context informs the request?' },
-      { key: 'Example', label: 'E — Example', placeholder: 'Provide a sample format or style reference...' }
+      { key: 'Task', placeholder: 'What task is being tackled?' },
+      { key: 'Request', placeholder: 'What exact output are you requesting?' },
+      { key: 'Action', placeholder: 'What specific direction must be followed?' },
+      { key: 'Context', placeholder: 'What context informs the request?' },
+      { key: 'Example', placeholder: 'Provide a sample format or style reference...' }
     ]
   },
   {
     id: 'CARE',
-    name: 'CARE Framework',
-    acronym: 'CARE',
-    category: 'story',
-    expansion: 'Context, Action, Result, Example',
-    bestFor: 'Framing impactful professional experiences and case stories.',
     sample: {
       Context: 'During my backend internship, database query spikes were causing 504 gateway timeouts on customer dashboards.',
       Action: 'Profiled slow queries using EXPLAIN ANALYZE, added composite indexes, and implemented a 60-second Redis cache.',
@@ -535,37 +472,27 @@ const promptFrameworksRegistry = [
       Example: 'Translate this into 2 resume bullet points and 1 behavioral interview talking point.'
     },
     fields: [
-      { key: 'Context', label: 'C — Context', placeholder: 'Describe the problem setting...' },
-      { key: 'Action', label: 'A — Action', placeholder: 'What specific actions did you take?' },
-      { key: 'Result', label: 'R — Result', placeholder: 'What quantifiable results were achieved?' },
-      { key: 'Example', label: 'E — Example', placeholder: 'How should this be packaged or formulated?' }
+      { key: 'Context', placeholder: 'Describe the problem setting...' },
+      { key: 'Action', placeholder: 'What specific actions did you take?' },
+      { key: 'Result', placeholder: 'What quantifiable results were achieved?' },
+      { key: 'Example', placeholder: 'How should this be packaged or formulated?' }
     ]
   },
   {
     id: 'PAR',
-    name: 'PAR Framework',
-    acronym: 'PAR',
-    category: 'story',
-    expansion: 'Problem, Action, Result',
-    bestFor: 'High-density, metric-driven technical resume bullet points.',
     sample: {
       Problem: 'Manual PDF invoice parsing was error-prone and took 12 human hours weekly.',
       Action: 'Engineered an asynchronous Celery pipeline using OpenCV and Tesseract OCR with automated schema validation.',
       Result: 'Processed 5,000+ monthly documents with 99.2% extraction accuracy, saving 10+ hours per week.'
     },
     fields: [
-      { key: 'Problem', label: 'P — Problem', placeholder: 'What friction, bottleneck, or bug existed?' },
-      { key: 'Action', label: 'A — Action', placeholder: 'What engineering steps did you implement?' },
-      { key: 'Result', label: 'R — Result', placeholder: 'What measurable business/system delta occurred?' }
+      { key: 'Problem', placeholder: 'What friction, bottleneck, or bug existed?' },
+      { key: 'Action', placeholder: 'What engineering steps did you implement?' },
+      { key: 'Result', placeholder: 'What measurable business/system delta occurred?' }
     ]
   },
   {
     id: 'STAR',
-    name: 'STAR Framework',
-    acronym: 'STAR',
-    category: 'story',
-    expansion: 'Situation, Task, Action, Result',
-    bestFor: 'Behavioral placement interviews (Amazon Leadership, Googleyness).',
     sample: {
       Situation: 'Two weeks before hackathon finals, our team lead left the project, leaving authentication incomplete.',
       Task: 'Step in as technical coordinator to finish JWT auth and ensure deployment on AWS.',
@@ -573,37 +500,27 @@ const promptFrameworksRegistry = [
       Result: 'Shipped on schedule, handled 2,000 concurrent demo users, and won 2nd place overall.'
     },
     fields: [
-      { key: 'Situation', label: 'S — Situation', placeholder: 'Set the scene and background...' },
-      { key: 'Task', label: 'T — Task', placeholder: 'What responsibility were you assigned?' },
-      { key: 'Action', label: 'A — Action', placeholder: 'What specific steps did you champion?' },
-      { key: 'Result', label: 'R — Result', placeholder: 'What outcome was achieved?' }
+      { key: 'Situation', placeholder: 'Set the scene and background...' },
+      { key: 'Task', placeholder: 'What responsibility were you assigned?' },
+      { key: 'Action', placeholder: 'What specific steps did you champion?' },
+      { key: 'Result', placeholder: 'What outcome was achieved?' }
     ]
   },
   {
     id: 'APE',
-    name: 'APE Framework',
-    acronym: 'APE',
-    category: 'task',
-    expansion: 'Action, Purpose, Expectation',
-    bestFor: 'Direct, unambiguous single-shot generation prompts.',
     sample: {
       Action: 'Summarize the Top 10 Dynamic Programming patterns for tech placement interviews.',
       Purpose: 'Enable quick revision 24 hours prior to an online coding assessment.',
       Expectation: 'Provide pattern name, time complexity, and one classic LeetCode problem link.'
     },
     fields: [
-      { key: 'Action', label: 'A — Action', placeholder: 'What must be performed?' },
-      { key: 'Purpose', label: 'P — Purpose', placeholder: 'Why is this being done?' },
-      { key: 'Expectation', label: 'E — Expectation', placeholder: 'What are the strict output bounds?' }
+      { key: 'Action', placeholder: 'What must be performed?' },
+      { key: 'Purpose', placeholder: 'Why is this being done?' },
+      { key: 'Expectation', placeholder: 'What are the strict output bounds?' }
     ]
   },
   {
     id: 'CRISPE',
-    name: 'CRISPE Framework',
-    acronym: 'CRISPE',
-    category: 'experiment',
-    expansion: 'Capacity, Insight, Statement, Personality, Experiment',
-    bestFor: 'Multi-perspective persona prompting and exploratory tests.',
     sample: {
       Capacity: 'Senior Staff Engineer and Placement Hiring Committee Chair at Cisco.',
       Insight: 'Students frequently list too many shallow tools without deep networking fundamentals.',
@@ -612,29 +529,24 @@ const promptFrameworksRegistry = [
       Experiment: 'Provide 3 tough technical interview questions that would instantly expose shallow knowledge.'
     },
     fields: [
-      { key: 'Capacity', label: 'C — Capacity', placeholder: 'What role capacity does the model adopt?' },
-      { key: 'Insight', label: 'I — Insight', placeholder: 'What context or insider perspective informs this?' },
-      { key: 'Statement', label: 'S — Statement', placeholder: 'What statement or item is under review?' },
-      { key: 'Personality', label: 'P — Personality', placeholder: 'What tone or demeanor should be used?' },
-      { key: 'Experiment', label: 'E — Experiment', placeholder: 'What test or simulation should be performed?' }
+      { key: 'Capacity', placeholder: 'What role capacity does the model adopt?' },
+      { key: 'Insight', placeholder: 'What context or insider perspective informs this?' },
+      { key: 'Statement', placeholder: 'What statement or item is under review?' },
+      { key: 'Personality', placeholder: 'What tone or demeanor should be used?' },
+      { key: 'Experiment', placeholder: 'What test or simulation should be performed?' }
     ]
   },
   {
     id: 'RTF',
-    name: 'RTF Framework',
-    acronym: 'RTF',
-    category: 'task',
-    expansion: 'Role, Task, Finish',
-    bestFor: 'Fast-paced, formatted task delivery with explicit finish criteria.',
     sample: {
       Role: 'Expert ATS Resume Screener.',
       Task: 'Extract 5 missing hard skills by comparing my resume against the target Amazon SDE-1 JD.',
       Finish: 'Return a bulleted list where each bullet starts with the skill in bold, followed by a 1-sentence explanation of where it appears in the JD.'
     },
     fields: [
-      { key: 'Role', label: 'R — Role', placeholder: 'Define persona or position...' },
-      { key: 'Task', label: 'T — Task', placeholder: 'Define the explicit task...' },
-      { key: 'Finish', label: 'F — Finish', placeholder: 'Define the strict delivery format and style...' }
+      { key: 'Role', placeholder: 'Define persona or position...' },
+      { key: 'Task', placeholder: 'Define the explicit task...' },
+      { key: 'Finish', placeholder: 'Define the strict delivery format and style...' }
     ]
   }
 ];
@@ -3678,6 +3590,10 @@ function initPromptStudio() {
   const list = document.getElementById('frameworks-list-scroll');
   if (list) {
     list.addEventListener('click', (e) => {
+      if (e.target.closest('.btn-registry-retry')) {
+        startPromptStudio();
+        return;
+      }
       const item = e.target.closest('[data-framework-id]');
       if (item) selectFramework(item.getAttribute('data-framework-id'));
     });
@@ -3698,10 +3614,7 @@ function initPromptStudio() {
   const coachBtn = document.getElementById('btn-prompt-to-coach');
   if (coachBtn) coachBtn.addEventListener('click', usePromptFrameworkInCoach);
 
-  loadFrameworkRegistry().then(() => {
-    renderFrameworksList();
-    selectFramework(appState.promptStudio.selectedFrameworkId);
-  });
+  startPromptStudio();
 }
 
 const normalizeFieldKey = (name) => String(name).toLowerCase().replace(/[^a-z]/g, '');
@@ -3723,8 +3636,10 @@ function buildStudioFramework(entry) {
         key: name,
         label: name,
         letter: name.charAt(0).toUpperCase(),
-        placeholder: g.placeholder || `Write the ${name.toLowerCase()} for this prompt…`,
-        hint: g.hint || '',
+        // Help stays visible beside the field. Where the guide only wrote one line of help,
+        // it is the hint: a placeholder disappears as soon as someone starts typing.
+        placeholder: g.hint ? g.placeholder : '',
+        hint: g.hint || g.placeholder || `Write the ${name.toLowerCase()} for this prompt.`,
         example: guide && guide.sample && g.key ? (guide.sample[g.key] || '') : ''
       };
     })
@@ -3747,14 +3662,44 @@ function loadFrameworkRegistry() {
       populateCoachFrameworkOptions();
     })
     .catch(err => {
-      console.warn('Framework registry unavailable, using the bundled guide list:', err);
-      appState.promptStudio.frameworks = promptFrameworksRegistry.map(g => buildStudioFramework({
-        id: g.id, name: g.name, group: 'Bundled list', acronym: g.expansion, best_use: g.bestFor,
-        fields: g.fields.map(f => f.key), recommended_scenarios: []
-      }));
-      appState.promptStudio.registrySource = 'bundled';
-      if (note) note.textContent = 'The framework registry could not be loaded; showing the bundled list.';
+      console.warn('The framework registry could not be loaded:', err.message);
+      appState.promptStudio.frameworks = [];
+      appState.promptStudio.registrySource = 'unavailable';
+      if (note) note.textContent = 'The framework registry could not be loaded.';
     });
+}
+
+function renderFrameworkRegistryError() {
+  const list = document.getElementById('frameworks-list-scroll');
+  const title = document.getElementById('builder-fw-title');
+  const desc = document.getElementById('builder-fw-desc');
+  const preview = document.getElementById('prompt-preview-code');
+  if (list) {
+    list.innerHTML = `<p class="frameworks-empty">The frameworks could not be loaded from the server.</p>
+      <button type="button" class="btn-secondary btn-sm btn-registry-retry">Try again</button>`;
+  }
+  if (title) title.textContent = 'Frameworks unavailable';
+  if (desc) desc.textContent = 'Prompt Studio reads its frameworks from the server. Check that it is running, then try again.';
+  if (preview) preview.textContent = '';
+  ['btn-fw-example', 'btn-fw-reset', 'btn-copy-prompt', 'btn-prompt-to-coach'].forEach(id => {
+    const btn = document.getElementById(id);
+    if (btn) btn.hidden = true;
+  });
+}
+
+function startPromptStudio() {
+  return loadFrameworkRegistry().then(() => {
+    if (!appState.promptStudio.frameworks.length) {
+      renderFrameworkRegistryError();
+      return;
+    }
+    ['btn-fw-reset', 'btn-copy-prompt', 'btn-prompt-to-coach'].forEach(id => {
+      const btn = document.getElementById(id);
+      if (btn) btn.hidden = false;
+    });
+    renderFrameworksList();
+    selectFramework(appState.promptStudio.selectedFrameworkId);
+  });
 }
 
 // The coach's framework list is the registry's, in the registry's order.
@@ -3923,8 +3868,14 @@ function legacyCopy(text) {
 function copyPromptToClipboard() {
   const previewBox = document.getElementById('prompt-preview-code');
   if (!previewBox) return;
+  const fw = getStudioFramework(appState.promptStudio.selectedFrameworkId);
+  const blanks = fw ? fw.fields.filter(field => !(appState.promptStudio.formData[field.key] || '').trim()).length : 0;
   copyText(previewBox.textContent).then(ok => {
-    showToast(ok ? 'Prompt copied to clipboard.' : 'Copy failed. Select the preview text and copy it manually.');
+    if (!ok) {
+      showToast('Copy failed. Select the preview text and copy it manually.');
+      return;
+    }
+    showToast(blanks ? `Prompt copied, with ${blanks} ${blanks === 1 ? 'field' : 'fields'} still blank.` : 'Prompt copied to clipboard.');
   });
 }
 
@@ -3989,10 +3940,21 @@ ${text}
   showToast(`Download started: ${filename}`);
 }
 
-// Defined handoff: the Career Coach answers through the chosen framework.
+// The fields someone has filled in, in registry order, with no header or placeholders.
+function composeFrameworkQuestion(fw) {
+  return fw.fields
+    .map(field => [field.label, (appState.promptStudio.formData[field.key] || '').trim()])
+    .filter(([, value]) => value)
+    .map(([label, value]) => `${label}: ${value}`)
+    .join('\n');
+}
+
+// Defined handoff: sets the coach's framework and places the draft in its question box.
+// Nothing is sent until the person reviews it and presses Ask.
 function usePromptFrameworkInCoach() {
   const fw = getStudioFramework(appState.promptStudio.selectedFrameworkId);
   const select = document.getElementById('coach-framework-select');
+  const input = document.getElementById('coach-query-input');
   if (!fw || !select) return;
   if (![...select.options].some(o => o.value === fw.id)) {
     showToast(`The Career Coach has no ${fw.id} lens.`);
@@ -4003,7 +3965,19 @@ function usePromptFrameworkInCoach() {
   switchResultsTab('pane-career-coach');
   const results = document.querySelector('.analyzer-results-card');
   if (results) results.scrollIntoView({ behavior: appState.motionMode === 'reduced' ? 'auto' : 'smooth', block: 'start' });
-  showToast(`Career Coach will answer through the ${fw.id} framework.`);
+
+  const question = composeFrameworkQuestion(fw);
+  if (input) {
+    if (question) input.value = question;
+    input.focus({ preventScroll: true });
+  }
+  if (!question) {
+    showToast(`The coach will answer through ${fw.id}. Type your question and press Ask.`);
+  } else if (question.length > COACH_MESSAGE_MAX) {
+    showToast(`Your ${fw.id} draft is over the coach's ${COACH_MESSAGE_MAX.toLocaleString()} character limit. Shorten it, then press Ask.`);
+  } else {
+    showToast(`Your ${fw.id} draft is in the coach's question box. Review it, then press Ask.`);
+  }
 }
 
 function triggerFrameworkRecommendation(scenarioKey) {
@@ -4011,7 +3985,9 @@ function triggerFrameworkRecommendation(scenarioKey) {
   const box = document.getElementById('recommendation-explanation-box');
   if (!rec || !box) return;
   document.querySelectorAll('.btn-scenario-chip').forEach(chip => {
-    chip.classList.toggle('active', chip.getAttribute('data-scenario') === scenarioKey);
+    const selected = chip.getAttribute('data-scenario') === scenarioKey;
+    chip.classList.toggle('active', selected);
+    chip.setAttribute('aria-pressed', String(selected));
   });
   const primary = getStudioFramework(rec.primaryId);
   const alt = getStudioFramework(rec.altId);
@@ -5437,8 +5413,12 @@ function initCareerCoachController() {
 
   if (sendBtn && inputElem) {
     sendBtn.addEventListener('click', () => submitCoachQuery());
+    // Enter asks; Shift+Enter starts a new line.
     inputElem.addEventListener('keydown', (e) => {
-      if (e.key === 'Enter') submitCoachQuery();
+      if (e.key === 'Enter' && !e.shiftKey) {
+        e.preventDefault();
+        submitCoachQuery();
+      }
     });
   }
   updateCoachContextNote();
@@ -5465,10 +5445,17 @@ function initCareerCoachController() {
   }
 }
 
+// models.CoachChatRequest.message
+const COACH_MESSAGE_MAX = 2000;
+
 async function submitCoachQuery(overrideText) {
   const inputElem = document.getElementById('coach-query-input');
   const question = (overrideText || (inputElem ? inputElem.value : '')).trim();
   if (!question) return;
+  if (question.length > COACH_MESSAGE_MAX) {
+    showToast(`This question is over the ${COACH_MESSAGE_MAX.toLocaleString()} character limit. Shorten it, then press Ask.`);
+    return;
+  }
 
   if (inputElem) inputElem.value = '';
 
