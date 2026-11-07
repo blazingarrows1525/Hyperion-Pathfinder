@@ -13,7 +13,7 @@
 // Writes <out>/<width>/<section>.jpg and <out>/audit.json (overflow, console errors,
 // failed requests, static DOM checks). Requires the backend to be running.
 import { spawn } from 'node:child_process';
-import { mkdirSync, writeFileSync, readFileSync, existsSync, rmSync } from 'node:fs';
+import { mkdirSync, mkdtempSync, writeFileSync, readFileSync, existsSync, rmSync } from 'node:fs';
 import { join, resolve } from 'node:path';
 import { tmpdir } from 'node:os';
 
@@ -48,10 +48,10 @@ const browserPath = BROWSERS.find(existsSync);
 if (!browserPath) throw new Error('No Chrome/Edge executable found');
 
 const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
-const port = 9300 + Math.floor(Math.random() * 500);
-const profile = join(tmpdir(), `ui-audit-${port}`);
+// Port 0 lets the browser pick a free port, so concurrent runs cannot collide.
+const profile = mkdtempSync(join(tmpdir(), 'ui-audit-'));
 const proc = spawn(browserPath, [
-  '--headless=new', `--remote-debugging-port=${port}`, `--user-data-dir=${profile}`,
+  '--headless=new', '--remote-debugging-port=0', `--user-data-dir=${profile}`,
   '--no-first-run', '--no-default-browser-check', '--hide-scrollbars',
   '--use-angle=swiftshader', '--enable-unsafe-swiftshader', 'about:blank',
 ], { stdio: 'ignore' });
@@ -59,6 +59,7 @@ const proc = spawn(browserPath, [
 async function connect() {
   for (let i = 0; i < 50; i++) {
     try {
+      const port = readFileSync(join(profile, 'DevToolsActivePort'), 'utf8').trim().split(/\s+/)[0];
       const list = await (await fetch(`http://127.0.0.1:${port}/json/list`)).json();
       const page = list.find((t) => t.type === 'page');
       if (page) return page.webSocketDebuggerUrl;
@@ -83,13 +84,18 @@ ws.addEventListener('message', (ev) => {
     listeners.forEach((fn) => fn(msg));
   }
 });
+ws.addEventListener('close', () => {
+  pending.forEach(({ rej }) => rej(new Error('The browser closed the DevTools connection')));
+  pending.clear();
+});
 const send = (method, params = {}) => new Promise((res, rej) => {
   const id = ++seq;
   pending.set(id, { res, rej });
   ws.send(JSON.stringify({ id, method, params }));
 });
 const evaluate = async (expression) => {
-  const r = await send('Runtime.evaluate', { expression, awaitPromise: true, returnByValue: true });
+  // includeCommandLineAPI exposes getEventListeners() to probes (scripts/ui_probes/control_census.js).
+  const r = await send('Runtime.evaluate', { expression, awaitPromise: true, returnByValue: true, includeCommandLineAPI: true });
   if (r.exceptionDetails) throw new Error(r.exceptionDetails.exception?.description || 'evaluate failed');
   return r.result.value;
 };

@@ -1,0 +1,90 @@
+{
+  "url": "http://127.0.0.1:8010/",
+  "browser": "C:/Program Files/Google/Chrome/Application/chrome.exe",
+  "theme": "grove",
+  "reducedMotion": false,
+  "viewports": {
+    "375": {
+      "height": 812,
+      "static": {
+        "duplicateIds": [],
+        "untypedButtons": 0,
+        "missingHandlers": [],
+        "sections": [
+          "hero",
+          "evidence",
+          "how-it-works",
+          "placement-snapshot",
+          "analyzer",
+          "genome",
+          "company-intel",
+          "prompt-studio",
+          "buttons-lab",
+          "faq"
+        ],
+        "theme": "grove",
+        "canvases": 1
+      },
+      "overflow": {
+        "scrollWidth": 375,
+        "clientWidth": 375,
+        "overflow": false,
+        "offenders": []
+      },
+      "shots": [
+        "375/hero.grove.jpg",
+        "375/evidence.grove.jpg",
+        "375/how-it-works.grove.jpg",
+        "375/placement-snapshot.grove.jpg",
+        "375/analyzer.grove.jpg",
+        "375/genome.grove.jpg",
+        "375/company-intel.grove.jpg",
+        "375/prompt-studio.grove.jpg",
+        "375/faq.grove.jpg"
+      ],
+      "consoleErrors": [],
+      "failedRequests": []
+    },
+    "1440": {
+      "height": 900,
+      "static": {
+        "duplicateIds": [],
+        "untypedButtons": 0,
+        "missingHandlers": [],
+        "sections": [
+          "hero",
+          "evidence",
+          "how-it-works",
+          "placement-snapshot",
+          "analyzer",
+          "genome",
+          "company-intel",
+          "prompt-studio",
+          "buttons-lab",
+          "faq"
+        ],
+        "theme": "grove",
+        "canvases": 1
+      },
+      "overflow": {
+        "scrollWidth": 1440,
+        "clientWidth": 1440,
+        "overflow": false,
+        "offenders": []
+      },
+      "shots": [
+        "1440/hero.grove.jpg",
+        "1440/evidence.grove.jpg",
+        "1440/how-it-works.grove.jpg",
+        "1440/placement-snapshot.grove.jpg",
+        "1440/analyzer.grove.jpg",
+        "1440/genome.grove.jpg",
+        "1440/company-intel.grove.jpg",
+        "1440/prompt-studio.grove.jpg",
+        "1440/faq.grove.jpg"
+      ],
+      "consoleErrors": [],
+      "failedRequests": []
+    }
+  }
+}
