@@ -21,6 +21,23 @@ def theme_block(selector):
     return CSS[start:CSS.index("}", start)]
 
 
+def test_only_the_two_active_themes_define_tokens():
+    assert "prism-day" not in CSS and "afterglow-night" not in CSS
+    assert "prism-day" not in JS and "afterglow-night" not in JS
+    assert ":root,\nhtml[data-theme=\"terra\"]" in CSS.replace("\r\n", "\n")
+
+
+def test_the_override_layer_stays_gone():
+    assert "ART DIRECTION REFRESH" not in CSS
+    assert "--hp-shadow" not in CSS and "--hp-glass" not in CSS and "--hp-ease" not in CSS
+
+
+def test_only_the_three_chosen_font_families_load():
+    fonts = re.search(r'fonts\.googleapis\.com/css2\?([^"]+)"', HTML).group(1)
+    assert sorted(re.findall(r"family=([A-Za-z+]+)", fonts)) == ["DM+Sans", "DM+Serif+Display", "JetBrains+Mono"]
+    assert "Space Grotesk" not in CSS and "'Inter'" not in CSS
+
+
 def test_terra_is_the_first_load_theme():
     assert re.search(r'<html[^>]*\bdata-theme="terra"', HTML)
     terra = theme_block('html[data-theme="terra"]')
