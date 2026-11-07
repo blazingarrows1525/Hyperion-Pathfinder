@@ -3212,9 +3212,13 @@ main section[id] {
 /* Comparison dialog */
 .compare-pickers {
   display: grid;
-  grid-template-columns: 1fr 1fr;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
   gap: 14px;
   margin-bottom: 18px;
+}
+
+.compare-pickers .sort-select {
+  width: 100%;
 }
 
 .compare-pickers label {
@@ -3285,6 +3289,50 @@ main section[id] {
   color: var(--color-muted);
 }
 
+/* Narrow phones: each attribute becomes a heading line with the two values side by side.
+   The markup carries explicit table roles, so the change of display keeps the table semantics. */
+@media (max-width: 480px) {
+  .comparison-table,
+  .comparison-table thead,
+  .comparison-table tbody {
+    display: block;
+    position: relative;
+  }
+
+  .comparison-table tr {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+    column-gap: 14px;
+    padding: 12px 0;
+    border-bottom: 1px solid var(--color-border);
+  }
+
+  .comparison-table th,
+  .comparison-table td {
+    padding: 0;
+    border-bottom: 0;
+  }
+
+  .comparison-table thead th:first-child {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    overflow: hidden;
+    clip: rect(0 0 0 0);
+  }
+
+  .comparison-table tbody th {
+    grid-column: 1 / -1;
+    width: auto;
+    margin-bottom: 6px;
+  }
+
+  .comparison-table tbody th span {
+    display: inline;
+    margin-left: 6px;
+  }
+}
+
 @media (max-width: 1024px) {
   .detail-panel-grid { grid-template-columns: minmax(0, 1fr); gap: 20px; }
 }
@@ -3293,7 +3341,7 @@ main section[id] {
   .field-map { display: flex; overflow-x: auto; scroll-snap-type: x mandatory; padding-bottom: 6px; }
   .archetype-tab { flex: 0 0 72%; scroll-snap-align: start; }
   .archetype-detail-panel { padding: 18px 16px; }
-  .compare-pickers { grid-template-columns: 1fr; }
+  .compare-pickers { grid-template-columns: minmax(0, 1fr); }
   .genome-field-seg b { display: none; }
 }
 
@@ -3324,6 +3372,17 @@ main section[id] {
   padding: 3px;
   border-radius: var(--radius-sm);
   background: var(--color-surface-inset);
+}
+
+@media (max-width: 640px) {
+  .segmented-filter {
+    display: flex;
+  }
+
+  .segmented-filter > .btn-filter-pill {
+    flex: 1 1 auto;
+    text-align: center;
+  }
 }
 
 .btn-filter-pill {
@@ -5326,12 +5385,22 @@ main section[id] {
     overflow-y: auto;
     z-index: 960;
   }
+
+  .voice-assistant-widget.is-covered {
+    display: none;
+  }
 }
 
 .popover-header {
   display: flex;
   justify-content: space-between;
   align-items: center;
+}
+
+.popover-body {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
 }
 
 .popover-category-badge {
@@ -5515,9 +5584,13 @@ main section[id] {
   background: rgba(var(--tint-rgb), 0.06);
   border: 1px solid rgba(var(--tint-rgb), 0.12);
   color: var(--color-lagoon-ink);
-  font-size: 0.72rem;
+  font-family: inherit;
+  font-size: 0.74rem;
+  font-weight: 600;
+  line-height: 1.3;
+  text-align: left;
   cursor: pointer;
-  transition: all 0.2s ease;
+  transition: background-color var(--motion-fast) var(--ease-standard), color var(--motion-fast) var(--ease-standard);
 }
 
 .btn-coach-chip:hover {
@@ -5529,6 +5602,22 @@ main section[id] {
   display: flex;
   align-items: flex-end;
   gap: 8px;
+}
+
+/* Phones: the question gets the full width; dictate and Ask sit under it. */
+@media (max-width: 640px) {
+  .coach-input-bar {
+    flex-wrap: wrap;
+  }
+
+  .coach-input-bar .coach-text-input {
+    flex: 1 1 100%;
+    order: -1;
+  }
+
+  #btn-send-coach-msg {
+    margin-left: auto;
+  }
 }
 
 .coach-text-input {
@@ -5827,7 +5916,8 @@ main section[id] {
   min-height: 32px;
   padding: 4px 8px;
   cursor: pointer;
-  max-width: 280px;
+  min-width: 0;
+  max-width: min(280px, 100%);
 }
 
 .fw-active-badge.is-active {

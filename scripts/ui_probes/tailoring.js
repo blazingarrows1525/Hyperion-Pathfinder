@@ -73,6 +73,12 @@ if (innerWidth <= 640) {
   check('on a phone it is a bottom sheet', cs.position === 'fixed' && Math.abs(innerHeight - box.bottom) < 40, `${cs.position} bottom=${box.bottom} of ${innerHeight}`);
   check('the sheet stays on screen', box.left >= 0 && box.right <= innerWidth && box.top >= 0, `${box.left}..${box.right} top ${box.top}`);
   check('the sheet can be read past its limit', cs.overflowY === 'auto');
+  // The fixed voice button sat on top of Close before it stepped aside for the sheet.
+  for (const id of ['popover-dismiss-btn', 'popover-apply-btn']) {
+    const r = $(id).getBoundingClientRect();
+    const hit = document.elementFromPoint(r.left + r.width - 6, r.top + r.height / 2);
+    check(`nothing covers ${id}`, $(id).contains(hit), hit && (hit.id || hit.className));
+  }
 } else {
   const stage = $('resume-document-viewport').getBoundingClientRect();
   const anchor = markEl('m_yellow').getBoundingClientRect();
@@ -81,6 +87,7 @@ if (innerWidth <= 640) {
   check('and inside the document width', box.right <= stage.right + 40, `${box.right} vs ${stage.right}`);
 }
 closeMarkupPopover();
+check('the voice button is back once the suggestion closes', !$('voice-assistant-widget').classList.contains('is-covered') && getComputedStyle($('voice-assistant-widget')).display !== 'none');
 
 // --- A green mark has nothing to replace ---------------------------------------
 openMarkupPopover('m_green', markEl('m_green'));

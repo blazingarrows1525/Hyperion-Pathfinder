@@ -3213,30 +3213,30 @@ function renderComparisonModalContent() {
     </div>
     ${archA.id === archB.id ? '<p class="compare-same" role="status">Both sides show the same archetype. Choose a different one to compare.</p>' : ''}
 
-    <table class="comparison-table">
+    <table class="comparison-table" role="table">
       <caption class="sr-only">Comparison of two career archetypes</caption>
-      <thead>
-        <tr>
-          <th scope="col"><span class="sr-only">Attribute</span></th>
-          <th scope="col">${head(archA)}</th>
-          <th scope="col">${head(archB)}</th>
+      <thead role="rowgroup">
+        <tr role="row">
+          <th scope="col" role="columnheader"><span class="sr-only">Attribute</span></th>
+          <th scope="col" role="columnheader">${head(archA)}</th>
+          <th scope="col" role="columnheader">${head(archB)}</th>
         </tr>
       </thead>
-      <tbody>
-        <tr>
-          <th scope="row">Records in corpus</th>
-          <td>${formatCorpusCount(archA, true)}</td>
-          <td>${formatCorpusCount(archB, true)}</td>
+      <tbody role="rowgroup">
+        <tr role="row">
+          <th scope="row" role="rowheader">Records in corpus</th>
+          <td role="cell">${formatCorpusCount(archA, true)}</td>
+          <td role="cell">${formatCorpusCount(archB, true)}</td>
         </tr>
-        <tr>
-          <th scope="row">Representative skills <span>curated</span></th>
-          <td>${archA.keySkills.slice(0, 5).map(escapeHTML).join(', ')}</td>
-          <td>${archB.keySkills.slice(0, 5).map(escapeHTML).join(', ')}</td>
+        <tr role="row">
+          <th scope="row" role="rowheader">Representative skills <span>curated</span></th>
+          <td role="cell">${archA.keySkills.slice(0, 5).map(escapeHTML).join(', ')}</td>
+          <td role="cell">${archB.keySkills.slice(0, 5).map(escapeHTML).join(', ')}</td>
         </tr>
-        <tr>
-          <th scope="row">Typical roles <span>illustrative</span></th>
-          <td>${archA.typicalRoles.slice(0, 3).map(escapeHTML).join(', ')}</td>
-          <td>${archB.typicalRoles.slice(0, 3).map(escapeHTML).join(', ')}</td>
+        <tr role="row">
+          <th scope="row" role="rowheader">Typical roles <span>illustrative</span></th>
+          <td role="cell">${archA.typicalRoles.slice(0, 3).map(escapeHTML).join(', ')}</td>
+          <td role="cell">${archB.typicalRoles.slice(0, 3).map(escapeHTML).join(', ')}</td>
         </tr>
       </tbody>
     </table>
@@ -4711,9 +4711,17 @@ function openMarkupPopover(markupId, anchorEl) {
   if (applyBtn) applyBtn.hidden = !replaceable;
 
   popover.style.display = 'flex';
+  setVoiceWidgetCovered(true);
   positionMarkupPopover(popover, anchorEl);
   if (replaceable && rewriteInput) rewriteInput.focus();
   else if (closeBtn) closeBtn.focus();
+}
+
+// The page wrapper is its own stacking context, so the phone bottom sheet cannot rise above
+// the fixed voice button; the button steps aside while the sheet is open (phones only, in CSS).
+function setVoiceWidgetCovered(covered) {
+  const widget = document.getElementById('voice-assistant-widget');
+  if (widget) widget.classList.toggle('is-covered', covered);
 }
 
 // Beside the span on wide screens; below 640 px the stylesheet makes it a bottom sheet.
@@ -4739,6 +4747,7 @@ function closeMarkupPopover({ restoreFocus = true } = {}) {
   const popover = document.getElementById('markup-detail-popover');
   const wasOpen = markupPopoverOpen();
   if (popover) popover.style.display = 'none';
+  setVoiceWidgetCovered(false);
   const draft = appState.resumeDraft;
   const anchorId = draft.popoverAnchorId;
   draft.selectedMarkupId = null;
@@ -5467,7 +5476,8 @@ function initCareerCoachController() {
     fwSelect.addEventListener('change', () => {
       const val = fwSelect.value;
       if (fwBadge) {
-        fwBadge.textContent = val ? `Using ${val}` : 'Direct advice';
+        fwBadge.textContent = val ? `Using ${val}` : '';
+        fwBadge.hidden = !val;
         fwBadge.classList.toggle('is-active', Boolean(val));
       }
       showToast(val ? `The coach will answer through ${val}.` : 'The coach will give direct advice.');

@@ -269,6 +269,13 @@ check('compare opens', visible(compare) && compare.getAttribute('aria-modal') ==
 check('focus moves into compare', compare.contains(document.activeElement));
 const pickers = [...compare.querySelectorAll('[data-compare-index]')];
 check('compare has labelled pickers', pickers.length === 2 && pickers.every((p) => p.closest('label')));
+const compareBody = $('compare-modal-body');
+const bodyStyle = getComputedStyle(compareBody);
+const contentRight = compareBody.getBoundingClientRect().right - parseFloat(bodyStyle.paddingRight) - parseFloat(bodyStyle.borderRightWidth);
+const compareTable = compare.querySelector('.comparison-table');
+const widest = Math.max(compareTable.getBoundingClientRect().right, ...pickers.map((p) => p.getBoundingClientRect().right));
+check('the comparison fits its dialog', widest <= contentRight + 1, `${Math.round(widest)} vs ${Math.round(contentRight)}`);
+check('the comparison keeps its table roles at every width', compareTable.getAttribute('role') === 'table' && compareTable.querySelectorAll('[role="rowheader"]').length === 3 && compareTable.querySelectorAll('[role="cell"]').length === 6);
 check('compare names both archetypes in its columns', compare.querySelector('thead').textContent.includes(getArchetypeLabel(archetypesDatabase.find((a) => a.id === appState.genome.compareArchetypeA))));
 pickers[1].value = '3';
 pickers[1].dispatchEvent(new Event('change', { bubbles: true }));

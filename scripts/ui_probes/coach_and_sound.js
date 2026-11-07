@@ -81,7 +81,22 @@ check('a framework fallback invents no results', !/\d+\s*%|\d+\s*ms|QPS/.test(pa
 check('the framework badge follows the selection', /PAR/.test($('coach-framework-badge').textContent), $('coach-framework-badge').textContent);
 select.value = '';
 select.dispatchEvent(new Event('change', { bubbles: true }));
+check('with direct advice the badge does not repeat the select', $('coach-framework-badge').hidden);
 mode = 'ok';
+
+// --- Layout of the coach panel -------------------------------------------------
+switchResultsTab('pane-career-coach');
+await sleep(60);
+const fwRow = document.querySelector('.coach-framework-selector-row').getBoundingClientRect();
+const fwSel = select.getBoundingClientRect();
+check('the framework picker stays inside its row', fwSel.left >= fwRow.left - 0.5 && fwSel.right <= fwRow.right + 0.5, `${Math.round(fwSel.left)}..${Math.round(fwSel.right)} in ${Math.round(fwRow.left)}..${Math.round(fwRow.right)}`);
+const chip = document.querySelector('.btn-coach-chip');
+if (chip) check('suggestion chips use the interface font', getComputedStyle(chip).fontFamily === getComputedStyle(document.body).fontFamily, getComputedStyle(chip).fontFamily);
+if (innerWidth <= 640) {
+  const bar = document.querySelector('.coach-input-bar').getBoundingClientRect();
+  const box = $('coach-query-input').getBoundingClientRect();
+  check('on a phone the question box has the whole row', box.width >= bar.width - 1, `${Math.round(box.width)} of ${Math.round(bar.width)}`);
+}
 
 // --- Coach options come from the registry ------------------------------------
 const registry = appState.promptStudio.frameworks;
