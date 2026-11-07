@@ -60,3 +60,16 @@ def test_selector_contract_holds():
     assert inventory["duplicate_ids"] == []
     assert inventory["js_ids_missing_from_html"] == []
     assert inventory["inline_handlers_undefined"] == []
+
+
+def test_editorial_reveal_system_respects_reduced_motion():
+    assert "function initEditorialRevealSystem()" in JS
+    assert "initEditorialRevealSystem();" in JS
+    assert ".hp-reveal.hp-reveal-visible" in CSS
+    assert '[data-motion="reduced"] .hp-reveal' in CSS
+    assert "@media (prefers-reduced-motion: reduce)" in CSS
+
+
+def test_career_atlas_has_adaptive_render_cap():
+    assert "const frameInterval = this.lowDetail ? (1000 / 24) : (1000 / 30);" in JS
+    assert "this.renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, this.lowDetail ? 1 : 1.5));" in JS
