@@ -27,6 +27,19 @@ def test_only_the_two_active_themes_define_tokens():
     assert ":root,\nhtml[data-theme=\"terra\"]" in CSS.replace("\r\n", "\n")
 
 
+def test_stylesheet_braces_balance():
+    # A stray "}" at the top level is folded into the next selector, and the browser drops
+    # that rule without a console message.
+    text = re.sub(r"/\*.*?\*/", "", CSS, flags=re.S)
+    text = re.sub(r'"(?:\\.|[^"\\])*"|\'(?:\\.|[^\'\\])*\'', '""', text)
+    depth = 0
+    for number, line in enumerate(text.splitlines(), 1):
+        for char in line:
+            depth += {"{": 1, "}": -1}.get(char, 0)
+            assert depth >= 0, f"unmatched closing brace on line {number}"
+    assert depth == 0, "a block is never closed"
+
+
 def test_the_override_layer_stays_gone():
     assert "ART DIRECTION REFRESH" not in CSS
     assert "--hp-shadow" not in CSS and "--hp-glass" not in CSS and "--hp-ease" not in CSS

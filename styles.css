@@ -1,5 +1,5 @@
 /* ==============================================================================
-   RESUME CHECKER — TERRA ATELIER DESIGN SYSTEM
+   HYPERION PATHFINDER — TERRA ATELIER DESIGN SYSTEM
    Warm editorial paper (Terra Atelier, default) with an aubergine night mode
    (Midnight Grove). Components read the legacy aliases further down, which
    resolve to the semantic --color-* tokens of the active theme.
@@ -318,7 +318,7 @@ html[data-theme="grove"] {
 }
 
 /* ==============================================================================
-   2. ACCESSIBILITY & REDUCED MOTION PREFERENCES
+   3. ACCESSIBILITY & REDUCED MOTION PREFERENCES
    ============================================================================== */
 @media (prefers-reduced-motion: reduce) {
   *, *::before, *::after {
@@ -405,7 +405,7 @@ main:focus {
 }
 
 /* ==============================================================================
-   3. RESET & BASE ELEMENTS
+   4. RESET & BASE ELEMENTS
    ============================================================================== */
 button,
 a,
@@ -476,10 +476,8 @@ body {
 }
 
 /* ==============================================================================
-   4. LAYOUT & 3D CANVAS BACKGROUND
+   5. LAYOUT — page wrapper, container, anchor offsets
    ============================================================================== */
-
-/* Minimalist Monochromatic Ambient Soft Glows */
 
 .app-wrapper {
   position: relative;
@@ -518,7 +516,7 @@ main section[id] {
 }
 
 /* ==============================================================================
-   5. MASTHEAD — wordmark, primary sections, status, preferences, one CTA
+   6. MASTHEAD — wordmark, primary sections, status, preferences, one CTA
    ============================================================================== */
 .masthead {
   position: sticky;
@@ -904,7 +902,7 @@ main section[id] {
 }
 
 /* ==============================================================================
-   6. CAREER ATLAS HERO — the statement, beside the instrument
+   7. CAREER ATLAS HERO — the statement, beside the instrument
    ============================================================================== */
 .atlas-hero {
   padding: clamp(32px, 4.4vw, 64px) 0 clamp(36px, 4.4vw, 60px);
@@ -1348,37 +1346,6 @@ main section[id] {
   .evidence-panel { padding: 20px 18px; }
   .evidence-facts { grid-template-columns: repeat(2, minmax(0, 1fr)); }
   .evidence-facts dd { font-size: 1.6rem; }
-}
-
-/* ==============================================================================
-   7. 3D CARD PARALLAX TILT (HERO VISUAL) — FLOATING SPATIAL DEPTH
-   ============================================================================== */
-
-.card-3d-tilt {
-  width: 100%;
-  max-width: 480px;
-  background: var(--bg-card);
-  backdrop-filter: blur(28px);
-  -webkit-backdrop-filter: blur(28px);
-  border: 1px solid rgba(var(--tint-rgb), 0.12);
-  border-radius: var(--radius-xl);
-  padding: 32px;
-  box-shadow: 0 30px 60px -12px rgba(var(--shade-rgb), 0.43), 0 0 1px 1px rgba(255, 255, 255, 0.12);
-  transform-style: preserve-3d;
-  transition: transform 0.15s ease-out, box-shadow 0.3s ease;
-  position: relative;
-  overflow: hidden;
-  animation: spatialFloat 7s ease-in-out infinite;
-}
-
-.card-3d-tilt::before {
-  content: '';
-  position: absolute;
-  top: 0;
-  left: 0;
-  right: 0;
-  height: 2px;
-  background: linear-gradient(90deg, transparent, rgba(var(--tint-rgb), 0.85), transparent);
 }
 
 /* ==============================================================================
@@ -4614,7 +4581,7 @@ main section[id] {
 }
 
 /* ==============================================================================
-   18. NEUMORPHIC (SOFT UI) & SPATIAL 3D COMPONENT SYSTEM
+   18. CONTROL PRIMITIVES — cards, fields, switches, segmented controls, sliders
    ============================================================================== */
 
 /* --- Neumorphic Cards & Extruded Surfaces --- */
@@ -4851,14 +4818,7 @@ main section[id] {
   border: 2px solid var(--color-ink-soft);
 }
 
-/* --- Spatial UI 3D Tilt & Specular Dynamic Glare --- */
-.spatial-tilt-card {
-  transform-style: preserve-3d;
-  perspective: 1200px;
-  position: relative;
-  will-change: transform;
-}
-
+/* --- Hover tilt glare (init3DCardTilt; fine pointers, full motion only) --- */
 .specular-glare {
   position: absolute;
   inset: 0;
@@ -4871,35 +4831,9 @@ main section[id] {
   background: radial-gradient(circle 350px at 50% 50%, rgba(var(--tint-rgb), 0.2) 0%, rgba(var(--tint-rgb), 0.05) 40%, transparent 75%);
 }
 
-.spatial-tilt-card:hover .specular-glare {
-  opacity: 1;
-}
-
-@keyframes spatialFloat {
-  0%, 100% {
-    transform: translateY(0px) rotate(0deg);
-  }
-  50% {
-    transform: translateY(-12px) rotate(0.8deg);
-  }
-}
-
-/* --- Spatial Scroll Reveals (IntersectionObserver) --- */
-}
-
-/* Theme Toggle Button in Navigation */
-
 /* ==============================================================================
-   9. ANNOTATION TOKENS, EXECUTIVE REVIEW, IN-DOC TAILORING & VOICE ASSISTANT
+   19. REPORT WORKSPACE — review lens, executive review, tailoring, coach, voice
    ============================================================================== */
-
-/* --- Executive Persona Selection Grid --- */
-.persona-chips-grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(210px, 1fr));
-  gap: 10px;
-  margin-top: 6px;
-}
 
 .persona-chip {
   cursor: pointer;

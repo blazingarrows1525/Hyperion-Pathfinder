@@ -2066,7 +2066,7 @@ function init3DCardTilt() {
   if (!canHover) return;
 
   // Forms, reports and long text stay still; tilt is for small showcase cards only.
-  const cardSelector = '.archetype-card, .company-card, .btn-lab-item, .card-3d-tilt, .spatial-tilt-card';
+  const cardSelector = '.archetype-card, .company-card, .btn-lab-item';
   const tiltCards = document.querySelectorAll(cardSelector);
 
   tiltCards.forEach(card => {
@@ -2100,7 +2100,7 @@ function init3DCardTilt() {
     });
 
     card.addEventListener('mouseleave', () => {
-      card.style.transform = 'perspective(1000px) rotateX(0deg) rotateY(0deg) scale3d(1, 1, 1)';
+      card.style.transform = '';
       glare.style.opacity = '0';
     });
   });
