@@ -9,10 +9,12 @@
 /* ==============================================================================
    0. METRIC-MATCHED FALLBACK FACES
    Local fonts sized to the web fonts, so text does not reflow when the web fonts
-   arrive (font-display: swap). Values measured in Chrome with canvas measureText
-   on a sentence of the hero copy: size-adjust = web width / local width, and the
-   overrides are the web font's ascent and descent divided by that factor.
-   Where the local font is missing (Android), the next font in the stack is used.
+   arrive (font-display: swap). size-adjust = web width / local width on a sentence
+   of interface copy; the overrides are the web font's ascent and descent divided by
+   that factor. DM Sans has an optical-size axis, so it was measured on page text at
+   13 to 17 px (the ratio holds within 0.3% across them); the serif and the mono were
+   measured with canvas text. Where the local font is missing (Android), the next
+   font in the stack is used.
    ============================================================================== */
 @font-face {
   font-family: 'DM Serif Display Fallback';
@@ -27,9 +29,31 @@
   font-family: 'DM Sans Fallback';
   font-weight: 400;
   src: local('Arial'), local('ArialMT');
-  size-adjust: 92.31%;
-  ascent-override: 107.25%;
-  descent-override: 33.58%;
+  size-adjust: 102.86%;
+  ascent-override: 96.25%;
+  descent-override: 30.14%;
+  line-gap-override: 0%;
+}
+
+/* The masthead and controls use 500 and 600; each weight gets its own measured face,
+   so the browser does not fall back to the 400 or 700 metrics for them. */
+@font-face {
+  font-family: 'DM Sans Fallback';
+  font-weight: 500;
+  src: local('Arial'), local('ArialMT');
+  size-adjust: 104.57%;
+  ascent-override: 94.67%;
+  descent-override: 29.65%;
+  line-gap-override: 0%;
+}
+
+@font-face {
+  font-family: 'DM Sans Fallback';
+  font-weight: 600;
+  src: local('Arial Bold'), local('Arial-BoldMT');
+  size-adjust: 100.33%;
+  ascent-override: 98.67%;
+  descent-override: 30.9%;
   line-gap-override: 0%;
 }
 
@@ -37,9 +61,9 @@
   font-family: 'DM Sans Fallback';
   font-weight: 700;
   src: local('Arial Bold'), local('Arial-BoldMT');
-  size-adjust: 93.04%;
-  ascent-override: 106.41%;
-  descent-override: 33.32%;
+  size-adjust: 101.82%;
+  ascent-override: 97.23%;
+  descent-override: 30.45%;
   line-gap-override: 0%;
 }
 
