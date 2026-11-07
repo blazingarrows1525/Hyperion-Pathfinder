@@ -1069,11 +1069,12 @@ main section[id] {
   box-shadow: inset 0 -2px 3px rgba(var(--shade-rgb), 0.25), inset 0 2px 2px rgba(255, 255, 255, 0.4);
 }
 
-.legend-swatch[data-arch="0"] { background: var(--arch-0-color); }
-.legend-swatch[data-arch="1"] { background: var(--arch-1-color); }
-.legend-swatch[data-arch="2"] { background: var(--arch-2-color); }
-.legend-swatch[data-arch="3"] { background: var(--arch-3-color); }
-.legend-swatch[data-arch="4"] { background: var(--arch-4-color); }
+/* Each cluster's silhouette matches its solid in the Career Atlas: it can be told apart by shape. */
+.legend-swatch[data-arch="0"] { background: var(--arch-0-color); clip-path: polygon(25% 3%, 75% 3%, 100% 50%, 75% 97%, 25% 97%, 0 50%); border-radius: 0; }
+.legend-swatch[data-arch="1"] { background: var(--arch-1-color); border-radius: 50%; }
+.legend-swatch[data-arch="2"] { background: var(--arch-2-color); clip-path: polygon(50% 0, 100% 50%, 50% 100%, 0 50%); border-radius: 0; }
+.legend-swatch[data-arch="3"] { background: transparent; border: 3px solid var(--arch-3-color); border-radius: 50%; }
+.legend-swatch[data-arch="4"] { background: var(--arch-4-color); border-radius: 2px; }
 
 .legend-name {
   font-size: 0.88rem;
@@ -6002,6 +6003,49 @@ main section[id] {
   touch-action: pan-y;
 }
 
+/* Names on the stage, placed from the 3D scene by CareerAtlas.updateLabels(). */
+.atlas-node-labels {
+  position: absolute;
+  inset: 0;
+  overflow: hidden;
+  pointer-events: none;
+}
+
+.atlas-node-label {
+  position: absolute;
+  top: 0;
+  left: 0;
+  max-width: 170px;
+  padding: 2px 7px;
+  border-radius: var(--radius-sm);
+  background: rgba(var(--surface-rgb), 0.82);
+  font-size: 0.72rem;
+  font-weight: 600;
+  line-height: 1.25;
+  text-align: center;
+  color: var(--color-ink);
+  will-change: transform;
+}
+
+.atlas-node-label.is-selected {
+  background: var(--color-ink);
+  color: var(--color-canvas);
+}
+
+.atlas-node-label.is-dim {
+  opacity: 0.45;
+}
+
+.atlas-corpus-label {
+  font-family: var(--font-mono);
+  font-weight: 500;
+  color: var(--color-ink-soft);
+}
+
+.spatial-canvas-wrapper.is-fallback .atlas-node-labels {
+  display: none;
+}
+
 .spatial-canvas-wrapper.is-orbit .spatial-hero-canvas {
   touch-action: none;
   cursor: grab;
@@ -6246,42 +6290,92 @@ main section[id] {
 }
 
 .fb-disc {
-  fill: var(--color-surface);
+  fill: var(--color-surface-raised);
   stroke: var(--color-border);
 }
 
 .fb-ring {
   fill: none;
-  stroke: var(--color-border-strong);
-  stroke-dasharray: 4 6;
+  stroke: var(--color-border);
 }
 
-.fb-links path {
-  fill: none;
+.fb-links line {
   stroke: var(--color-border-strong);
-  stroke-width: 1.5;
-  opacity: 0.7;
+  stroke-width: 1;
+}
+
+.fb-corpus {
+  fill: var(--color-ochre);
+}
+
+/* Real buttons placed over the decorative dial; below 560 px they stack as a list. */
+.atlas-fallback-nodes {
+  position: absolute;
+  inset: 0 0 48px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.atlas-fallback-nodes li {
+  position: absolute;
+  left: var(--spot-x);
+  top: var(--spot-y);
+  transform: translate(-50%, -50%);
 }
 
 .fb-node {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  min-height: 44px;
+  padding: 6px 12px 6px 8px;
+  border: 1px solid var(--color-border-strong);
+  border-radius: var(--radius-md);
+  background: var(--color-surface-raised);
+  color: var(--color-ink);
+  font-family: inherit;
+  text-align: left;
   cursor: pointer;
 }
 
-.fb-node circle {
-  fill: var(--arch);
-  stroke: var(--color-surface);
-  stroke-width: 3;
+.fb-node:hover {
+  border-color: var(--color-forest);
 }
 
-.fb-node.is-selected circle {
-  stroke: var(--color-ink);
+.fb-node.is-selected {
+  border-color: var(--color-ink);
+  box-shadow: inset 0 0 0 1px var(--color-ink);
 }
 
-.fb-node text {
-  font-family: var(--font-body);
-  font-size: 13px;
+.fb-node-text {
+  display: grid;
+  gap: 1px;
+}
+
+.fb-node-name {
+  font-size: 0.78rem;
   font-weight: 600;
-  fill: var(--color-ink);
+  line-height: 1.25;
+}
+
+.fb-node-count {
+  font-family: var(--font-mono);
+  font-size: 0.68rem;
+  color: var(--color-ink-soft);
+}
+
+.atlas-fallback-foot {
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-wrap: wrap;
+  gap: 4px 12px;
+  padding: 8px 14px;
 }
 
 .atlas-fallback-note {
@@ -6296,7 +6390,12 @@ main section[id] {
   .btn-3d-mode { padding: 0 9px; font-size: 0.76rem; }
   .atlas-caption { display: none; }
   .atlas-evidence-card { top: auto; bottom: 58px; left: 10px; right: 10px; width: auto; max-height: 55%; overflow: auto; }
-  .fb-node text { font-size: 18px; }
+  .atlas-fallback { position: relative; inset: auto; height: auto; }
+  .atlas-fallback-svg { display: none; }
+  .atlas-fallback-nodes { position: static; display: grid; gap: 8px; padding: 12px; }
+  .atlas-fallback-nodes li { position: static; transform: none; }
+  .fb-node { width: 100%; }
+  .atlas-fallback-foot { position: static; }
 }
 
 /* ==============================================================================

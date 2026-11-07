@@ -104,6 +104,7 @@ function apiUrl(path) {
 const PALETTE_TOKENS = {
   canvas: '--color-canvas',
   surface: '--color-surface',
+  surfaceRaised: '--color-surface-raised',
   ink: '--color-ink',
   inkSoft: '--color-ink-soft',
   muted: '--color-muted',
@@ -1034,6 +1035,26 @@ let renderer = null;
 let careerAtlas = null;
 
 const ATLAS_MODE_LABELS = { atlas: 'Atlas', orbit: 'Orbit', evidence: 'Evidence map' };
+const ATLAS_DIAL_RADIUS = 306;
+const ATLAS_ORBIT_RADIUS = 196;
+// Full motion keeps the scene gently alive this long after load or the last interaction;
+// then the ambient motion fades out and nothing renders until something changes.
+const ATLAS_AMBIENT_MS = 10000;
+const ATLAS_ZOOM_MIN = 0.62;
+const ATLAS_ZOOM_MAX = 1.45;
+// A press that travels further than this is a drag, not a click on a node.
+const ATLAS_CLICK_SLOP_PX = 6;
+// Below this stage width the legend alone names the clusters; labels would collide.
+const ATLAS_LABEL_MIN_WIDTH = 720;
+// Each cluster's solid, by cluster id. The legend's glyphs (styles.css, .legend-swatch) use the
+// same silhouettes, so a cluster can be told apart by shape as well as by colour.
+const ATLAS_SOLIDS = [
+  { make: () => new THREE.CylinderGeometry(0.82, 0.96, 1.5, 6), halfHeight: 0.75, flat: true, turn: 0.26 }, // hexagon
+  { make: () => new THREE.IcosahedronGeometry(1.04, 1), halfHeight: 1.04, flat: true, turn: 0 },              // circle
+  { make: () => new THREE.OctahedronGeometry(1.22, 0), halfHeight: 1.22, flat: true, turn: 0.52 },            // diamond
+  { make: () => new THREE.TorusGeometry(0.78, 0.34, 14, 40), halfHeight: 1.12, flat: false, turn: 0.3 },      // ring
+  { make: () => new THREE.BoxGeometry(1.36, 1.36, 1.36), halfHeight: 0.68, flat: true, turn: 0.42 }           // square
+];
 
 function webglAvailable() {
   try {
@@ -1047,7 +1068,7 @@ function webglAvailable() {
 // Cluster i sits on an ellipse around the disc centre.
 function atlasNodePosition(index, total) {
   const angle = (index / total) * Math.PI * 2 - Math.PI / 2 - 0.3;
-  return { x: Math.cos(angle) * 185, z: Math.sin(angle) * 118 };
+  return { x: Math.cos(angle) * ATLAS_ORBIT_RADIUS, z: Math.sin(angle) * ATLAS_ORBIT_RADIUS };
 }
 
 function getAtlasNodeData() {
@@ -1077,13 +1098,24 @@ class CareerAtlas {
     this.hoverId = null;
     this.previewId = null;
     this.reducedMotion = appState.motionMode === 'reduced';
+    // Rendering stops while any pause reason holds: offscreen, document-hidden or context-lost.
     this.pauseReasons = new Set();
+    // Why the last frame asked for another: camera-easing, node-selection,
+    // user-initiated-orbit or ambient-drift. Empty once the scene is at rest.
+    this.frameReasons = new Set();
     this.frame = null;
     this.frameTimer = null;
+    this.boundTick = () => this.tick();
+    this.ambientUntil = 0;
+    this.ambientMix = 0;
+    this.easeK = 1;
     this.disposed = false;
     this.listeners = [];
     this.dragging = false;
     this.lastPointer = { x: 0, y: 0 };
+    this.pressPoint = { x: 0, y: 0 };
+    this.pressMoved = false;
+    this.nodes = [];
     this.rot = { x: 0, y: 0 };
     this.targetRot = { x: 0, y: 0 };
     this.velocity = { x: 0, y: 0 };
@@ -1115,308 +1147,259 @@ class CareerAtlas {
     scene = this.scene;
     camera = this.camera;
 
-    this.buildScene();
-    this.applyPalette();
+    // A scene that cannot be built must not leave a half-bound instance behind.
+    try {
+      this.buildScene();
+      this.applyPalette();
+    } catch (err) {
+      console.warn('Career Atlas: the scene could not be built', err);
+      return false;
+    }
     this.bindEvents();
     this.resize();
+    this.armAmbient();
     return true;
   }
 
   // ---- scene graph --------------------------------------------------------------
+  // An instrument, not a particle demo: an engraved dial, a small armillary marking the corpus,
+  // and five matte solids on it. Each solid's shape identifies its cluster (see the legend), its
+  // size follows the cluster's share of the corpus, and its spoke says only "part of the corpus".
   buildScene() {
     this.root = new THREE.Group();
     this.scene.add(this.root);
     this.clock = new THREE.Clock();
     this.elapsed = 0;
-    this.introProgress = 0;
-    this.introComplete = false;
+    this.projected = new THREE.Vector3();
 
-    // Atmospheric depth fog
-    this.scene.fog = new THREE.FogExp2(0x000000, 0.00032);
+    // A little haze seats the far edge of the dial in the stage background.
+    this.scene.fog = new THREE.FogExp2(0x000000, 0.00026);
 
-    // Multi-light rig: hemisphere fill + warm key + soft cool rim
-    this.hemi = new THREE.HemisphereLight(0xffffff, 0x888888, 0.65);
-    this.sun = new THREE.DirectionalLight(0xffffff, 0.88);
+    // One key light and a soft fill: the solids read through their facets, not through glow.
+    this.hemi = new THREE.HemisphereLight(0xffffff, 0x888888, 0.7);
+    this.sun = new THREE.DirectionalLight(0xffffff, 0.9);
     this.sun.position.set(-280, 460, 300);
-    this.rimLight = new THREE.DirectionalLight(0x88aaff, 0.32);
-    this.rimLight.position.set(200, 80, -400);
-    this.scene.add(this.hemi, this.sun, this.rimLight);
+    this.scene.add(this.hemi, this.sun);
 
-    // Matte paper disc with subtle contour rings
-    this.discGeo = new THREE.CylinderGeometry(300, 306, 10, 80);
+    // A soft round blob, used for contact shadows and the illustrative dots.
+    const sprite = document.createElement('canvas');
+    sprite.width = sprite.height = 64;
+    const ctx = sprite.getContext('2d');
+    const grad = ctx.createRadialGradient(32, 32, 0, 32, 32, 32);
+    grad.addColorStop(0, 'rgba(255,255,255,1)');
+    grad.addColorStop(0.55, 'rgba(255,255,255,0.55)');
+    grad.addColorStop(1, 'rgba(255,255,255,0)');
+    ctx.fillStyle = grad;
+    ctx.fillRect(0, 0, 64, 64);
+    this.softTexture = new THREE.CanvasTexture(sprite);
+
+    this.shadowGeo = new THREE.PlaneGeometry(1, 1);
+    this.shadowMat = new THREE.MeshBasicMaterial({ map: this.softTexture, transparent: true, depthWrite: false, opacity: 0.3 });
+
+    this.buildDial();
+    this.buildArmillary();
+    this.buildNodes();
+    this.buildSpokes();
+
+    // Illustrative dots: they suggest each cluster's share of the corpus and are not records.
+    this.dotGeo = new THREE.BufferGeometry();
+    this.dotMat = new THREE.PointsMaterial({ size: 6, map: this.softTexture, vertexColors: true, transparent: true, depthWrite: false, opacity: 0.85 });
+    this.dots = new THREE.Points(this.dotGeo, this.dotMat);
+    this.root.add(this.dots);
+
+    this.updateNodeSizes();
+    this.buildDots();
+    this.buildLabels();
+    this.syncSelection();
+  }
+
+  makeShadow(size, x, z) {
+    const shadow = new THREE.Mesh(this.shadowGeo, this.shadowMat);
+    shadow.rotation.x = -Math.PI / 2;
+    shadow.position.set(x, 0.4, z);
+    shadow.scale.set(size, size, 1);
+    this.root.add(shadow);
+    return shadow;
+  }
+
+  buildDial() {
+    this.discGeo = new THREE.CylinderGeometry(ATLAS_DIAL_RADIUS, ATLAS_DIAL_RADIUS + 6, 8, 96);
     this.discMat = new THREE.MeshStandardMaterial({ roughness: 1, metalness: 0 });
     const disc = new THREE.Mesh(this.discGeo, this.discMat);
-    disc.scale.set(1, 1, 0.64);
-    disc.position.y = -6;
+    disc.position.y = -4.2;
     this.root.add(disc);
 
-    // Glowing ground aura ring
-    this.groundRingGeo = new THREE.RingGeometry(294, 308, 120);
-    this.groundRingMat = new THREE.MeshBasicMaterial({ 
-      transparent: true, opacity: 0.16, side: THREE.DoubleSide, depthWrite: false 
-    });
-    const groundRing = new THREE.Mesh(this.groundRingGeo, this.groundRingMat);
-    groundRing.rotation.x = -Math.PI / 2;
-    groundRing.position.y = 0.5;
-    groundRing.scale.set(1, 0.64, 1);
-    this.root.add(groundRing);
-
-    // Thin contour lines on disc
-    this.lineMat = new THREE.LineBasicMaterial({ transparent: true, opacity: 0.45 });
-    this.ringGeos = [150, 238].map(r => {
-      const pts = [];
-      for (let i = 0; i <= 120; i++) {
-        const a = (i / 120) * Math.PI * 2;
-        pts.push(new THREE.Vector3(Math.cos(a) * r, 0, Math.sin(a) * r * 0.64));
+    this.lineMat = new THREE.LineBasicMaterial({ transparent: true, opacity: 0.55 });
+    const ringGeos = [108, ATLAS_ORBIT_RADIUS, 256, ATLAS_DIAL_RADIUS - 8].map(radius => {
+      const points = [];
+      for (let i = 0; i < 144; i++) {
+        const angle = (i / 144) * Math.PI * 2;
+        points.push(new THREE.Vector3(Math.cos(angle) * radius, 0.3, Math.sin(angle) * radius));
       }
-      const geo = new THREE.BufferGeometry().setFromPoints(pts);
-      this.root.add(new THREE.Line(geo, this.lineMat));
+      const geo = new THREE.BufferGeometry().setFromPoints(points);
+      this.root.add(new THREE.LineLoop(geo, this.lineMat));
       return geo;
     });
+    this.ringGeos = ringGeos;
 
-    // Five archetype nodes with distinctive prismatic silhouettes, gyroscopic orbital rings, and breathing physics
+    // The graduated rim is what makes the disc read as an instrument.
+    const ticks = [];
+    for (let i = 0; i < 72; i++) {
+      const angle = (i / 72) * Math.PI * 2;
+      const inner = i % 6 === 0 ? ATLAS_DIAL_RADIUS - 26 : ATLAS_DIAL_RADIUS - 16;
+      const outer = ATLAS_DIAL_RADIUS - 8;
+      ticks.push(Math.cos(angle) * inner, 0.3, Math.sin(angle) * inner, Math.cos(angle) * outer, 0.3, Math.sin(angle) * outer);
+    }
+    this.tickGeo = new THREE.BufferGeometry();
+    this.tickGeo.setAttribute('position', new THREE.Float32BufferAttribute(ticks, 3));
+    this.root.add(new THREE.LineSegments(this.tickGeo, this.lineMat));
+  }
+
+  // The corpus marker: a brass armillary at the centre of the dial.
+  buildArmillary() {
+    this.brassMat = new THREE.MeshStandardMaterial({ roughness: 0.48, metalness: 0.3 });
+    this.armillary = new THREE.Group();
+    const base = new THREE.Mesh(new THREE.CylinderGeometry(15, 19, 5, 40), this.brassMat);
+    base.position.y = 2.5;
+    const pin = new THREE.Mesh(new THREE.CylinderGeometry(1.1, 1.8, 40, 12), this.brassMat);
+    pin.position.y = 24;
+    const globe = new THREE.Mesh(new THREE.IcosahedronGeometry(7.5, 2), this.brassMat);
+    globe.position.y = 48;
+    this.ringGeo = new THREE.TorusGeometry(19, 0.55, 8, 72);
+    this.armillaryRingA = new THREE.Mesh(this.ringGeo, this.brassMat);
+    this.armillaryRingB = new THREE.Mesh(this.ringGeo, this.brassMat);
+    this.armillaryRingA.position.y = 48;
+    this.armillaryRingB.position.y = 48;
+    this.armillaryRingA.rotation.set(1.18, 0, 0);
+    this.armillaryRingB.rotation.set(0.42, 0.9, 0);
+    this.armillary.add(base, pin, globe, this.armillaryRingA, this.armillaryRingB);
+    this.root.add(this.armillary);
+    this.makeShadow(74, 0, 0);
+  }
+
+  buildNodes() {
     const data = getAtlasNodeData();
-    this.nodeGeo = new THREE.SphereGeometry(1, 40, 28);
     this.plinthGeo = new THREE.CylinderGeometry(1, 1.12, 1, 40);
-    this.haloGeo = new THREE.RingGeometry(1.3, 1.48, 64);
-    this.orbitalRingGeo = new THREE.TorusGeometry(1.75, 0.038, 12, 80);
-
-    // Prismatic geometry profiles tailored to each archetype cluster identity
-    const getArchetypePrismaticGeometry = (clusterId) => {
-      switch (clusterId % 5) {
-        case 0: return new THREE.CylinderGeometry(0.85, 1.05, 1.6, 6); // 0: Core Eng & Business (Faceted Prism)
-        case 1: return new THREE.IcosahedronGeometry(1.05, 2);          // 1: Data Science & AI/ML (Precision Geodesic)
-        case 2: return new THREE.OctahedronGeometry(1.22, 0);           // 2: General CS & Software Dev (Largest Octahedral Core)
-        case 3: return new THREE.TorusGeometry(0.85, 0.36, 16, 40);     // 3: Full-Stack Web Dev (Ribbon Loop Silhouette)
-        case 4: return new THREE.DodecahedronGeometry(1.02, 0);         // 4: Core Engineering Mech/Civil (Faceted Polyhedron)
-        default: return new THREE.SphereGeometry(1, 32, 24);
-      }
-    };
+    this.haloGeo = new THREE.RingGeometry(1.24, 1.38, 72);
+    this.plinthMat = new THREE.MeshStandardMaterial({ roughness: 0.95, metalness: 0, transparent: true });
+    this.hitGeo = new THREE.SphereGeometry(1, 12, 8);
+    this.hitMat = new THREE.MeshBasicMaterial();
 
     this.nodes = data.map((d, i) => {
       const pos = atlasNodePosition(i, data.length);
+      const solid = ATLAS_SOLIDS[d.id % ATLAS_SOLIDS.length];
       const group = new THREE.Group();
       group.position.set(pos.x, 0, pos.z);
 
-      const mat = new THREE.MeshStandardMaterial({ 
-        roughness: 0.28, metalness: 0.18, transparent: true,
+      const mat = new THREE.MeshStandardMaterial({
+        roughness: 0.62, metalness: 0, flatShading: solid.flat, transparent: true,
         emissive: new THREE.Color(0x000000), emissiveIntensity: 0
       });
-      const plinthMat = new THREE.MeshStandardMaterial({ roughness: 0.95, metalness: 0, transparent: true });
+      const mesh = new THREE.Mesh(solid.make(), mat);
+      mesh.rotation.y = solid.turn;
+      mesh.userData.archetypeId = d.id;
+      // An invisible sphere takes the pointer, so the hole in the ring and a small solid's
+      // edge still count. Raycasting tests it; rendering skips it.
+      const hit = new THREE.Mesh(this.hitGeo, this.hitMat);
+      hit.visible = false;
+      mesh.add(hit);
+
+      const plinth = new THREE.Mesh(this.plinthGeo, this.plinthMat);
       const haloMat = new THREE.MeshBasicMaterial({ transparent: true, opacity: 0, side: THREE.DoubleSide, depthWrite: false });
-      const geo = getArchetypePrismaticGeometry(d.id);
-      const mesh = new THREE.Mesh(geo, mat);
-      const plinth = new THREE.Mesh(this.plinthGeo, plinthMat);
       const halo = new THREE.Mesh(this.haloGeo, haloMat);
       halo.rotation.x = -Math.PI / 2;
-      mesh.userData.archetypeId = d.id;
 
-      // Outer gyroscopic orbital ring
-      const orbRingMat = new THREE.MeshBasicMaterial({ transparent: true, opacity: 0.35, depthWrite: false, side: THREE.DoubleSide });
-      const orbRing = new THREE.Mesh(this.orbitalRingGeo, orbRingMat);
-      orbRing.rotation.x = Math.PI / 2.2 + (i * 0.35);
-      orbRing.rotation.z = i * 0.45;
-
-      // Inner intersecting orbital ring
-      const orbRing2Mat = new THREE.MeshBasicMaterial({ transparent: true, opacity: 0.22, depthWrite: false, side: THREE.DoubleSide });
-      const orbRing2 = new THREE.Mesh(this.orbitalRingGeo, orbRing2Mat);
-      orbRing2.rotation.x = Math.PI / 3.4 + (i * 0.4);
-      orbRing2.rotation.y = Math.PI / 4 + (i * 0.5);
-
-      // Soft glow corona
-      const glowGeo = new THREE.SphereGeometry(1.3, 20, 16);
-      const glowMat = new THREE.MeshBasicMaterial({ transparent: true, opacity: 0, depthWrite: false });
-      const glow = new THREE.Mesh(glowGeo, glowMat);
-
-      group.add(plinth, mesh, halo, orbRing, orbRing2, glow);
+      group.add(plinth, mesh, halo);
       this.root.add(group);
-      return { 
-        ...d, pos, group, mesh, plinth, halo, orbRing, orbRing2, glow,
-        mat, plinthMat, haloMat, orbRingMat, orbRing2Mat, glowMat,
+      return {
+        ...d, pos, group, mesh, hit, plinth, halo, mat, haloMat,
+        shadow: this.makeShadow(60, pos.x, pos.z),
+        halfHeight: solid.halfHeight,
         radius: 30, lift: 1, opacity: 1, haloOpacity: 0,
         pulsePhase: i * 1.25, bobPhase: i * 0.85
       };
     });
-    this.pickables = this.nodes.map(n => n.mesh);
-
-    // Connection beams between neighbouring clusters with energy tubes
-    this.beamCurves = [];
-    this.beamMeshes = [];
-    this.linkGeos = this.nodes.map((a, i) => {
-      const b = this.nodes[(i + 1) % this.nodes.length];
-      const curve = new THREE.QuadraticBezierCurve3(
-        new THREE.Vector3(a.pos.x, 8, a.pos.z),
-        new THREE.Vector3((a.pos.x + b.pos.x) / 2, 54, (a.pos.z + b.pos.z) / 2),
-        new THREE.Vector3(b.pos.x, 8, b.pos.z)
-      );
-      this.beamCurves.push(curve);
-
-      // Base contour line
-      const geo = new THREE.BufferGeometry().setFromPoints(curve.getPoints(24));
-      this.root.add(new THREE.Line(geo, this.lineMat));
-
-      // Animated energy beam tube
-      const tubeGeo = new THREE.TubeGeometry(curve, 36, 0.75, 8, false);
-      const tubeMat = new THREE.MeshBasicMaterial({ transparent: true, opacity: 0.12, depthWrite: false });
-      const tube = new THREE.Mesh(tubeGeo, tubeMat);
-      this.root.add(tube);
-      this.beamMeshes.push({ mesh: tube, mat: tubeMat, curve });
-
-      return geo;
-    });
-
-    // Flowing energy data particles traveling along connection beams
-    this.flowParticles = this.buildFlowParticles();
-
-    // Central holographic intelligence core (icosahedron + octahedron)
-    this.coreGeo = new THREE.IcosahedronGeometry(18, 1);
-    this.coreMat = new THREE.MeshBasicMaterial({ wireframe: true, transparent: true, opacity: 0.28, depthWrite: false });
-    this.core = new THREE.Mesh(this.coreGeo, this.coreMat);
-    this.core.position.y = 35;
-    this.root.add(this.core);
-
-    this.innerCoreGeo = new THREE.OctahedronGeometry(7, 0);
-    this.innerCoreMat = new THREE.MeshBasicMaterial({ transparent: true, opacity: 0.45 });
-    this.innerCore = new THREE.Mesh(this.innerCoreGeo, this.innerCoreMat);
-    this.innerCore.position.y = 35;
-    this.root.add(this.innerCore);
-
-    // Illustrative corpus dots: round sprites, colors per cluster
-    const sprite = document.createElement('canvas');
-    sprite.width = sprite.height = 32;
-    const ctx = sprite.getContext('2d');
-    const grad = ctx.createRadialGradient(16, 16, 0, 16, 16, 16);
-    grad.addColorStop(0, 'rgba(255,255,255,1)');
-    grad.addColorStop(0.6, 'rgba(255,255,255,0.9)');
-    grad.addColorStop(1, 'rgba(255,255,255,0)');
-    ctx.fillStyle = grad;
-    ctx.fillRect(0, 0, 32, 32);
-    this.dotTexture = new THREE.CanvasTexture(sprite);
-    this.dotGeo = new THREE.BufferGeometry();
-    this.dotMat = new THREE.PointsMaterial({ size: 7, map: this.dotTexture, vertexColors: true, transparent: true, depthWrite: false, opacity: 0.85 });
-    this.dots = new THREE.Points(this.dotGeo, this.dotMat);
-    this.root.add(this.dots);
-
-    // Ambient floating stardust particles
-    this.ambientParticles = this.buildAmbientParticles();
-
-    this.updateNodeSizes();
-    this.buildDots();
+    this.pickables = this.nodes.map(n => n.hit);
   }
 
-  buildFlowParticles() {
-    const particlesPerBeam = 10;
-    const totalCount = this.beamCurves.length * particlesPerBeam;
-    const positions = new Float32Array(totalCount * 3);
-    const colors = new Float32Array(totalCount * 3);
+  // Spokes run from the corpus marker to each cluster. They say "part of the corpus"; nothing
+  // connects clusters to each other, because no measured similarity between them is shown.
+  buildSpokes() {
+    const positions = [];
+    this.nodes.forEach(n => positions.push(0, 0.5, 0, n.pos.x, 0.5, n.pos.z));
+    this.spokeGeo = new THREE.BufferGeometry();
+    this.spokeGeo.setAttribute('position', new THREE.Float32BufferAttribute(positions, 3));
+    this.root.add(new THREE.LineSegments(this.spokeGeo, this.lineMat));
 
-    this.flowData = [];
-    let idx = 0;
-    this.beamCurves.forEach((curve, beamIdx) => {
-      for (let p = 0; p < particlesPerBeam; p++) {
-        const t = p / particlesPerBeam;
-        const pt = curve.getPoint(t);
-        positions[idx * 3] = pt.x;
-        positions[idx * 3 + 1] = pt.y;
-        positions[idx * 3 + 2] = pt.z;
-        colors[idx * 3] = 1;
-        colors[idx * 3 + 1] = 1;
-        colors[idx * 3 + 2] = 1;
-        this.flowData.push({ beamIdx, t, speed: 0.09 + (p % 3) * 0.04 });
-        idx++;
-      }
-    });
-
-    const flowGeo = new THREE.BufferGeometry();
-    flowGeo.setAttribute('position', new THREE.Float32BufferAttribute(positions, 3));
-    flowGeo.setAttribute('color', new THREE.Float32BufferAttribute(colors, 3));
-
-    const flowSprite = document.createElement('canvas');
-    flowSprite.width = flowSprite.height = 16;
-    const fctx = flowSprite.getContext('2d');
-    const fgrad = fctx.createRadialGradient(8, 8, 0, 8, 8, 8);
-    fgrad.addColorStop(0, 'rgba(255,255,255,1)');
-    fgrad.addColorStop(0.5, 'rgba(255,255,255,0.7)');
-    fgrad.addColorStop(1, 'rgba(255,255,255,0)');
-    fctx.fillStyle = fgrad;
-    fctx.fillRect(0, 0, 16, 16);
-    this.flowTexture = new THREE.CanvasTexture(flowSprite);
-
-    const flowMat = new THREE.PointsMaterial({
-      size: 5, map: this.flowTexture, vertexColors: true,
-      transparent: true, depthWrite: false, opacity: 0.65,
-      blending: THREE.AdditiveBlending
-    });
-    const flowPoints = new THREE.Points(flowGeo, flowMat);
-    this.root.add(flowPoints);
-    return { geometry: flowGeo, material: flowMat, points: flowPoints };
+    this.activeSpokeGeo = new THREE.BoxGeometry(1, 0.4, 2.4);
+    this.activeSpokeMat = new THREE.MeshBasicMaterial({ transparent: true, opacity: 0.85 });
+    this.activeSpoke = new THREE.Mesh(this.activeSpokeGeo, this.activeSpokeMat);
+    this.root.add(this.activeSpoke);
   }
 
-  buildAmbientParticles() {
-    const count = this.lowDetail ? 60 : 160;
-    const positions = new Float32Array(count * 3);
-    const colors = new Float32Array(count * 3);
-    const rand = seededRandom(42);
-
-    this.ambientData = [];
-    for (let i = 0; i < count; i++) {
-      const x = (rand() - 0.5) * 800;
-      const y = rand() * 220 + 8;
-      const z = (rand() - 0.5) * 600;
-      positions[i * 3] = x;
-      positions[i * 3 + 1] = y;
-      positions[i * 3 + 2] = z;
-      colors[i * 3] = 0.8;
-      colors[i * 3 + 1] = 0.85;
-      colors[i * 3 + 2] = 0.8;
-      this.ambientData.push({
-        baseY: y,
-        speed: 0.35 + rand() * 0.65,
-        phase: rand() * Math.PI * 2,
-        driftX: (rand() - 0.5) * 0.25,
-        driftZ: (rand() - 0.5) * 0.25
-      });
-    }
-
-    const ambGeo = new THREE.BufferGeometry();
-    ambGeo.setAttribute('position', new THREE.Float32BufferAttribute(positions, 3));
-    ambGeo.setAttribute('color', new THREE.Float32BufferAttribute(colors, 3));
-
-    const ambSprite = document.createElement('canvas');
-    ambSprite.width = ambSprite.height = 16;
-    const actx = ambSprite.getContext('2d');
-    const agrad = actx.createRadialGradient(8, 8, 0, 8, 8, 8);
-    agrad.addColorStop(0, 'rgba(255,255,255,0.9)');
-    agrad.addColorStop(1, 'rgba(255,255,255,0)');
-    actx.fillStyle = agrad;
-    actx.fillRect(0, 0, 16, 16);
-    this.ambientTexture = new THREE.CanvasTexture(ambSprite);
-
-    const ambMat = new THREE.PointsMaterial({
-      size: 4, map: this.ambientTexture, vertexColors: true,
-      transparent: true, depthWrite: false, opacity: 0.38,
-      blending: THREE.AdditiveBlending
+  // Names on the stage, placed from the 3D scene. The legend carries the same facts for
+  // assistive technology, so this layer is decorative for it, and it stays out of the pointer's way.
+  buildLabels() {
+    if (this.labelLayer) this.labelLayer.remove();
+    this.labelLayer = document.createElement('div');
+    this.labelLayer.className = 'atlas-node-labels';
+    this.labelLayer.setAttribute('aria-hidden', 'true');
+    this.nodes.forEach(n => {
+      n.labelEl = document.createElement('span');
+      n.labelEl.className = 'atlas-node-label';
+      this.labelLayer.appendChild(n.labelEl);
     });
-    const ambPoints = new THREE.Points(ambGeo, ambMat);
-    this.root.add(ambPoints);
-    return { geometry: ambGeo, material: ambMat, points: ambPoints };
+    this.corpusLabelEl = document.createElement('span');
+    this.corpusLabelEl.className = 'atlas-node-label atlas-corpus-label';
+    this.labelLayer.appendChild(this.corpusLabelEl);
+    this.wrapper.appendChild(this.labelLayer);
+    this.renderLabelText();
+  }
+
+  renderLabelText() {
+    if (!this.labelLayer) return;
+    this.nodes.forEach(n => {
+      n.labelEl.textContent = n.label;
+    });
+    const known = this.nodes.every(n => typeof n.count === 'number');
+    const total = known ? this.nodes.reduce((sum, n) => sum + n.count, 0) : null;
+    this.corpusLabelEl.textContent = total === null ? 'Alumni corpus' : `Alumni corpus · ${total} resumes`;
+  }
+
+  placeLabel(el, x, y, z) {
+    this.projected.set(x, y, z).project(this.camera);
+    const px = Math.round((this.projected.x * 0.5 + 0.5) * this.size.w);
+    const py = Math.round((-this.projected.y * 0.5 + 0.5) * this.size.h);
+    el.style.transform = `translate(-50%, -100%) translate(${px}px, ${py}px)`;
+  }
+
+  updateLabels() {
+    if (!this.labelLayer || this.labelLayer.hidden) return;
+    this.nodes.forEach(n => {
+      const top = n.mesh.position.y + n.radius * n.lift * n.halfHeight + 8;
+      this.placeLabel(n.labelEl, n.pos.x, top, n.pos.z);
+    });
+    this.placeLabel(this.corpusLabelEl, 0, 70, 0);
   }
 
   updateNodeSizes() {
     const counts = this.nodes.map(n => n.count).filter(c => typeof c === 'number');
     const max = counts.length ? Math.max(...counts) : null;
     this.nodes.forEach(n => {
-      n.radius = max && typeof n.count === 'number' ? 15 + 27 * Math.sqrt(n.count / max) : 30;
-      n.plinth.scale.set(n.radius * 0.64, 6, n.radius * 0.64);
-      n.plinth.position.y = 3;
+      // Square root, so a solid's visible area rather than its width follows the count.
+      n.radius = max && typeof n.count === 'number' ? 15 + 27 * Math.sqrt(n.count / max) : 28;
+      n.plinth.scale.set(n.radius * 0.72, 5, n.radius * 0.72);
+      n.plinth.position.y = 2.5;
       n.halo.scale.setScalar(n.radius);
-      n.halo.position.y = 1.5;
+      n.halo.position.y = 0.7;
+      n.shadow.scale.set(n.radius * 3.1, n.radius * 3.1, 1);
+      n.hit.scale.setScalar(Math.max(1.3, 30 / n.radius));
     });
   }
 
   // Dot count per cluster follows its share of the corpus, capped overall.
   buildDots() {
-    const total = this.lowDetail ? 70 : 150;
+    const total = this.lowDetail ? 60 : 120;
     const known = this.nodes.every(n => typeof n.count === 'number');
     const sum = known ? this.nodes.reduce((s, n) => s + n.count, 0) : this.nodes.length;
     const rand = seededRandom(226);
@@ -1427,14 +1410,14 @@ class CareerAtlas {
       const count = Math.max(4, Math.round(total * share));
       for (let k = 0; k < count; k++) {
         const angle = rand() * Math.PI * 2;
-        const dist = n.radius + 10 + rand() * 46;
-        positions.push(n.pos.x + Math.cos(angle) * dist, 2 + rand() * 18, n.pos.z + Math.sin(angle) * dist * 0.7);
+        const dist = n.radius * 1.5 + 8 + rand() * 40;
+        positions.push(n.pos.x + Math.cos(angle) * dist, 1.2, n.pos.z + Math.sin(angle) * dist);
         this.dotOwners.push(i);
       }
     });
     this.dotGeo.setAttribute('position', new THREE.Float32BufferAttribute(positions, 3));
     this.dotGeo.setAttribute('color', new THREE.Float32BufferAttribute(new Array(this.dotOwners.length * 3).fill(1), 3));
-    this.dotMat.size = this.lowDetail ? 6 : 7;
+    this.dotMat.size = this.lowDetail ? 5 : 6;
     this.paintDots();
   }
 
@@ -1453,58 +1436,25 @@ class CareerAtlas {
   applyPalette() {
     this.palette = getThemePalette();
     const p = this.palette;
-    this.discMat.color.set(p.isDark ? p.surface : p.canvas);
+    this.discMat.color.set(p.isDark ? p.surface : p.surfaceRaised);
     this.lineMat.color.set(p.borderStrong);
-    this.hemi.color.set(p.surface);
+    this.hemi.color.set(p.isDark ? p.ink : '#ffffff');
     this.hemi.groundColor.set(p.border);
-    this.hemi.intensity = p.isDark ? 0.55 : 0.75;
-    this.sun.intensity = p.isDark ? 0.7 : 0.9;
-
-    if (this.scene.fog) {
-      this.scene.fog.color.set(p.isDark ? 0x161422 : p.canvas);
-    }
+    this.hemi.intensity = p.isDark ? 0.6 : 0.78;
+    this.sun.intensity = p.isDark ? 0.75 : 0.85;
+    this.scene.fog.color.set(p.canvas);
+    this.shadowMat.color.set(p.isDark ? '#000000' : p.ink);
+    this.shadowMat.opacity = p.isDark ? 0.5 : 0.24;
+    this.brassMat.color.set(p.ochre);
+    this.plinthMat.color.set(p.isDark ? p.border : p.canvas);
 
     this.nodes.forEach(n => {
       const c = p.archetypes[n.id];
       n.mat.color.set(c);
       n.mat.emissive.set(c);
-      n.plinthMat.color.set(p.isDark ? p.border : p.canvas);
       n.haloMat.color.set(c);
-      if (n.orbRingMat) n.orbRingMat.color.set(c);
-      if (n.orbRing2Mat) n.orbRing2Mat.color.set(c);
-      if (n.glowMat) n.glowMat.color.set(c);
     });
-
-    if (this.groundRingMat) {
-      this.groundRingMat.color.set(p.isDark ? p.forest : p.borderStrong);
-    }
-
-    if (this.coreMat) this.coreMat.color.set(p.isDark ? (p.orchid || 0x7965A8) : p.forest);
-    if (this.innerCoreMat) this.innerCoreMat.color.set(p.isDark ? (p.lagoon || 0x277C7D) : p.terracotta);
-
-    if (this.beamMeshes) {
-      this.beamMeshes.forEach((bm, i) => {
-        bm.mat.color.set(p.archetypes[this.nodes[i % this.nodes.length].id]);
-      });
-    }
-
-    if (this.flowParticles && this.flowData) {
-      const fc = this.flowParticles.geometry.getAttribute('color');
-      const c = new THREE.Color();
-      this.flowData.forEach((fd, i) => {
-        c.set(p.archetypes[this.nodes[fd.beamIdx % this.nodes.length].id]);
-        fc.setXYZ(i, c.r, c.g, c.b);
-      });
-      fc.needsUpdate = true;
-      this.flowParticles.material.blending = p.isDark ? THREE.AdditiveBlending : THREE.NormalBlending;
-    }
-
-    if (this.ambientParticles) {
-      this.ambientParticles.material.blending = p.isDark ? THREE.AdditiveBlending : THREE.NormalBlending;
-      this.ambientParticles.material.opacity = p.isDark ? 0.45 : 0.25;
-    }
-
-    this.dotMat.blending = p.isDark ? THREE.AdditiveBlending : THREE.NormalBlending;
+    this.syncSelection();
     this.paintDots();
     this.requestRender();
   }
@@ -1514,7 +1464,8 @@ class CareerAtlas {
     this.nodes.forEach((n, i) => Object.assign(n, { label: data[i].label, count: data[i].count, pct: data[i].pct }));
     this.updateNodeSizes();
     this.buildDots();
-    this.requestRender();
+    this.renderLabelText();
+    this.armAmbient();
   }
 
   // ---- state changes -----------------------------------------------------------
@@ -1527,48 +1478,93 @@ class CareerAtlas {
       this.targetRot.y = 0;
       this.velocity.x = this.velocity.y = 0;
     }
+    this.syncSelection();
     this.paintDots();
-    this.requestRender();
+    this.armAmbient();
   }
 
   setSelected(id) {
     this.selectedId = id;
+    this.syncSelection();
     this.paintDots();
-    this.requestRender();
+    this.armAmbient();
+  }
+
+  // Everything that follows the selected cluster and is not eased frame by frame.
+  syncSelection() {
+    const selected = this.nodes.find(n => n.id === this.selectedId);
+    if (selected && this.activeSpoke) {
+      const length = Math.hypot(selected.pos.x, selected.pos.z);
+      this.activeSpoke.position.set(selected.pos.x / 2, 0.6, selected.pos.z / 2);
+      this.activeSpoke.scale.x = length;
+      this.activeSpoke.rotation.y = -Math.atan2(selected.pos.z, selected.pos.x);
+      if (this.palette) this.activeSpokeMat.color.set(this.palette.archetypes[selected.id]);
+    }
+    if (this.labelLayer) {
+      this.nodes.forEach(n => {
+        n.labelEl.classList.toggle('is-selected', n.id === this.selectedId);
+        n.labelEl.classList.toggle('is-dim', this.mode === 'evidence' && n.id !== this.selectedId);
+      });
+    }
   }
 
   // Keyboard focus or hover on a legend item highlights its node.
   preview(id) {
     this.previewId = id;
-    this.requestRender();
+    this.armAmbient();
   }
 
   setReducedMotion(reduced) {
     this.reducedMotion = reduced;
-    this.requestRender();
+    if (reduced) this.ambientUntil = 0;
+    this.armAmbient();
   }
 
   zoomBy(factor) {
-    this.targetZoom = Math.min(1.45, Math.max(0.62, this.targetZoom * factor));
-    this.requestRender();
+    this.targetZoom = Math.min(ATLAS_ZOOM_MAX, Math.max(ATLAS_ZOOM_MIN, this.targetZoom * factor));
+    syncAtlasZoomButtons();
+    this.armAmbient();
   }
 
   resetCamera() {
     this.targetRot.x = this.targetRot.y = 0;
     this.velocity.x = this.velocity.y = 0;
     this.targetZoom = 1;
+    syncAtlasZoomButtons();
+    this.armAmbient();
+  }
+
+  // Render the change now, and in Full motion (re)open the ambient window.
+  // Calm and system-reduced motion never get ambient frames.
+  armAmbient() {
+    if (!this.reducedMotion) this.ambientUntil = performance.now() + ATLAS_AMBIENT_MS;
     this.requestRender();
   }
 
-  // ---- loop: one frame per request, more only while something is easing ---------
+  get ambientActive() {
+    return !this.reducedMotion && performance.now() < this.ambientUntil;
+  }
+
+  // Diagnostics for the lifecycle probes.
+  get schedulerState() {
+    if (this.disposed) return 'disposed';
+    if (this.pauseReasons.size) return `paused-${[...this.pauseReasons][0]}`;
+    if (this.frame) return 'frame-pending';
+    if (this.frameTimer) return 'ambient-timer-pending';
+    return 'at-rest';
+  }
+
+  // ---- loop ------------------------------------------------------------------------
+  // At most one thing is ever pending: an animation frame or one cadence timer.
+  // Direct input and easing get an immediate frame. Ambient motion runs at a capped cadence for
+  // a bounded time after load or interaction, then the scene rests and renders nothing.
   requestRender() {
-    // State changes and direct input request an immediate frame.
     if (this.disposed || this.frame || this.pauseReasons.size) return;
     if (this.frameTimer) {
       clearTimeout(this.frameTimer);
       this.frameTimer = null;
     }
-    this.frame = requestAnimationFrame(() => this.tick());
+    this.frame = requestAnimationFrame(this.boundTick);
   }
 
   scheduleContinuousRender() {
@@ -1577,20 +1573,20 @@ class CareerAtlas {
     this.frameTimer = window.setTimeout(() => {
       this.frameTimer = null;
       if (this.disposed || this.pauseReasons.size) return;
-      this.frame = requestAnimationFrame(() => this.tick());
+      this.frame = requestAnimationFrame(this.boundTick);
     }, interval);
+  }
+
+  cancelPendingFrame() {
+    if (this.frame) cancelAnimationFrame(this.frame);
+    if (this.frameTimer) clearTimeout(this.frameTimer);
+    this.frame = null;
+    this.frameTimer = null;
   }
 
   pause(reason) {
     this.pauseReasons.add(reason);
-    if (this.frame) {
-      cancelAnimationFrame(this.frame);
-      this.frame = null;
-    }
-    if (this.frameTimer) {
-      clearTimeout(this.frameTimer);
-      this.frameTimer = null;
-    }
+    this.cancelPendingFrame();
   }
 
   resume(reason) {
@@ -1598,138 +1594,103 @@ class CareerAtlas {
     this.requestRender();
   }
 
+  // Eases toward a target at a rate normalised to time; a value still on its way keeps the loop alive.
+  easeTo(from, to, reason) {
+    const next = from + (to - from) * this.easeK;
+    if (Math.abs(to - next) <= 0.0005) return to;
+    this.frameReasons.add(reason);
+    return next;
+  }
+
   tick() {
     this.frame = null;
     if (this.disposed || this.pauseReasons.size) return;
-    const dt = this.clock ? Math.min(0.05, this.clock.getDelta()) : 0.016;
+    const dt = Math.min(0.05, this.clock.getDelta());
     this.elapsed += dt;
-    const k = this.reducedMotion ? 1 : 0.16;
-    let moving = false;
-    const ease = (from, to) => {
-      const next = from + (to - from) * k;
-      if (Math.abs(to - next) > 0.0005) moving = true;
-      return Math.abs(to - next) > 0.0005 ? next : to;
-    };
+    const frameScale = dt * 60;
+    this.easeK = this.reducedMotion ? 1 : 1 - Math.pow(1 - 0.16, frameScale);
+    const reasons = this.frameReasons;
+    reasons.clear();
 
-    // Inertia drag decay
+    // The ambient weight fades in and out, so the end of the window settles the scene
+    // instead of snapping it. Every decorative motion below is scaled by it.
+    const ambientTarget = this.ambientActive ? 1 : 0;
+    this.ambientMix += (ambientTarget - this.ambientMix) * (this.reducedMotion ? 1 : 1 - Math.pow(1 - 0.06, frameScale));
+    if (Math.abs(ambientTarget - this.ambientMix) < 0.002) this.ambientMix = ambientTarget;
+    const amb = this.ambientMix;
+    if (amb > 0) reasons.add('ambient-drift');
+
+    // Orbit inertia after a drag
     if (!this.dragging && (Math.abs(this.velocity.x) > 0.0004 || Math.abs(this.velocity.y) > 0.0004)) {
-      this.targetRot.y += this.velocity.x;
-      this.targetRot.x += this.velocity.y;
-      this.velocity.x *= this.reducedMotion ? 0 : 0.82;
-      this.velocity.y *= this.reducedMotion ? 0 : 0.82;
+      this.targetRot.y += this.velocity.x * frameScale;
+      this.targetRot.x += this.velocity.y * frameScale;
+      const decay = this.reducedMotion ? 0 : Math.pow(0.82, frameScale);
+      this.velocity.x *= decay;
+      this.velocity.y *= decay;
       this.clampRotation();
-      moving = true;
+      reasons.add('user-initiated-orbit');
     }
 
-    // Slow cinematic drift in Atlas mode when not dragging
-    if (this.mode === 'atlas' && !this.dragging && !this.reducedMotion) {
-      this.targetRot.y += dt * 0.012;
+    // Slow drift in Atlas mode, only inside the ambient window. It moves the camera and its
+    // target together, so drifting is not "easing" and stays at the ambient cadence.
+    if (this.mode === 'atlas' && !this.dragging && amb > 0) {
+      const drift = dt * 0.012 * amb;
+      this.targetRot.y += drift;
+      this.rot.y += drift;
       this.clampRotation();
-      moving = true;
     }
 
-    this.rot.x = ease(this.rot.x, this.targetRot.x);
-    this.rot.y = ease(this.rot.y, this.targetRot.y);
-    this.zoom = ease(this.zoom, this.mode === 'evidence' ? this.targetZoom * 0.78 : this.targetZoom);
+    this.rot.x = this.easeTo(this.rot.x, this.targetRot.x, 'camera-easing');
+    this.rot.y = this.easeTo(this.rot.y, this.targetRot.y, 'camera-easing');
+    this.zoom = this.easeTo(this.zoom, this.mode === 'evidence' ? this.targetZoom * 0.82 : this.targetZoom, 'camera-easing');
 
-    const selected = this.nodes.find(n => n.id === this.selectedId);
-    const focusX = this.mode === 'evidence' && selected ? selected.pos.x * 0.55 + 120 : 0;
-    const focusZ = this.mode === 'evidence' && selected ? selected.pos.z * 0.55 : 0;
-    this.focus.x = ease(this.focus.x, focusX);
-    this.focus.z = ease(this.focus.z, focusZ);
+    let focusX = 0;
+    let focusZ = 0;
+    for (let i = 0; i < this.nodes.length; i++) {
+      const n = this.nodes[i];
+      if (this.mode === 'evidence' && n.id === this.selectedId) {
+        focusX = n.pos.x * 0.45;
+        focusZ = n.pos.z * 0.45;
+      }
+    }
+    this.focus.x = this.easeTo(this.focus.x, focusX, 'camera-easing');
+    this.focus.z = this.easeTo(this.focus.z, focusZ, 'camera-easing');
 
     const highlighted = this.previewId !== null ? this.previewId : this.hoverId;
-    this.nodes.forEach(n => {
+    for (let i = 0; i < this.nodes.length; i++) {
+      const n = this.nodes[i];
       const isSelected = n.id === this.selectedId;
       const isHighlighted = n.id === highlighted;
 
-      // Breathing pulse and gentle floating bob
-      const pulse = Math.sin(this.elapsed * 1.8 + n.pulsePhase) * 0.04;
-      const bob = Math.sin(this.elapsed * 0.9 + n.bobPhase) * 2.2;
+      // A very slight breath and bob, only inside the ambient window.
+      const pulse = Math.sin(this.elapsed * 1.4 + n.pulsePhase) * 0.018 * amb;
+      const bob = Math.sin(this.elapsed * 0.8 + n.bobPhase) * 1.6 * amb;
 
-      n.lift = ease(n.lift, isSelected ? 1.15 + pulse : isHighlighted ? 1.08 + pulse * 0.5 : 1 + pulse * 0.25);
-      n.opacity = ease(n.opacity, this.mode === 'evidence' && !isSelected ? 0.35 : 1);
-      n.haloOpacity = ease(n.haloOpacity, isSelected ? 0.9 : isHighlighted ? 0.45 : 0);
-      const r = n.radius * n.lift;
+      n.lift = this.easeTo(n.lift, isSelected ? 1.12 : isHighlighted ? 1.06 : 1, 'node-selection');
+      n.opacity = this.easeTo(n.opacity, this.mode === 'evidence' && !isSelected ? 0.32 : 1, 'node-selection');
+      n.haloOpacity = this.easeTo(n.haloOpacity, isSelected ? 0.95 : isHighlighted ? 0.5 : 0, 'node-selection');
+
+      const r = n.radius * (n.lift + pulse);
       n.mesh.scale.setScalar(r);
-      n.mesh.position.y = r + 6 + (this.reducedMotion ? 0 : bob);
+      n.mesh.position.y = 5 + r * n.halfHeight + bob;
       n.mat.opacity = n.opacity;
-      n.plinthMat.opacity = n.opacity;
       n.haloMat.opacity = n.haloOpacity;
-
-      // Emissive glow highlight
-      const targetEmissive = isSelected ? 0.22 : isHighlighted ? 0.12 : 0.02;
-      n.mat.emissiveIntensity += (targetEmissive - n.mat.emissiveIntensity) * 0.1;
-      n.mat.emissive.copy(n.mat.color).multiplyScalar(0.4);
-
-      // Gyroscopic orbital rings rotation
-      if (n.orbRing && !this.reducedMotion) {
-        n.orbRing.rotation.z += dt * (0.35 + n.id * 0.07);
-        n.orbRing.scale.setScalar(r * 0.038);
-        n.orbRing.position.y = n.mesh.position.y;
-        n.orbRingMat.opacity = isSelected ? 0.55 : isHighlighted ? 0.32 : 0.18;
-      }
-      if (n.orbRing2 && !this.reducedMotion) {
-        n.orbRing2.rotation.y += dt * (0.28 + n.id * 0.05);
-        n.orbRing2.scale.setScalar(r * 0.042);
-        n.orbRing2.position.y = n.mesh.position.y;
-        n.orbRing2Mat.opacity = isSelected ? 0.4 : isHighlighted ? 0.22 : 0.12;
-      }
-
-      // Soft glow corona
-      if (n.glow) {
-        const glowScale = r * (isSelected ? 1.4 : isHighlighted ? 1.25 : 1.12);
-        n.glow.scale.setScalar(glowScale);
-        n.glow.position.y = n.mesh.position.y;
-        n.glowMat.opacity = isSelected ? 0.12 : isHighlighted ? 0.07 : 0.02;
-      }
-    });
-
-    // Flowing energy data particles along bezier paths
-    if (this.flowParticles && this.flowData && !this.reducedMotion) {
-      const fp = this.flowParticles.geometry.getAttribute('position');
-      this.flowData.forEach((fd, i) => {
-        fd.t = (fd.t + dt * fd.speed) % 1;
-        const pt = this.beamCurves[fd.beamIdx].getPoint(fd.t);
-        fp.setXYZ(i, pt.x, pt.y, pt.z);
-      });
-      fp.needsUpdate = true;
-      moving = true;
+      n.mat.emissiveIntensity = this.easeTo(n.mat.emissiveIntensity, isSelected ? 0.16 : isHighlighted ? 0.09 : 0, 'node-selection');
     }
 
-    // Ambient floating stardust
-    if (this.ambientParticles && this.ambientData && !this.reducedMotion) {
-      const ap = this.ambientParticles.geometry.getAttribute('position');
-      this.ambientData.forEach((ad, i) => {
-        const y = ad.baseY + Math.sin(this.elapsed * ad.speed + ad.phase) * 14;
-        const x = ap.getX(i) + ad.driftX * dt;
-        const z = ap.getZ(i) + ad.driftZ * dt;
-        ap.setXYZ(i, x, y, z);
-      });
-      ap.needsUpdate = true;
-    }
-
-    // Central holographic intelligence core rotation
-    if (this.core && !this.reducedMotion) {
-      this.core.rotation.x += dt * 0.14;
-      this.core.rotation.y += dt * 0.2;
-      this.coreMat.opacity = 0.16 + Math.sin(this.elapsed * 1.4) * 0.07;
-    }
-    if (this.innerCore && !this.reducedMotion) {
-      this.innerCore.rotation.x -= dt * 0.26;
-      this.innerCore.rotation.z += dt * 0.22;
-      this.innerCoreMat.opacity = 0.32 + Math.sin(this.elapsed * 2.0) * 0.12;
-    }
-
-    // Ground ring pulse
-    if (this.groundRingMat) {
-      this.groundRingMat.opacity = 0.12 + Math.sin(this.elapsed * 0.8) * 0.04;
-    }
+    // The armillary turns slowly while the ambient window is open.
+    this.armillaryRingA.rotation.z += dt * 0.22 * amb;
+    this.armillaryRingB.rotation.y += dt * 0.16 * amb;
 
     this.updateCamera();
     this.renderer.render(this.scene, this.camera);
-    if (!this.reducedMotion) moving = true;
-    if (moving) this.scheduleContinuousRender();
+    this.updateLabels();
+
+    if (reasons.has('camera-easing') || reasons.has('node-selection') || reasons.has('user-initiated-orbit')) {
+      this.requestRender();
+    } else if (reasons.size) {
+      this.scheduleContinuousRender();
+    }
   }
 
   clampRotation() {
@@ -1739,12 +1700,13 @@ class CareerAtlas {
 
   updateCamera() {
     const aspect = this.size.w / this.size.h;
-    // keep the whole disc in frame on narrow stages
-    const fit = 335 / (Math.tan((this.camera.fov / 2) * Math.PI / 180) * aspect);
-    const distance = Math.max(600, fit) * this.zoom;
-    const elevation = 0.62 + this.rot.x + this.parallax.y;
+    const tanHalfFov = Math.tan((this.camera.fov / 2) * Math.PI / 180);
+    // Keep the whole dial in frame whichever side of the stage is the tight one.
+    const fit = Math.max((ATLAS_DIAL_RADIUS + 40) / (tanHalfFov * aspect), 262 / tanHalfFov);
+    const distance = fit * this.zoom;
+    const elevation = 0.66 + this.rot.x + this.parallax.y;
     const azimuth = this.rot.y + this.parallax.x;
-    this.cameraTarget.set(this.focus.x, 18, this.focus.z);
+    this.cameraTarget.set(this.focus.x, 22, this.focus.z);
     this.camera.position.set(
       this.cameraTarget.x + distance * Math.cos(elevation) * Math.sin(azimuth),
       this.cameraTarget.y + distance * Math.sin(elevation),
@@ -1762,6 +1724,7 @@ class CareerAtlas {
     this.renderer.setSize(w, h, false);
     this.camera.aspect = w / h;
     this.camera.updateProjectionMatrix();
+    if (this.labelLayer) this.labelLayer.hidden = w < ATLAS_LABEL_MIN_WIDTH;
     if (sizeClassChanged) this.buildDots();
     this.requestRender();
   }
@@ -1777,22 +1740,31 @@ class CareerAtlas {
     this.pointerNdc.set(((clientX - rect.left) / rect.width) * 2 - 1, -((clientY - rect.top) / rect.height) * 2 + 1);
     this.raycaster.setFromCamera(this.pointerNdc, this.camera);
     const hit = this.raycaster.intersectObjects(this.pickables, false)[0];
-    return hit ? this.nodes.find(n => n.mesh === hit.object) : null;
+    return hit ? this.nodes.find(n => n.hit === hit.object) : null;
   }
 
   bindEvents() {
     this.on(this.canvas, 'pointerdown', (e) => {
+      this.pressPoint.x = e.clientX;
+      this.pressPoint.y = e.clientY;
+      this.pressMoved = false;
+      // Only Orbit takes over the pointer; Atlas and Evidence leave the page free to scroll.
       if (this.mode !== 'orbit') return;
       this.dragging = true;
-      this.lastPointer = { x: e.clientX, y: e.clientY };
+      this.lastPointer.x = e.clientX;
+      this.lastPointer.y = e.clientY;
       this.velocity.x = this.velocity.y = 0;
       this.canvas.setPointerCapture(e.pointerId);
     });
     this.on(this.canvas, 'pointermove', (e) => {
+      if (Math.hypot(e.clientX - this.pressPoint.x, e.clientY - this.pressPoint.y) > ATLAS_CLICK_SLOP_PX) {
+        this.pressMoved = true;
+      }
       if (this.dragging) {
         const dx = (e.clientX - this.lastPointer.x) / this.size.w;
         const dy = (e.clientY - this.lastPointer.y) / this.size.h;
-        this.lastPointer = { x: e.clientX, y: e.clientY };
+        this.lastPointer.x = e.clientX;
+        this.lastPointer.y = e.clientY;
         this.velocity.x = -dx * 2.0;
         this.velocity.y = dy * 1.4;
         this.targetRot.y += this.velocity.x;
@@ -1814,10 +1786,10 @@ class CareerAtlas {
         // a small parallax in Atlas mode only
         if (this.mode === 'atlas' && !this.reducedMotion) {
           const rect = this.canvas.getBoundingClientRect();
-          this.parallax.x = ((e.clientX - rect.left) / rect.width - 0.5) * -0.08;
-          this.parallax.y = ((e.clientY - rect.top) / rect.height - 0.5) * 0.04;
+          this.parallax.x = ((e.clientX - rect.left) / rect.width - 0.5) * -0.05;
+          this.parallax.y = ((e.clientY - rect.top) / rect.height - 0.5) * 0.025;
         }
-        this.requestRender();
+        this.armAmbient(); // exploring the scene keeps it alive; it settles once the pointer rests
       }
     });
     const endDrag = (e) => {
@@ -1828,6 +1800,7 @@ class CareerAtlas {
     };
     this.on(this.canvas, 'pointerup', endDrag);
     this.on(this.canvas, 'pointercancel', endDrag);
+    this.on(this.canvas, 'lostpointercapture', endDrag);
     this.on(this.canvas, 'pointerleave', () => {
       this.hoverId = null;
       this.parallax.x = this.parallax.y = 0;
@@ -1835,8 +1808,10 @@ class CareerAtlas {
       this.hideTooltip();
       this.requestRender();
     });
-    // Click or tap selects a cluster and syncs the Career Genome.
+    // Click or tap selects a cluster and syncs the legend and the Career Genome.
+    // The release at the end of a drag is not a click on whatever lies under it.
     this.on(this.canvas, 'click', (e) => {
+      if (this.pressMoved) return;
       const node = this.pickNode(e.clientX, e.clientY);
       if (!node) return;
       selectArchetype(node.id);
@@ -1854,23 +1829,34 @@ class CareerAtlas {
     }
     if ('IntersectionObserver' in window) {
       this.visibilityObserver = new IntersectionObserver((entries) => {
-        entries.forEach(entry => (entry.isIntersecting ? this.resume('offscreen') : this.pause('offscreen')));
+        entries.forEach(entry => {
+          if (!entry.isIntersecting) {
+            this.pause('offscreen');
+            return;
+          }
+          this.resume('offscreen');
+          this.armAmbient(); // a brief settle-in when the stage scrolls back into view
+        });
       });
       this.visibilityObserver.observe(this.wrapper);
     }
-    this.on(document, 'visibilitychange', () => (document.hidden ? this.pause('hidden') : this.resume('hidden')));
+    this.on(document, 'visibilitychange', () => (document.hidden ? this.pause('document-hidden') : this.resume('document-hidden')));
 
     this.on(this.canvas, 'webglcontextlost', (e) => {
       e.preventDefault();
-      this.pause('context');
-      showAtlasFallback('Interactive 3D paused while the graphics context recovers; the map is shown in 2D.');
+      this.pause('context-lost');
+      this.hideTooltip();
+      showAtlasFallback('The 3D view paused because the graphics context was lost. The map is shown in 2D until it recovers.');
+      announceAtlasStatus('The 3D view paused. The 2D map is available.');
     });
     this.on(this.canvas, 'webglcontextrestored', () => {
       hideAtlasFallback();
       this.disposeSceneObjects();
       this.buildScene();
       this.applyPalette();
-      this.resume('context');
+      this.resize();
+      this.resume('context-lost');
+      announceAtlasStatus('The 3D view is back.');
     });
   }
 
@@ -1886,12 +1872,17 @@ class CareerAtlas {
         : `Cluster ${node.id} · corpus count loading`;
     }
     tip.style.setProperty('--arch', `var(--arch-${node.id}-color)`);
-    const rect = this.wrapper.getBoundingClientRect();
-    const x = Math.min(rect.width - 230, Math.max(8, clientX - rect.left + 14));
-    const y = Math.max(8, clientY - rect.top - 64);
-    tip.style.left = `${x}px`;
-    tip.style.top = `${y}px`;
     tip.style.display = 'block';
+    // Inside the stage, and clear of the toolbar whichever edge it sits on.
+    const rect = this.wrapper.getBoundingClientRect();
+    const toolbar = this.wrapper.querySelector('.atlas-toolbar');
+    const toolbarAtTop = toolbar && toolbar.offsetTop < rect.height / 2;
+    const minY = toolbarAtTop ? toolbar.offsetTop + toolbar.offsetHeight + 8 : 8;
+    const bottomEdge = toolbar && !toolbarAtTop ? toolbar.offsetTop : rect.height;
+    const maxX = Math.max(8, rect.width - tip.offsetWidth - 8);
+    const maxY = Math.max(minY, bottomEdge - tip.offsetHeight - 8);
+    tip.style.left = `${Math.min(maxX, Math.max(8, clientX - rect.left + 14))}px`;
+    tip.style.top = `${Math.min(maxY, Math.max(minY, clientY - rect.top - tip.offsetHeight - 12))}px`;
   }
 
   hideTooltip() {
@@ -1912,25 +1903,24 @@ class CareerAtlas {
       }
     });
     while (this.scene.children.length) this.scene.remove(this.scene.children[0]);
-    if (this.dotTexture) this.dotTexture.dispose();
-    if (this.flowTexture) this.flowTexture.dispose();
-    if (this.ambientTexture) this.ambientTexture.dispose();
-    this.beamMeshes = [];
-    this.beamCurves = [];
-    this.flowData = null;
-    this.ambientData = null;
+    if (this.softTexture) this.softTexture.dispose();
+    if (this.labelLayer) this.labelLayer.remove();
+    this.labelLayer = null;
+    this.corpusLabelEl = null;
+    this.nodes = [];
+    this.pickables = [];
   }
 
   dispose() {
+    if (this.disposed) return;
     this.disposed = true;
-    if (this.frame) cancelAnimationFrame(this.frame);
-    if (this.frameTimer) clearTimeout(this.frameTimer);
-    this.frame = null;
-    this.frameTimer = null;
+    this.cancelPendingFrame();
     this.listeners.forEach(off => off());
     this.listeners = [];
     if (this.resizeObserver) this.resizeObserver.disconnect();
     if (this.visibilityObserver) this.visibilityObserver.disconnect();
+    this.resizeObserver = null;
+    this.visibilityObserver = null;
     this.hideTooltip();
     this.disposeSceneObjects();
     if (this.renderer) this.renderer.dispose();
@@ -1939,39 +1929,48 @@ class CareerAtlas {
       camera = null;
       renderer = null;
     }
+    this.wrapper.classList.remove('is-orbit');
   }
 }
 
-// ---- SVG fallback: the same five clusters, still selectable ------------------------
-function showAtlasFallback(note) {
+// ---- 2D fallback: the same five clusters, as real buttons over a decorative dial ------
+function showAtlasFallback(note, { offerThreeD = false } = {}) {
   const box = document.getElementById('atlas-fallback');
   const canvas = document.getElementById('spatial-hero-canvas');
   if (!box) return;
   const data = getAtlasNodeData();
-  const counts = data.map(d => d.count).filter(c => typeof c === 'number');
-  const max = counts.length ? Math.max(...counts) : null;
-  const nodes = data.map((d, i) => {
+  const known = data.filter(d => typeof d.count === 'number');
+  const max = known.length ? Math.max(...known.map(d => d.count)) : null;
+  const selectedId = appState.genome.selectedArchetypeId;
+  const spots = data.map((d, i) => {
     const p = atlasNodePosition(i, data.length);
-    const r = max && typeof d.count === 'number' ? 14 + 22 * Math.sqrt(d.count / max) : 24;
-    return { ...d, x: 400 + p.x * 1.25, y: 200 + p.z * 1.05, r };
+    return { ...d, left: 50 + (p.x / ATLAS_DIAL_RADIUS) * 37, top: 47 + (p.z / ATLAS_DIAL_RADIUS) * 37 };
   });
-  const links = nodes.map((a, i) => {
-    const b = nodes[(i + 1) % nodes.length];
-    return `<path d="M${a.x} ${a.y} Q${(a.x + b.x) / 2} ${(a.y + b.y) / 2 - 36} ${b.x} ${b.y}" />`;
-  }).join('');
   box.innerHTML = `
-    <svg class="atlas-fallback-svg" viewBox="0 0 800 400" aria-hidden="true" focusable="false">
-      <ellipse class="fb-disc" cx="400" cy="205" rx="380" ry="170" />
-      <ellipse class="fb-ring" cx="400" cy="205" rx="190" ry="85" />
-      <ellipse class="fb-ring" cx="400" cy="205" rx="300" ry="134" />
-      <g class="fb-links">${links}</g>
-      ${nodes.map(n => `
-        <g class="fb-node${n.id === appState.genome.selectedArchetypeId ? ' is-selected' : ''}" data-arch="${n.id}" data-archetype-id="${n.id}">
-          <circle cx="${n.x}" cy="${n.y}" r="${n.r}" />
-          <text x="${n.x}" y="${n.y + n.r + 18}" text-anchor="middle">${escapeHTML(n.label)}</text>
-        </g>`).join('')}
+    <svg class="atlas-fallback-svg" viewBox="0 0 800 440" preserveAspectRatio="xMidYMid meet" aria-hidden="true" focusable="false">
+      <ellipse class="fb-disc" cx="400" cy="207" rx="372" ry="190" />
+      <ellipse class="fb-ring" cx="400" cy="207" rx="238" ry="122" />
+      <ellipse class="fb-ring" cx="400" cy="207" rx="134" ry="68" />
+      <g class="fb-links">${spots.map(s => `<line x1="400" y1="207" x2="${(s.left * 8).toFixed(1)}" y2="${(s.top * 4.4).toFixed(1)}" />`).join('')}</g>
+      <circle class="fb-corpus" cx="400" cy="207" r="9" />
     </svg>
-    <p class="atlas-fallback-note">${escapeHTML(note)}</p>`;
+    <ul class="atlas-fallback-nodes">
+      ${spots.map(s => {
+        const size = max && typeof s.count === 'number' ? Math.round(14 + 14 * Math.sqrt(s.count / max)) : 18;
+        const selected = s.id === selectedId;
+        const detail = typeof s.count === 'number' ? `${s.count} resumes · ${s.pct}%` : 'Count loading';
+        return `<li style="--spot-x:${s.left.toFixed(1)}%;--spot-y:${s.top.toFixed(1)}%">
+          <button type="button" class="fb-node${selected ? ' is-selected' : ''}" data-archetype-id="${s.id}" aria-pressed="${selected}">
+            <span class="legend-swatch" data-arch="${s.id}" style="--swatch-size:${size}px" aria-hidden="true"></span>
+            <span class="fb-node-text"><span class="fb-node-name">${escapeHTML(s.label)}</span><span class="fb-node-count">${escapeHTML(detail)}</span></span>
+          </button>
+        </li>`;
+      }).join('')}
+    </ul>
+    <div class="atlas-fallback-foot">
+      <p class="atlas-fallback-note">${escapeHTML(note)}</p>
+      ${offerThreeD ? '<button type="button" class="btn-text-action atlas-load-3d">Load the 3D view</button>' : ''}
+    </div>`;
   box.hidden = false;
   if (canvas) canvas.hidden = true;
   const wrapper = document.getElementById('spatial-canvas-wrapper');
@@ -1979,8 +1978,12 @@ function showAtlasFallback(note) {
   if (!box.dataset.bound) {
     box.dataset.bound = 'true';
     box.addEventListener('click', (e) => {
-      const g = e.target.closest('[data-archetype-id]');
-      if (g) selectArchetype(parseInt(g.getAttribute('data-archetype-id'), 10));
+      const node = e.target.closest('.fb-node');
+      if (node) {
+        selectArchetype(parseInt(node.getAttribute('data-archetype-id'), 10));
+        return;
+      }
+      if (e.target.closest('.atlas-load-3d')) init3DScene({ force: true });
     });
   }
 }
@@ -1995,35 +1998,71 @@ function hideAtlasFallback() {
 }
 
 function syncAtlasFallbackSelection() {
-  document.querySelectorAll('#atlas-fallback .fb-node').forEach(g => {
-    g.classList.toggle('is-selected', parseInt(g.getAttribute('data-archetype-id'), 10) === appState.genome.selectedArchetypeId);
+  document.querySelectorAll('#atlas-fallback .fb-node').forEach(node => {
+    const selected = parseInt(node.getAttribute('data-archetype-id'), 10) === appState.genome.selectedArchetypeId;
+    node.classList.toggle('is-selected', selected);
+    node.setAttribute('aria-pressed', String(selected));
   });
 }
 
+function announceAtlasStatus(message) {
+  const status = document.getElementById('atlas-status');
+  if (status) status.textContent = message;
+}
+
+// A device that says it is short of memory or data starts in 2D, with the choice to load 3D.
+function atlasShouldStartIn2D() {
+  const connection = navigator.connection;
+  return Boolean((connection && connection.saveData) || (navigator.deviceMemory && navigator.deviceMemory <= 2));
+}
+
+function syncAtlasZoomButtons() {
+  const zoomIn = document.getElementById('btn-3d-zoom-in');
+  const zoomOut = document.getElementById('btn-3d-zoom-out');
+  if (!zoomIn || !zoomOut) return;
+  const zoom = careerAtlas ? careerAtlas.targetZoom : 1;
+  const focused = document.activeElement;
+  zoomIn.disabled = zoom <= ATLAS_ZOOM_MIN + 0.0001;
+  zoomOut.disabled = zoom >= ATLAS_ZOOM_MAX - 0.0001;
+  // A button that just reached its limit must not take keyboard focus away with it.
+  if (focused === zoomIn && zoomIn.disabled) zoomOut.focus();
+  if (focused === zoomOut && zoomOut.disabled) zoomIn.focus();
+}
+
 // ---- lifecycle hooks used by the rest of the app -------------------------------------
-function init3DScene() {
+function init3DScene({ force = false } = {}) {
   const canvas = document.getElementById('spatial-hero-canvas');
   const wrapper = document.getElementById('spatial-canvas-wrapper');
   if (!canvas || !wrapper) return;
   initAtlasControls();
   if (careerAtlas) return;
 
+  const unavailable = 'The 3D view is not available in this browser. The career map works the same in 2D.';
   if (typeof THREE === 'undefined' || !webglAvailable()) {
-    showAtlasFallback('Interactive 3D is unavailable in this browser; the career map remains available in 2D.');
+    showAtlasFallback(unavailable);
+    return;
+  }
+  if (!force && atlasShouldStartIn2D()) {
+    showAtlasFallback('Showing the 2D map to save memory and data on this device.', { offerThreeD: true });
     return;
   }
   const atlas = new CareerAtlas(canvas, wrapper);
   if (!atlas.init()) {
     atlas.dispose();
-    showAtlasFallback('Interactive 3D is unavailable in this browser; the career map remains available in 2D.');
+    showAtlasFallback(unavailable);
     return;
   }
   careerAtlas = atlas;
   hideAtlasFallback();
+  syncAtlasZoomButtons();
   if (new URLSearchParams(window.location.search).has('debug3d')) window.careerAtlas = atlas; // developer inspection only
   loadCorpusSummary().then(() => {
     if (careerAtlas) careerAtlas.refreshCounts();
-    if (!document.getElementById('atlas-fallback').hidden) showAtlasFallback(document.querySelector('.atlas-fallback-note')?.textContent || '');
+    const box = document.getElementById('atlas-fallback');
+    if (box && !box.hidden) {
+      const note = box.querySelector('.atlas-fallback-note');
+      showAtlasFallback(note ? note.textContent : unavailable, { offerThreeD: Boolean(box.querySelector('.atlas-load-3d')) });
+    }
   });
 }
 
@@ -2069,7 +2108,7 @@ function initAtlasControls() {
   const zoomOut = document.getElementById('btn-3d-zoom-out');
   const reset = document.getElementById('btn-3d-reset-cam-stage');
   if (zoomIn) zoomIn.addEventListener('click', () => careerAtlas && careerAtlas.zoomBy(0.86));
-  if (zoomOut) zoomOut.addEventListener('click', () => careerAtlas && careerAtlas.zoomBy(1.16));
+  if (zoomOut) zoomOut.addEventListener('click', () => careerAtlas && careerAtlas.zoomBy(1 / 0.86));
   if (reset) reset.addEventListener('click', reset3DCamera);
 
   // Legend items preview their node on hover and keyboard focus.
@@ -6269,11 +6308,17 @@ function renderAtlasLegend() {
         count.textContent = String(entry.count);
         count.setAttribute('aria-label', `${entry.count} records`);
       }
+      // The bar shows the cluster's share of the corpus, from the same summary as the count.
+      if (typeof entry.count === 'number' && summary.total_indexed_vectors) {
+        item.style.setProperty('--legend-share', `${(entry.count / summary.total_indexed_vectors) * 100}%`);
+      }
     });
   }
   document.querySelectorAll('.atlas-legend-item').forEach(item => {
     const id = parseInt(item.getAttribute('data-archetype-id'), 10);
-    item.classList.toggle('is-selected', id === appState.genome.selectedArchetypeId);
+    const selected = id === appState.genome.selectedArchetypeId;
+    item.classList.toggle('is-selected', selected);
+    item.setAttribute('aria-pressed', String(selected));
   });
 }
 
@@ -6283,6 +6328,11 @@ function initAtlasLegend() {
       const id = parseInt(item.getAttribute('data-archetype-id'), 10);
       if (!Number.isNaN(id) && typeof selectArchetype === 'function') selectArchetype(id);
       renderAtlasLegend();
+      const arch = archetypesDatabase.find(a => a.id === id);
+      if (arch) {
+        const c = getArchetypeCorpusCount(arch);
+        announceAtlasStatus(`Selected ${getArchetypeLabel(arch)}${c ? `: ${c.count} resumes, ${c.pct}% of the corpus` : ''}.`);
+      }
     });
   });
   renderAtlasLegend();

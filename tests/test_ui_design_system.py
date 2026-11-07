@@ -81,9 +81,24 @@ def test_reveal_system_only_touches_static_discovery_panels():
         assert tool not in selector
 
 
+def test_atlas_frame_loop_allocates_nothing_and_rests():
+    source = JS.replace("\r\n", "\n")
+    start = source.index("  tick() {\n    this.frame = null;")
+    body = source[start:source.index("  clampRotation() {", start)]
+    assert "new THREE." not in body  # no per-frame geometry, vector or colour allocation
+    assert "=>" not in body  # no per-frame closures
+    assert "ambient-drift" in body
+    assert "if (!this.reducedMotion) moving = true" not in source  # the old endless loop
+
+
+def test_atlas_has_no_links_implying_similarity():
+    assert "beamCurves" not in JS and "buildFlowParticles" not in JS and "buildAmbientParticles" not in JS
+    assert "membership, not similarity" in HTML
+
+
 def test_career_atlas_has_adaptive_continuous_render_scheduling():
     assert "scheduleContinuousRender()" in JS
     assert "const interval = this.lowDetail ? (1000 / 24) : (1000 / 30);" in JS
     assert "clearTimeout(this.frameTimer)" in JS
-    assert "if (moving) this.scheduleContinuousRender();" in JS
+    assert "else if (reasons.size) {\n      this.scheduleContinuousRender();" in JS.replace("\r\n", "\n")
     assert "this.renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, this.lowDetail ? 1 : 1.5));" in JS
