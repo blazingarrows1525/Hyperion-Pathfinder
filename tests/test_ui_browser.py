@@ -22,6 +22,7 @@ BASE_URL = os.environ.get("UI_BROWSER_BASE_URL", "")
 # probe file, query string, widths
 PROBES = [
     ("analyzer_inputs.js", "", "1440,375"),
+    ("analyzer_states.js", "", "1440,375"),
 ]
 
 pytestmark = pytest.mark.skipif(

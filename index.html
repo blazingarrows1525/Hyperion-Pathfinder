@@ -475,7 +475,7 @@
               <p class="section-kicker"><span class="section-index">03</span> Analyzer</p>
               <h2 id="analyzer-heading" class="section-title">Resume analyzer</h2>
             </div>
-            <p class="section-lede">Upload a PDF, add the job description and run. The report streams in beside the form, and each score component points back to evidence in your resume.</p>
+            <p class="section-lede">Upload a PDF, add the job description and run. The report appears beside the form, and each score component points back to evidence in your resume.</p>
           </header>
 
           <div class="analyzer-grid">
@@ -607,7 +607,8 @@
             <div class="analyzer-results-card workspace-panel">
 
               <!-- Tabbed Results Navigation -->
-              <div class="results-tab-bar" role="tablist" aria-label="Diagnostic Workspace Tabs">
+              <div class="results-tab-bar">
+                <div class="results-tabs" role="tablist" aria-label="Report views">
                 <button type="button" class="results-tab-btn active" id="tab-btn-report" role="tab" aria-selected="true" aria-controls="pane-diagnostic-report">
                   <i data-lucide="file-text" style="width:14px;height:14px;"></i>
                   <span>Report</span>
@@ -625,6 +626,7 @@
                   <i data-lucide="messages-square" style="width:14px;height:14px;"></i>
                   <span>Career Coach</span>
                 </button>
+                </div>
 
                 <div class="results-actions-row">
                   <button type="button" class="btn-icon-circle" onclick="copyAnalysisToClipboard()" title="Copy Markdown Report to Clipboard" aria-label="Copy report">
@@ -641,8 +643,8 @@
                 <div class="empty-icon-ring" aria-hidden="true">
                   <i data-lucide="file-text" style="width:30px;height:30px;"></i>
                 </div>
-                <h4 class="empty-title">Your report will appear here</h4>
-                <p class="empty-desc">
+                <h4 class="empty-title" id="results-empty-title">Your report will appear here</h4>
+                <p class="empty-desc" id="results-empty-desc">
                   Add a resume PDF and a job description, then run the analysis. The report covers the score components, matched and missing evidence, reference resumes from the corpus and suggested rewrites.
                 </p>
                 <button type="button" class="btn-secondary" onclick="enableDemoAndRun()">
@@ -652,9 +654,30 @@
 
               <!-- Streaming Results Area -->
               <div id="streaming-results-area" class="streaming-results-area">
-                
+
+                <!-- Shown during a run. The stages are the ones the page can really observe: the
+                     server sends its whole report at the end, so there is no percentage to show. -->
+                <div id="analysis-progress-panel" class="analysis-progress" hidden>
+                  <div class="analysis-progress-head">
+                    <span class="analysis-progress-mark" aria-hidden="true"></span>
+                    <div class="analysis-progress-copy">
+                      <h4 id="analysis-progress-title" class="analysis-progress-title">Sending your resume</h4>
+                      <p id="analysis-progress-detail" class="analysis-progress-detail"></p>
+                    </div>
+                    <span id="analysis-progress-elapsed" class="analysis-progress-elapsed" aria-hidden="true"></span>
+                  </div>
+                  <ol id="analysis-stage-list" class="analysis-stage-list">
+                    <li data-stage="sending">Send the PDF and job description</li>
+                    <li data-stage="analyzing">The server reads the PDF, scores it and writes the report</li>
+                    <li data-stage="report">Show the report here</li>
+                  </ol>
+                  <div id="analysis-stream-preview" class="analysis-stream-preview" hidden></div>
+                </div>
+
+                <div id="analysis-report-body" class="analysis-report-body">
+
                 <!-- Score & Provenance Banner -->
-                <div class="score-banner-box">
+                <div class="score-banner-box" id="score-banner-box" hidden>
                   <div class="score-banner-left">
                     <div class="mini-score-ring">
                       <svg width="86" height="86" viewBox="0 0 86 86" style="transform:rotate(-90deg);">
@@ -666,7 +689,7 @@
                     <div class="score-banner-meta">
                       <h4>Alignment score</h4>
                       <p>How closely the resume's evidence matches this job description. Not a hiring probability.</p>
-                      <span id="provenance-tag" class="provenance-tag provenance-live">Live Session</span>
+                      <span id="provenance-tag" class="provenance-tag">No report yet</span>
                     </div>
                   </div>
 
@@ -679,7 +702,7 @@
                 </div>
 
                 <!-- TAB PANE 1: MARKDOWN DIAGNOSTIC REPORT -->
-                <div id="pane-diagnostic-report" class="results-tab-pane active" role="tabpanel" aria-labelledby="tab-btn-report">
+                <div id="pane-diagnostic-report" class="results-tab-pane active" role="tabpanel" aria-labelledby="tab-btn-report" tabindex="0">
                   <!-- Prismatic Deterministic Rubric Breakdown -->
                   <div id="diagnostic-rubric-canvas" class="diagnostic-rubric-canvas">
                     <div class="rubric-summary-card">
@@ -741,7 +764,7 @@
                 </div>
 
                 <!-- TAB PANE 2: SENIOR EXECUTIVE REVIEW LENS -->
-                <div id="pane-executive-review" class="results-tab-pane" role="tabpanel" aria-labelledby="tab-btn-persona" style="display:none;">
+                <div id="pane-executive-review" class="results-tab-pane" role="tabpanel" aria-labelledby="tab-btn-persona" tabindex="0" style="display:none;">
                   <div class="exec-review-container">
                     <div class="exec-disclaimer-banner">
                       <i data-lucide="info" style="width:16px;height:16px;flex-shrink:0;"></i>
@@ -986,6 +1009,8 @@
                     </div>
 
                   </div>
+                </div>
+
                 </div>
 
               </div>

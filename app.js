@@ -150,9 +150,10 @@ const appState = {
   analyzer: {
     selectedFile: null,
     jobDescription: '',
-    status: 'idle', // 'idle' | 'validating' | 'uploading' | 'analyzing' | 'streaming' | 'complete' | 'error'
+    status: 'idle', // 'idle' | 'submitting' | 'streaming' | 'complete' | 'cancelled' | 'error'
     abortController: null,
-    streamBuffer: '',
+    activeRun: null, // the one run allowed to change anything; see startAnalysisRun
+    streamBuffer: '', // the report on screen; only a validated new report replaces it
     extractedScore: null,
     demoMode: false,
     reportIsDemo: false, // provenance of the report currently in streamBuffer
@@ -2395,7 +2396,7 @@ function initResumeAnalyzer() {
     demoToggle.addEventListener('change', (e) => {
       appState.analyzer.demoMode = e.target.checked;
       checkBackendHealth();
-      showToast(appState.analyzer.demoMode ? 'Explicit Demo Mode Enabled' : 'Live Backend Mode Enabled');
+      showToast(appState.analyzer.demoMode ? 'Demo mode on. Analyze plays the bundled sample report.' : 'Demo mode off. Analyze uses your resume.');
     });
   }
 
@@ -2408,14 +2409,7 @@ function initResumeAnalyzer() {
 
   // Cancel in-flight request
   if (cancelBtn) {
-    cancelBtn.addEventListener('click', () => {
-      if (appState.analyzer.abortController) {
-        appState.analyzer.abortController.abort();
-        appState.analyzer.abortController = null;
-        showToast('Analysis request cancelled.');
-        resetAnalyzerState();
-      }
-    });
+    cancelBtn.addEventListener('click', cancelAnalysis);
   }
 }
 
@@ -2516,22 +2510,282 @@ function hideFieldError(id) {
   if (input) input.removeAttribute('aria-invalid');
 }
 
-async function executeAnalysis() {
-  const jdTextarea = document.getElementById('jd-textarea');
+// --- Analysis runs -----------------------------------------------------------
+// A run owns its AbortController and timers, and only the current run may change anything.
+// The report on screen (state and DOM) stays untouched until a new one has been validated,
+// so a failed or cancelled run cannot erase it.
+
+const ANALYSIS_STAGES = {
+  sending: {
+    title: 'Sending your resume',
+    detail: 'Uploading the PDF and job description to the server.'
+  },
+  analyzing: {
+    title: 'Analyzing on the server',
+    detail: 'The server sends the whole report when it finishes, so there is no percentage to show. This can take up to a minute.'
+  },
+  demo: {
+    title: 'Playing the illustrative demo',
+    detail: 'A bundled sample report. Nothing is uploaded or analyzed.'
+  }
+};
+
+// Server wording that is written for people. Anything else may carry exception text or paths,
+// so it never reaches the page.
+const ANALYSIS_SAFE_MESSAGES = [
+  { pattern: /could not extract text/i, field: 'file', message: 'No text could be read from this PDF. It may be scanned or image-based. Try a PDF with selectable text.' },
+  { pattern: /is empty \(0 bytes\)/i, field: 'file', message: 'This PDF is empty (0 bytes). Choose another file.' },
+  { pattern: /exceeds the \d+\s*MB/i, field: 'file', message: 'This PDF is over the 10 MB limit. Choose a smaller file.' },
+  { pattern: /not a valid PDF/i, field: 'file', message: 'This file is not a valid PDF, even though its name may end in .pdf. Choose another file.' },
+  { pattern: /encrypted/i, field: 'file', message: 'This PDF is password protected. Remove the password and upload it again.' },
+  { pattern: /page count .*exceeds/i, field: 'file', message: 'This PDF is over the 15 page limit. Upload a shorter version.' },
+  { pattern: /failed to parse pdf/i, field: 'file', message: 'This PDF could not be read and may be damaged. Export it again and retry.' },
+  { pattern: /job description is missing/i, field: 'jd', message: 'Enter a job description or choose a sample.' }
+];
+// /analyze answers HTTP 200 and then streams these instead of a report.
+const ANALYSIS_STREAM_FAILURE = /^(Analysis Error:|Server streaming error:|Analysis finished, but no response)/;
+
+function analysisFailure(message, field = '') {
+  return Object.assign(new Error(message), { userFacing: true, field });
+}
+
+function safeAnalysisFailure(serverText, fallback) {
+  const known = ANALYSIS_SAFE_MESSAGES.find(entry => entry.pattern.test(serverText || ''));
+  return known ? analysisFailure(known.message, known.field) : analysisFailure(fallback);
+}
+
+async function analysisHttpFailure(response) {
+  let detail = '';
+  try {
+    const body = await response.clone().json();
+    detail = typeof body.detail === 'string' ? body.detail : '';
+  } catch (notJson) {
+    detail = await response.text().catch(() => '');
+  }
+  // Oversized request lines are refused before FastAPI runs, as a plain-text 400 or a 414/431.
+  if (response.status === 414 || response.status === 431 || /invalid http request/i.test(detail)) {
+    return analysisFailure('The server would not accept a job description this long. Shorten it and try again.', 'jd');
+  }
+  if (response.status === 413) {
+    return analysisFailure('The server would not accept a file this large. Choose a smaller PDF.', 'file');
+  }
+  if (response.status >= 500) {
+    return safeAnalysisFailure(detail, 'The server could not finish the analysis. Try again in a moment.');
+  }
+  return safeAnalysisFailure(detail, `The server refused this request (status ${response.status}). Check the file and job description, then try again.`);
+}
+
+function isCurrentRun(run) {
+  return appState.analyzer.activeRun === run && !run.controller.signal.aborted;
+}
+
+function hasCommittedReport() {
+  return Boolean(appState.analyzer.streamBuffer);
+}
+
+function setAnalysisStage(stageKey) {
+  const stage = ANALYSIS_STAGES[stageKey];
+  const title = document.getElementById('analysis-progress-title');
+  const detail = document.getElementById('analysis-progress-detail');
+  if (title) title.textContent = stage.title;
+  if (detail) detail.textContent = stage.detail;
+
+  const list = document.getElementById('analysis-stage-list');
+  if (!list) return;
+  list.hidden = stageKey === 'demo';
+  const items = [...list.querySelectorAll('li')];
+  const activeIndex = items.findIndex(item => item.dataset.stage === stageKey);
+  items.forEach((item, index) => {
+    item.dataset.state = index < activeIndex ? 'done' : index === activeIndex ? 'active' : 'pending';
+    if (index === activeIndex) item.setAttribute('aria-current', 'step');
+    else item.removeAttribute('aria-current');
+  });
+}
+
+function showStreamPreview(text) {
+  const preview = document.getElementById('analysis-stream-preview');
+  if (!preview || ANALYSIS_STREAM_FAILURE.test(text.trimStart())) return;
+  const visible = text.split('<!-- STRUCTURED_REPORT_START')[0];
+  preview.hidden = !visible.trim();
+  preview.textContent = visible;
+  preview.scrollTop = preview.scrollHeight;
+}
+
+function showAnalysisAlert(message) {
+  const alertCard = document.getElementById('analyzer-alert-card');
+  if (!alertCard) return;
+  alertCard.textContent = message;
+  alertCard.style.display = 'block';
+}
+
+function hideAnalysisAlert() {
+  const alertCard = document.getElementById('analyzer-alert-card');
+  if (!alertCard) return;
+  alertCard.textContent = '';
+  alertCard.style.display = 'none';
+}
+
+const RESULTS_EMPTY_COPY = {
+  'pane-diagnostic-report': {
+    title: 'Your report will appear here',
+    desc: 'Add a resume PDF and a job description, then run the analysis. The report covers the score components, matched and missing evidence, reference resumes from the corpus and suggested rewrites.'
+  },
+  'pane-executive-review': {
+    title: 'The executive review comes with a report',
+    desc: 'Run an analysis and this tab shows how the review lens you chose reads your resume. The lens changes the critique, never the score.'
+  },
+  'pane-interactive-tailoring': {
+    title: 'Tailoring comes with a report',
+    desc: 'Run an analysis and this tab shows your resume text with each suggested change marked, ready to apply, undo or export.'
+  }
+};
+
+// The one place that decides what the results panel shows.
+function renderResultsView() {
+  const running = Boolean(appState.analyzer.activeRun);
+  const hasReport = hasCommittedReport();
+  const activeTab = document.querySelector('.results-tab-btn[aria-selected="true"]');
+  const activePane = activeTab ? activeTab.getAttribute('aria-controls') : 'pane-diagnostic-report';
+  // The coach works without a report; the other views have nothing to show until there is one.
+  const showBody = hasReport || activePane === 'pane-career-coach';
+
+  const placeholder = document.getElementById('results-placeholder');
+  const resultsArea = document.getElementById('streaming-results-area');
+  const progress = document.getElementById('analysis-progress-panel');
+  const body = document.getElementById('analysis-report-body');
+  const banner = document.getElementById('score-banner-box');
+  const card = document.querySelector('.analyzer-results-card');
+
+  if (placeholder) placeholder.style.display = !running && !showBody ? 'flex' : 'none';
+  if (resultsArea) resultsArea.style.display = running || showBody ? 'flex' : 'none';
+  if (progress) progress.hidden = !running;
+  if (body) body.hidden = running;
+  if (banner) banner.hidden = !hasReport;
+  if (card) {
+    if (running) card.setAttribute('aria-busy', 'true');
+    else card.removeAttribute('aria-busy');
+  }
+
+  const copy = RESULTS_EMPTY_COPY[activePane];
+  const emptyTitle = document.getElementById('results-empty-title');
+  const emptyDesc = document.getElementById('results-empty-desc');
+  if (copy && emptyTitle) emptyTitle.textContent = copy.title;
+  if (copy && emptyDesc) emptyDesc.textContent = copy.desc;
+}
+
+function startAnalysisRun(stageKey) {
+  const analyzer = appState.analyzer;
+  if (analyzer.activeRun) {
+    analyzer.activeRun.controller.abort();
+    stopRunTimers(analyzer.activeRun);
+  }
+  const controller = new AbortController();
+  const run = { controller, clock: null, demoTimer: null };
+  analyzer.activeRun = run;
+  analyzer.abortController = controller;
+  analyzer.status = 'submitting';
+
+  hideAnalysisAlert();
+  setAnalysisStage(stageKey);
+  showStreamPreview('');
+
+  const elapsed = document.getElementById('analysis-progress-elapsed');
+  if (elapsed) elapsed.textContent = '';
+  if (stageKey !== 'demo') {
+    const startedAt = performance.now();
+    run.clock = setInterval(() => {
+      if (elapsed) elapsed.textContent = `${Math.round((performance.now() - startedAt) / 1000)} s`;
+    }, 1000);
+  }
+
   const analyzeBtn = document.getElementById('btn-analyze-submit');
   const cancelBtn = document.getElementById('btn-cancel-request');
   const btnText = document.getElementById('btn-analyze-text');
-  const placeholder = document.getElementById('results-placeholder');
-  const resultsArea = document.getElementById('streaming-results-area');
-  const markdownArea = document.getElementById('markdown-stream-output');
-  const alertCard = document.getElementById('analyzer-alert-card');
+  const hadFocus = document.activeElement === analyzeBtn;
+  if (analyzeBtn) analyzeBtn.disabled = true;
+  if (btnText) btnText.textContent = 'Analyzing…';
+  if (cancelBtn) {
+    cancelBtn.style.display = 'block';
+    if (hadFocus) cancelBtn.focus({ preventScroll: true });
+  }
+  renderResultsView();
+
+  // On narrow screens the panel can sit below the fold, where nothing would seem to happen.
+  const card = document.querySelector('.analyzer-results-card');
+  if (card && card.getBoundingClientRect().top >= window.innerHeight) {
+    card.scrollIntoView({ block: 'nearest', behavior: appState.motionMode === 'reduced' ? 'auto' : 'smooth' });
+  }
+  return run;
+}
+
+function stopRunTimers(run) {
+  clearInterval(run.clock);
+  clearInterval(run.demoTimer);
+  run.clock = null;
+  run.demoTimer = null;
+}
+
+function endAnalysisRun(run, status, buttonLabel = 'Analyze resume') {
+  stopRunTimers(run);
+  const analyzer = appState.analyzer;
+  analyzer.activeRun = null;
+  analyzer.abortController = null;
+  analyzer.status = status;
+
+  const cancelBtn = document.getElementById('btn-cancel-request');
+  const analyzeBtn = document.getElementById('btn-analyze-submit');
+  const btnText = document.getElementById('btn-analyze-text');
+  const focusWasOnCancel = document.activeElement === cancelBtn || document.activeElement === document.body;
+  if (analyzeBtn) analyzeBtn.disabled = false;
+  if (btnText) btnText.textContent = buttonLabel;
+  if (cancelBtn) cancelBtn.style.display = 'none';
+  if (focusWasOnCancel && analyzeBtn) analyzeBtn.focus({ preventScroll: true });
+  renderResultsView();
+}
+
+function cancelAnalysis() {
+  const run = appState.analyzer.activeRun;
+  if (!run) return;
+  run.controller.abort();
+  endAnalysisRun(run, 'cancelled');
+  showToast(hasCommittedReport() ? 'Analysis cancelled. Your earlier report is unchanged.' : 'Analysis cancelled.');
+}
+
+function failAnalysisRun(run, failure) {
+  console.warn('Analysis did not finish:', failure.message);
+  endAnalysisRun(run, 'error', 'Try again');
+  const message = failure.message + (hasCommittedReport() ? ' Your earlier report is unchanged.' : '');
+  const fieldErrors = { file: ['file-error-msg', 'resume-file-input'], jd: ['jd-error-msg', 'jd-textarea'] };
+  const fieldError = fieldErrors[failure.field];
+  if (fieldError) {
+    showFieldError(fieldError[0], message);
+    const input = document.getElementById(fieldError[1]);
+    if (input) input.focus();
+  } else {
+    showAnalysisAlert(message);
+  }
+}
+
+// A new report shows on its own tab, without moving focus away from where the person is.
+function completeAnalysisRun(run, toastMessage) {
+  endAnalysisRun(run, 'complete');
+  switchResultsTab('pane-diagnostic-report');
+  showToast(toastMessage);
+}
+
+async function executeAnalysis({ demo = false } = {}) {
+  const analyzer = appState.analyzer;
+  const jdTextarea = document.getElementById('jd-textarea');
+  const useDemo = demo || analyzer.demoMode;
 
   // 1. Validation: each problem appears beside its field, and focus goes to the first one.
   const jd = (jdTextarea ? jdTextarea.value : '').trim();
-  const file = appState.analyzer.selectedFile;
-  const fileProblem = !file && !appState.analyzer.demoMode ? 'Add your resume PDF to begin.' : '';
+  const file = analyzer.selectedFile;
+  const fileProblem = !file && !useDemo ? 'Add your resume PDF to begin.' : '';
   const jdProblem = jobDescriptionProblem(jd);
 
+  hideFieldError('file-error-msg');
+  hideFieldError('jd-error-msg');
   if (fileProblem) showFieldError('file-error-msg', fileProblem);
   if (jdProblem) showFieldError('jd-error-msg', jdProblem);
   if (fileProblem || jdProblem) {
@@ -2540,30 +2794,15 @@ async function executeAnalysis() {
     return;
   }
 
-  // 2. State setup
-  appState.analyzer.status = 'analyzing';
-  appState.analyzer.streamBuffer = '';
-  appState.analyzer.abortController = new AbortController();
-  appState.reportData = null;
-  clearScoreRing();
-  resetRubricBreakdown();
-
-  if (alertCard) alertCard.style.display = 'none';
-  if (placeholder) placeholder.style.display = 'none';
-  if (resultsArea) resultsArea.style.display = 'flex';
-  if (markdownArea) markdownArea.textContent = 'Connecting to inference engine...';
-
-  analyzeBtn.disabled = true;
-  btnText.textContent = 'Comparing with the alumni corpus…';
-  if (cancelBtn) cancelBtn.style.display = 'block';
-
-  // 3. Demo Mode Route
-  if (appState.analyzer.demoMode) {
-    runDemoAnalysis();
+  // 2. Demo route: local only, nothing is sent.
+  if (useDemo) {
+    runDemoAnalysis(startAnalysisRun('demo'));
     return;
   }
 
-  // 4. Live API Streaming Route
+  // 3. Live route.
+  const run = startAnalysisRun('sending');
+  let responded = false;
   try {
     const formData = new FormData();
     formData.append('resume_file', file);
@@ -2578,65 +2817,58 @@ async function executeAnalysis() {
     const response = await fetch(url.toString(), {
       method: 'POST',
       body: formData,
-      signal: appState.analyzer.abortController.signal
+      signal: run.controller.signal
     });
+    if (!isCurrentRun(run)) return;
+    responded = true;
 
-    if (!response.ok) {
-      let errDetail = `Server returned status ${response.status} (${response.statusText})`;
-      try {
-        const errJson = await response.json();
-        if (errJson.detail) errDetail = errJson.detail;
-      } catch (e) {}
-      throw new Error(errDetail);
-    }
+    if (!response.ok) throw await analysisHttpFailure(response);
 
-    markdownArea.textContent = 'Synthesizing placement patterns...';
+    analyzer.status = 'streaming';
+    setAnalysisStage('analyzing');
     const reader = response.body.pipeThrough(new TextDecoderStream()).getReader();
-
+    let buffer = '';
     while (true) {
       const { value, done } = await reader.read();
+      if (!isCurrentRun(run)) {
+        reader.cancel().catch(() => {});
+        return;
+      }
       if (done) break;
-
-      appState.analyzer.streamBuffer += value;
-      // Show plain text stream (without raw structured comment if present)
-      const cleanStream = appState.analyzer.streamBuffer.replace(/<!-- STRUCTURED_REPORT_START -->[\s\S]*?<!-- STRUCTURED_REPORT_END -->/g, '');
-      markdownArea.textContent = cleanStream + ' ...';
+      buffer += value;
+      showStreamPreview(buffer);
     }
 
-    // Finished streaming: Parse structured report and safe render Markdown
-    parseAndHydrateStructuredReport(appState.analyzer.streamBuffer);
-    renderSafeMarkdown(appState.analyzer.streamBuffer, false);
+    const streamed = buffer.trimStart();
+    if (ANALYSIS_STREAM_FAILURE.test(streamed)) {
+      throw safeAnalysisFailure(streamed, 'The analysis stopped because of a problem on the server. Try again in a moment.');
+    }
+    const report = readStructuredReport(buffer);
+    if (!report) {
+      throw analysisFailure('The server finished without sending a usable report. Try again in a moment.');
+    }
+
+    analyzer.streamBuffer = buffer;
+    hydrateStructuredReport(report);
+    renderSafeMarkdown(buffer, false);
     updateScoreRing();
-    showToast('Analysis complete.');
-
+    completeAnalysisRun(run, `Report ready. Alignment score ${analyzer.extractedScore} of 100.`);
   } catch (err) {
-    if (err.name === 'AbortError') {
-      console.log('User cancelled request.');
-      return;
+    // Cancelled or replaced: whoever did that has already updated the view.
+    if (!isCurrentRun(run)) return;
+    if (err.userFacing) {
+      failAnalysisRun(run, err);
+    } else if (responded) {
+      failAnalysisRun(run, analysisFailure('The connection closed before the report finished. Try again.'));
+    } else {
+      failAnalysisRun(run, analysisFailure('The analysis server could not be reached. Check that it is running, then try again. The illustrative demo works without it.'));
     }
-    console.error('Analysis failed:', err);
-    if (alertCard) {
-      alertCard.textContent = `Live analysis error: ${err.message}. You can switch to Demo Mode below to test the interface without a running backend.`;
-      alertCard.style.display = 'block';
-    }
-    // Offer demo option in results area
-    markdownArea.innerHTML = `
-      <div style="padding:16px;background:rgba(var(--terracotta-rgb),0.1);border-radius:8px;border:1px solid rgba(var(--terracotta-rgb),0.3);">
-        <strong style="color:var(--accent-coral);">Connection to Backend Failed</strong>
-        <p style="margin-top:6px;font-size:0.88rem;">Check that the API server is running and reachable from this page, or switch on <strong>Demo mode</strong> to preview the report layout.</p>
-        <button type="button" class="btn-preset-chip" style="margin-top:10px;" onclick="enableDemoAndRun()">Run Illustrative Demo Analysis</button>
-      </div>
-    `;
-  } finally {
-    resetAnalyzerButtons();
   }
 }
 
+// Plays the bundled report once. Demo mode itself stays as it was, so the next Analyze
+// click cannot quietly play the sample over a real resume.
 function enableDemoAndRun() {
-  const demoToggle = document.getElementById('demo-mode-toggle');
-  if (demoToggle) demoToggle.checked = true;
-  appState.analyzer.demoMode = true;
-
   // One click must be enough: an empty JD gets the first sample role, through
   // the textarea's own input handling so the counter and validation stay in sync.
   const jdTextarea = document.getElementById('jd-textarea');
@@ -2647,12 +2879,10 @@ function enableDemoAndRun() {
       jdTextarea.dispatchEvent(new Event('input', { bubbles: true }));
     }
   }
-  checkBackendHealth();
-  executeAnalysis();
+  executeAnalysis({ demo: true });
 }
 
-function runDemoAnalysis() {
-  const markdownArea = document.getElementById('markdown-stream-output');
+function runDemoAnalysis(run) {
   const demoText = `
 **1. Overall Score (out of 100):** 86/100
 
@@ -2671,56 +2901,31 @@ function runDemoAnalysis() {
 * **CI/CD Automated Deployment Pipelines (GitHub Actions / Terraform)**
 `;
 
-  // Stops when Cancel aborts the shared controller, like the live stream does.
-  const signal = appState.analyzer.abortController ? appState.analyzer.abortController.signal : null;
+  const finish = () => {
+    if (!isCurrentRun(run)) return;
+    appState.analyzer.streamBuffer = demoText;
+    hydrateDemoStructuredReport();
+    renderSafeMarkdown(demoText, true);
+    updateScoreRing();
+    completeAnalysisRun(run, 'Illustrative demo report ready. Its score of 86 is a sample.');
+  };
+
+  // Calm mode gets the result straight away instead of watching it type.
+  if (appState.motionMode === 'reduced') {
+    setTimeout(finish, 0);
+    return;
+  }
+
   let idx = 0;
-  const interval = setInterval(() => {
-    if (signal && signal.aborted) {
-      clearInterval(interval);
-      return;
-    }
+  run.demoTimer = setInterval(() => {
+    if (!isCurrentRun(run)) return;
     if (idx < demoText.length) {
-      appState.analyzer.streamBuffer += demoText.slice(idx, idx + 5);
-      markdownArea.textContent = appState.analyzer.streamBuffer + ' ...';
       idx += 5;
+      showStreamPreview(demoText.slice(0, idx));
     } else {
-      clearInterval(interval);
-      appState.analyzer.streamBuffer = demoText;
-      hydrateDemoStructuredReport();
-      renderSafeMarkdown(demoText, true);
-      updateScoreRing();
-      showToast('Illustrative demo report loaded.');
-      resetAnalyzerButtons();
+      finish();
     }
   }, 20);
-}
-
-function resetAnalyzerButtons() {
-  const analyzeBtn = document.getElementById('btn-analyze-submit');
-  const cancelBtn = document.getElementById('btn-cancel-request');
-  const btnText = document.getElementById('btn-analyze-text');
-
-  if (analyzeBtn) {
-    analyzeBtn.disabled = false;
-  }
-  if (btnText) {
-    btnText.textContent = 'Analyze resume';
-  }
-  if (cancelBtn) {
-    cancelBtn.style.display = 'none';
-  }
-  appState.analyzer.status = 'idle';
-}
-
-function resetAnalyzerState() {
-  resetAnalyzerButtons();
-  const placeholder = document.getElementById('results-placeholder');
-  const resultsArea = document.getElementById('streaming-results-area');
-  const markdownArea = document.getElementById('markdown-stream-output');
-
-  if (placeholder) placeholder.style.display = 'flex';
-  if (resultsArea) resultsArea.style.display = 'none';
-  if (markdownArea) markdownArea.textContent = '';
 }
 
 function renderSafeMarkdown(rawText, isDemo) {
@@ -3702,25 +3907,20 @@ function getAnalysisReportMarkdown() {
 function copyAnalysisToClipboard() {
   const text = getAnalysisReportMarkdown();
   if (!text) {
-    showToast('No report yet — run an analysis first.');
+    showToast('No report yet. Run an analysis first.');
     return;
   }
-
-  if (navigator.clipboard && navigator.clipboard.writeText) {
-    navigator.clipboard.writeText(text).then(() => {
-      showToast('Report copied to clipboard.');
-    }).catch(() => {
-      fallbackCopy(text, 'Report copied to clipboard.');
-    });
-  } else {
-    fallbackCopy(text, 'Report copied to clipboard.');
-  }
+  // Copied text travels without the page around it, so a sample has to say what it is.
+  const labelled = appState.analyzer.reportIsDemo
+    ? `Illustrative demo output, not generated from a resume.\n\n${text}`
+    : text;
+  fallbackCopy(labelled, appState.analyzer.reportIsDemo ? 'Demo report copied, labelled as illustrative.' : 'Report copied to clipboard.');
 }
 
 function exportAnalysisReport() {
   const text = getAnalysisReportMarkdown();
   if (!text) {
-    showToast('No report yet — run an analysis first.');
+    showToast('No report yet. Run an analysis first.');
     return;
   }
 
@@ -3731,7 +3931,7 @@ function exportAnalysisReport() {
   const scoreLine = typeof score === 'number'
     ? `Resume–JD alignment score: ${score}/100 (textual alignment, not a hiring probability)\n`
     : '';
-  const mdContent = `# Resume Checker — Analysis Report
+  const mdContent = `# Hyperion Pathfinder — Analysis Report
 Export Date: ${new Date().toLocaleString()}
 Source: ${source}
 ${scoreLine}
@@ -3750,7 +3950,7 @@ ${text}
   a.click();
   document.body.removeChild(a);
   URL.revokeObjectURL(url);
-  showToast(`Downloaded ${filename}`);
+  showToast(`Download started: ${filename}`);
 }
 
 // Defined handoff: the Career Coach answers through the chosen framework.
@@ -3814,6 +4014,8 @@ function initInteractionLab() {
   }
 }
 
+let toastTimer = null;
+
 function showToast(msg) {
   const toast = document.getElementById('toast-notification');
   const msgElem = document.getElementById('toast-message');
@@ -3822,7 +4024,9 @@ function showToast(msg) {
   msgElem.textContent = msg;
   toast.classList.add('show');
 
-  setTimeout(() => {
+  // A new toast gets its full time on screen: the previous one's timer must not hide it.
+  clearTimeout(toastTimer);
+  toastTimer = setTimeout(() => {
     toast.classList.remove('show');
   }, 3200);
 }
@@ -4154,39 +4358,48 @@ function initAccessibilityAndMotion() {
 // ==============================================================================
 
 // --- 16.1 RESULTS WORKSPACE TABS CONTROLLER ---
+function selectResultsTab(btn, { focus = false } = {}) {
+  const targetPaneId = btn.getAttribute('aria-controls');
+  if (!targetPaneId) return;
+
+  document.querySelectorAll('.results-tab-btn').forEach(tab => {
+    const selected = tab === btn;
+    tab.classList.toggle('active', selected);
+    tab.setAttribute('aria-selected', String(selected));
+    tab.tabIndex = selected ? 0 : -1;
+  });
+  document.querySelectorAll('.results-tab-pane').forEach(pane => {
+    const selected = pane.id === targetPaneId;
+    pane.classList.toggle('active', selected);
+    pane.style.display = selected ? 'block' : 'none';
+  });
+  renderResultsView();
+  if (focus) btn.focus();
+}
+
 function initResultsWorkspaceTabs() {
-  const tabBtns = document.querySelectorAll('.results-tab-btn');
-  tabBtns.forEach(btn => {
-    btn.addEventListener('click', () => {
-      const targetPaneId = btn.getAttribute('aria-controls');
-      if (!targetPaneId) return;
-
-      // Update active states on tab buttons
-      tabBtns.forEach(b => {
-        b.classList.remove('active');
-        b.setAttribute('aria-selected', 'false');
-      });
-      btn.classList.add('active');
-      btn.setAttribute('aria-selected', 'true');
-
-      // Update active states on tab panes
-      document.querySelectorAll('.results-tab-pane').forEach(pane => {
-        pane.classList.remove('active');
-        pane.style.display = 'none';
-      });
-
-      const targetPane = document.getElementById(targetPaneId);
-      if (targetPane) {
-        targetPane.classList.add('active');
-        targetPane.style.display = 'block';
-      }
+  const tabBtns = [...document.querySelectorAll('.results-tab-btn')];
+  tabBtns.forEach((btn, index) => {
+    btn.tabIndex = btn.getAttribute('aria-selected') === 'true' ? 0 : -1;
+    btn.addEventListener('click', () => selectResultsTab(btn));
+    btn.addEventListener('keydown', (e) => {
+      const targets = {
+        ArrowRight: tabBtns[(index + 1) % tabBtns.length],
+        ArrowLeft: tabBtns[(index - 1 + tabBtns.length) % tabBtns.length],
+        Home: tabBtns[0],
+        End: tabBtns[tabBtns.length - 1]
+      };
+      const target = targets[e.key];
+      if (!target) return;
+      e.preventDefault();
+      selectResultsTab(target, { focus: true });
     });
   });
 }
 
 function switchResultsTab(paneId) {
   const btn = document.querySelector(`.results-tab-btn[aria-controls="${paneId}"]`);
-  if (btn) btn.click();
+  if (btn) selectResultsTab(btn);
 }
 
 // --- 16.2 EXECUTIVE PERSONA CONTROLLER ---
@@ -5333,30 +5546,26 @@ function tailoringSourceFromReport(report) {
 }
 
 // --- 16.7 STRUCTURED REPORT PARSING & DEMO HYDRATION ---
-function parseAndHydrateStructuredReport(streamBuffer) {
-  if (!streamBuffer) return;
-  const match = streamBuffer.match(/<!-- STRUCTURED_REPORT_START -->([\s\S]*?)<!-- STRUCTURED_REPORT_END -->/);
-  if (!match || !match[1]) return;
-
+// Parsing has no side effects, so a response that fails it leaves the current report alone.
+function readStructuredReport(streamBuffer) {
+  const match = (streamBuffer || '').match(/<!-- STRUCTURED_REPORT_START -->([\s\S]*?)<!-- STRUCTURED_REPORT_END -->/);
+  if (!match || !match[1]) return null;
   try {
     const report = JSON.parse(match[1]);
-    appState.reportData = report;
-
-    if (typeof report.overall_score === 'number') {
-      updateScoreRingFromNumber(report.overall_score);
-      updateRubricBreakdown(report.score_breakdown);
-    }
-
-    if (report.persona_review) {
-      renderExecutiveReview(report.persona_review);
-    }
-    const tailoringSource = tailoringSourceFromReport(report);
-    if (tailoringSource) {
-      hydrateResumeTailoring(tailoringSource);
-    }
+    return typeof report.overall_score === 'number' ? report : null;
   } catch (err) {
-    console.error('Failed to parse structured report JSON:', err);
+    console.warn('The structured report was not valid JSON.');
+    return null;
   }
+}
+
+function hydrateStructuredReport(report) {
+  appState.reportData = report;
+  updateScoreRingFromNumber(report.overall_score);
+  updateRubricBreakdown(report.score_breakdown);
+  if (report.persona_review) renderExecutiveReview(report.persona_review);
+  const tailoringSource = tailoringSourceFromReport(report);
+  if (tailoringSource) hydrateResumeTailoring(tailoringSource);
 }
 
 function hydrateDemoStructuredReport() {
