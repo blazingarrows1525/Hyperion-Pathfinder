@@ -117,7 +117,7 @@
               </div>
               <div class="prefs-row">
                 <span class="prefs-label">Sound</span>
-                <button type="button" id="btn-sound-toggle" class="pref-toggle" title="Interface sounds are off until you turn them on" aria-label="Toggle interface sound" aria-pressed="false">
+                <button type="button" id="btn-sound-toggle" class="pref-toggle" title="Interface sounds are off until you turn them on" aria-label="Interface sounds" aria-pressed="false">
                   <i data-lucide="volume-x" style="width:15px;height:15px;"></i>
                   <span id="sound-toggle-label">Off</span>
                 </button>
@@ -949,7 +949,7 @@
                       </div>
                       <div>
                         <h5 id="coach-active-persona-title">Executive Career Coach</h5>
-                        <p>Ask natural-language questions grounded strictly in your resume evidence and target role requirements.</p>
+                        <p id="coach-context-note">No report yet, so answers are general guidance. Run an analysis to base them on your resume.</p>
                       </div>
                     </div>
 
@@ -974,34 +974,16 @@
                         <label for="coach-framework-select" style="font-size:0.75rem;font-weight:700;letter-spacing:0.04em;color:var(--text-secondary);">Framework Lens:</label>
                       </div>
                       <select id="coach-framework-select" class="neu-select-compact" aria-label="Select Prompt Framework Lens for Coach Responses">
-                        <option value="" selected>Direct Advice (Standard)</option>
-                        <option value="RACE">RACE — Role, Action, Context, Expectation</option>
-                        <option value="STAR">STAR — Situation, Task, Action, Result</option>
-                        <option value="PAR">PAR — Problem, Action, Result</option>
-                        <option value="CLEAR">CLEAR — Context, Logic, Expectations, Action, Restriction</option>
-                        <option value="SMART">SMART — Specific, Measurable, Achievable, Relevant, Time-bound</option>
-                        <option value="QUEST">QUEST — Question, Understanding, Expectation, Scope, Time</option>
-                        <option value="GUIDE">GUIDE — Goal, Understanding, Information, Direction, Evaluation</option>
-                        <option value="FOCUS">FOCUS — Function, Outcome, Criteria, Assumptions, Strategy</option>
-                        <option value="IDEA">IDEA — Intent, Details, Examples, Adjustments</option>
-                        <option value="RISEN">RISEN — Requirement, Information, Strategy, Evaluation, Negotiation</option>
-                        <option value="RHODES">RHODES — Research, Hypothesis, Objectives, Development, Execution, Synthesis</option>
-                        <option value="CREATE">CREATE — Conceptualize, Research, Experiment, Analyze, Transform, Evaluate</option>
-                        <option value="TAG">TAG — Task, Action, Goal</option>
-                        <option value="TRACE">TRACE — Task, Request, Action, Context, Example</option>
-                        <option value="CARE">CARE — Context, Action, Result, Example</option>
-                        <option value="APE">APE — Action, Purpose, Expectation</option>
-                        <option value="CRISPE">CRISPE — Capacity, Insight, Statement, Personality, Experiment</option>
-                        <option value="RTF">RTF — Role, Task, Finish</option>
+                        <option value="" selected>Direct advice</option>
                       </select>
-                      <span id="coach-framework-badge" class="fw-active-badge">Standard Mode</span>
+                      <span id="coach-framework-badge" class="fw-active-badge">Direct advice</span>
                     </div>
 
                     <div class="coach-input-bar">
                       <button type="button" id="btn-coach-voice-input" class="neu-btn btn-icon-round" title="Ask question with voice dictation" aria-label="Dictate voice question">
                         <i data-lucide="mic" style="width:16px;height:16px;color:var(--accent-cyan);"></i>
                       </button>
-                      <input type="text" id="coach-query-input" class="neu-textarea coach-text-input" placeholder="Ask your career coach a question (e.g. 'How should I explain my Docker experience?')...">
+                      <input type="text" id="coach-query-input" class="neu-textarea coach-text-input" maxlength="2000" aria-label="Question for the career coach" placeholder="For example: How should I explain my Docker experience?">
                       <button type="button" id="btn-send-coach-msg" class="neu-btn neu-btn-primary" style="padding:10px 18px;font-size:0.85rem;">
                         <i data-lucide="send" style="width:15px;height:15px;"></i>
                         <span>Ask</span>

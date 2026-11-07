@@ -29,7 +29,7 @@ class SpatialAudioEngine {
     }
     if (label) label.textContent = this.enabled ? 'On' : 'Off';
     if (this.enabled) this.click();
-    showToast(this.enabled ? 'Spatial Audio Synthesizer: Active' : 'Spatial Audio: Muted');
+    showToast(this.enabled ? 'Interface sounds on.' : 'Interface sounds off.');
     return this.enabled;
   }
   playTone(freq, type = 'sine', duration = 0.08, gainVal = 0.04) {
@@ -2939,7 +2939,10 @@ function renderSafeMarkdown(rawText, isDemo) {
       provenanceTag.textContent = 'Illustrative Demo Output — Not Generated from Live Resume';
     } else {
       provenanceTag.className = 'provenance-tag provenance-live';
-      provenanceTag.textContent = 'Live analysis — compared with the alumni reference corpus';
+      const writer = activeEngine
+        ? (activeEngine.isLocal ? 'feedback from the local engine, no language model' : `feedback written by ${activeEngine.name}`)
+        : '';
+      provenanceTag.textContent = `Live analysis, compared with the alumni reference corpus${writer ? `; ${writer}` : ''}`;
     }
   }
 
@@ -2948,16 +2951,20 @@ function renderSafeMarkdown(rawText, isDemo) {
   // Strip internal structured report JSON comment so it does not appear in human-readable markdown
   const cleanMarkdown = (rawText || '').replace(/<!-- STRUCTURED_REPORT_START -->[\s\S]*?<!-- STRUCTURED_REPORT_END -->/g, '').trim();
 
+  markdownArea.innerHTML = markdownToSafeHtml(cleanMarkdown);
+  updateCoachContextNote();
+}
+
+// If marked or DOMPurify is missing, the text is shown escaped: a weaker filter is never used.
+function markdownToSafeHtml(text) {
   if (typeof marked !== 'undefined') {
     try {
-      const parsed = marked.parse(cleanMarkdown);
-      markdownArea.innerHTML = sanitizeHtmlSafe(parsed);
-    } catch (e) {
-      markdownArea.textContent = cleanMarkdown;
+      return sanitizeHtmlSafe(marked.parse(text));
+    } catch (err) {
+      console.warn('Markdown could not be parsed; showing plain text.');
     }
-  } else {
-    markdownArea.textContent = cleanMarkdown;
   }
+  return escapeHtml(text);
 }
 
 // Client-side DOM Sanitizer against scripts, iframes, inline event handlers, and data/javascript URIs
@@ -3016,6 +3023,7 @@ function clearScoreRing() {
 function updateScoreRingFromNumber(score) {
   score = Math.max(0, Math.min(100, Math.round(score)));
   appState.analyzer.extractedScore = score;
+  updateCoachContextNote();
   const scoreElem = document.getElementById('mini-score-val');
   const ring = document.getElementById('mini-progress-ring');
 
@@ -3721,6 +3729,7 @@ function loadFrameworkRegistry() {
       appState.promptStudio.frameworks = entries.map(buildStudioFramework);
       appState.promptStudio.registrySource = 'api';
       if (note) note.textContent = `${entries.length} frameworks · registry v${data.version || '?'}`;
+      populateCoachFrameworkOptions();
     })
     .catch(err => {
       console.warn('Framework registry unavailable, using the bundled guide list:', err);
@@ -3731,6 +3740,18 @@ function loadFrameworkRegistry() {
       appState.promptStudio.registrySource = 'bundled';
       if (note) note.textContent = 'The framework registry could not be loaded; showing the bundled list.';
     });
+}
+
+// The coach's framework list is the registry's, in the registry's order.
+function populateCoachFrameworkOptions() {
+  const select = document.getElementById('coach-framework-select');
+  if (!select) return;
+  const current = select.value;
+  [...select.options].forEach(option => { if (option.value) option.remove(); });
+  appState.promptStudio.frameworks.forEach(fw => {
+    select.add(new Option(`${fw.id}: ${fw.expansion}`, fw.id));
+  });
+  select.value = [...select.options].some(option => option.value === current) ? current : '';
 }
 
 function getStudioFramework(id) {
@@ -5186,16 +5207,20 @@ function toggleSpokenBriefing() {
   }
 
   // Build spoken briefing text from current report
-  const score = appState.analyzer.extractedScore || 84;
+  const score = appState.analyzer.extractedScore;
+  if (typeof score !== 'number') {
+    showToast('No report yet. Run an analysis first.');
+    return;
+  }
   const review = appState.executiveReview.review;
   const personaTitle = review?.persona_title || 'Senior Engineering Reviewer';
-  const reaction = review?.reaction_summary || 'Your resume demonstrates concrete technical capability with areas for improvement.';
+  const reaction = review?.reaction_summary ? `Top impression: ${review.reaction_summary}.` : '';
 
   const spokenBriefingText = `
     Executive diagnostic briefing from your ${personaTitle}.
     Your resume-to-job evidence alignment score is ${score} out of 100.
     Please note: this is an evidence alignment score, not a guarantee of employment.
-    Top impression: ${reaction}.
+    ${reaction}
     For concrete improvements, open the In-Document Tailoring tab to review actionable replacements.
   `;
 
@@ -5281,15 +5306,16 @@ function initCareerCoachController() {
       if (e.key === 'Enter') submitCoachQuery();
     });
   }
+  updateCoachContextNote();
 
   if (fwSelect) {
     fwSelect.addEventListener('change', () => {
       const val = fwSelect.value;
       if (fwBadge) {
-        fwBadge.textContent = val ? `${val} Active` : 'Standard Mode';
-        fwBadge.style.color = val ? 'var(--accent-cyan)' : 'var(--text-muted)';
+        fwBadge.textContent = val ? `Using ${val}` : 'Direct advice';
+        fwBadge.classList.toggle('is-active', Boolean(val));
       }
-      showToast(val ? `Framework Lens set to: ${val}` : 'Framework Lens: Standard Advice');
+      showToast(val ? `The coach will answer through ${val}.` : 'The coach will give direct advice.');
     });
   }
 
@@ -5322,16 +5348,22 @@ async function submitCoachQuery(overrideText) {
   appendCoachThinking(thinkingId);
 
   try {
+    // Only what the current report really contains: no default score, role or skills.
+    const report = appState.reportData;
     const payload = {
-      analysis_id: appState.reportData?.analysis_id || ('coach_' + Date.now()),
+      analysis_id: report?.analysis_id || ('coach_' + Date.now()),
       user_message: question,
       selected_persona_id: appState.executiveReview.selectedPersonaId || 'auto',
-      current_score: appState.analyzer.extractedScore || 84,
-      target_role: 'Software Engineer',
       relevant_markup_ids: [],
+      matched_skills: (report?.matched_skills || []).map(skill => skill.canonical),
+      missing_skills: report?.missing_required_skills || [],
       prompt_framework_id: chosenFramework,
       framework_id: chosenFramework
     };
+    const score = appState.analyzer.extractedScore;
+    if (typeof score === 'number') payload.current_score = score;
+    const targetRole = report?.persona_review?.target_role;
+    if (targetRole) payload.target_role = targetRole;
 
     const response = await fetch(apiUrl('/api/coach/chat'), {
       method: 'POST',
@@ -5343,16 +5375,35 @@ async function submitCoachQuery(overrideText) {
 
     if (response.ok) {
       const data = await response.json();
-      appendCoachMessage('assistant', data.answer, data.referenced_evidence_ids, data.spoken_briefing);
+      appendCoachMessage('assistant', data.answer, data.evidence_refs, data.spoken_briefing);
     } else {
       throw new Error(`HTTP ${response.status}`);
     }
 
   } catch (err) {
+    console.warn('The coach service did not answer:', err.message);
     removeCoachThinking(thinkingId);
-    // Grounded offline/demo fallback with framework structure
-    const fallbackAnswer = generateGroundedCoachReply(question, chosenFramework);
-    appendCoachMessage('assistant', fallbackAnswer);
+    appendCoachMessage('assistant', coachFallbackReply(chosenFramework));
+  }
+}
+
+// Tells the person what each answer can draw on.
+function updateCoachContextNote() {
+  const note = document.getElementById('coach-context-note');
+  if (!note) return;
+  const report = appState.reportData;
+  const score = appState.analyzer.extractedScore;
+  const engine = activeEngine && activeEngine.isLocal
+    ? ' With no language model configured, answers come from templates.'
+    : '';
+  if (!report || typeof score !== 'number') {
+    note.textContent = `No report yet, so answers are general guidance. Run an analysis to base them on your resume.${engine}`;
+  } else if (appState.analyzer.reportIsDemo) {
+    note.textContent = `Each question is sent with the illustrative demo report, not a real resume.${engine}`;
+  } else {
+    const matched = (report.matched_skills || []).length;
+    const missing = (report.missing_required_skills || []).length;
+    note.textContent = `Each question is sent with your latest report: ${score} of 100, ${matched} matched and ${missing} missing required skills.${engine}`;
   }
 }
 
@@ -5378,9 +5429,17 @@ function appendCoachMessage(sender, text, evidenceIds = [], spokenText = '') {
   const contentDiv = document.createElement('div');
   contentDiv.className = 'msg-content';
 
-  const p = document.createElement('p');
-  p.textContent = text;
-  contentDiv.appendChild(p);
+  if (sender === 'assistant') {
+    // The coach answers in Markdown; it goes through the same sanitizer as the report.
+    const body = document.createElement('div');
+    body.className = 'coach-msg-body';
+    body.innerHTML = markdownToSafeHtml(text);
+    contentDiv.appendChild(body);
+  } else {
+    const p = document.createElement('p');
+    p.textContent = text;
+    contentDiv.appendChild(p);
+  }
 
   // If coach message, add TTS audio button
   if (sender === 'assistant') {
@@ -5420,7 +5479,7 @@ function appendCoachThinking(id) {
   div.className = 'coach-msg coach-msg-assistant';
   div.innerHTML = `
     <div class="msg-avatar"><i data-lucide="bot" style="width:14px;height:14px;"></i></div>
-    <div class="msg-content"><p class="coach-thinking-dots">Consulting placement patterns<span>.</span><span>.</span><span>.</span></p></div>
+    <div class="msg-content"><p class="coach-thinking-dots">Preparing an answer<span>.</span><span>.</span><span>.</span></p></div>
   `;
   transcript.appendChild(div);
   transcript.scrollTop = transcript.scrollHeight;
@@ -5432,63 +5491,16 @@ function removeCoachThinking(id) {
   if (el) el.remove();
 }
 
-function generateGroundedCoachReply(question, framework = '') {
-  const q = question.toLowerCase();
-  const score = appState.analyzer.extractedScore || 84;
-  const fw = (framework || '').toUpperCase().trim();
-
-  if (fw === 'RACE') {
-    return `As per the RACE (Role, Action, Context, Expectation) framework:
-• Role: Executive Career Coach & Placement Evaluator.
-• Action: Quantify your project metrics and define interface boundary ownership.
-• Context: Technical campus placements evaluate distributed systems scale and concurrency handling.
-• Expectation: Replace subjective phrasing with measurable latency improvements (e.g. from 240ms to 125ms).`;
+// Shown only when the coach service fails. It says so, knows nothing about the resume, and
+// contains no example figures that could be mistaken for the person's own results.
+function coachFallbackReply(frameworkId) {
+  const intro = 'The coach service did not respond, so this is general guidance, not an answer based on your resume.';
+  const framework = frameworkId ? getStudioFramework(frameworkId) : null;
+  if (framework) {
+    const parts = framework.fields.map(field => `- **${field.label}**`).join('\n');
+    return `${intro}\n\nTo answer through ${framework.id} (${framework.expansion}), cover each part with facts from your own work:\n\n${parts}`;
   }
-  if (fw === 'STAR') {
-    return `As per the STAR (Situation, Task, Action, Result) framework:
-• Situation: Target job descriptions expect demonstrable scale and performance tuning under production load.
-• Task: Take architectural ownership of query caching and asynchronous batch processing.
-• Action: Integrated FastAPI and Redis connection pooling with 92% automated unit test coverage.
-• Result: Measured a 35% reduction in p95 latency while supporting 10,000 concurrent users.`;
-  }
-  if (fw === 'PAR') {
-    return `As per the PAR (Problem, Action, Result) framework:
-• Problem: Unoptimized database scans caused response degradation under peak placement traffic.
-• Action: Restructured relational indexing and introduced Redis distributed caching.
-• Result: Decreased p95 response time from 280ms to 65ms at 15k QPS.`;
-  }
-  if (fw === 'CLEAR') {
-    return `As per the CLEAR (Context, Logic, Expectations, Action, Restriction) framework:
-• Context: Technical Placement Preparation for Core SDE / AI Engineering roles.
-• Logic: High-impact metrics establish authentic technical credibility over generic skill lists.
-• Expectations: Provide measurable throughput and scale benchmarks.
-• Action: Update your primary project descriptions to cite concrete testing depth.
-• Restriction: Avoid unverified buzzwords; use verified metrics only.`;
-  }
-  if (fw === 'SMART') {
-    return `As per the SMART (Specific, Measurable, Achievable, Relevant, Time-bound) framework:
-• Specific: Target required skills in distributed caching, concurrency, and cloud deployment.
-• Measurable: Aim for an alignment score above 85/100 by eliminating all passive phrasing.
-• Achievable: Leverage your existing Python and algorithms coursework to build verified projects.
-• Relevant: Directly maps to Super Dream placement expectations (₹20+ LPA).
-• Time-bound: Complete bullet point revisions and draft recalculation within 48 hours.`;
-  }
-  if (fw) {
-    return `As per the ${fw} framework:
-• Guidance: Focus on measurable engineering throughput, test coverage, and clear component ownership.
-• Structure: Format your project narratives using concrete technical benchmarks.`;
-  }
-
-  if (q.includes('quantif') || q.includes('metric')) {
-    return `To quantify project impact effectively: state the baseline metric, the technical mechanism used, and the measured result. For example: "Reduced p95 search latency from 240ms to 125ms across 100k records by implementing FAISS IndexFlatL2." Avoid guessing unverified numbers.`;
-  }
-  if (q.includes('gap') || q.includes('skeptic')) {
-    return `The senior review lens scrutinized vague responsibility claims (such as "assisted with pipelines") and buzzwords without implementation proof. Replace general statements with your specific code contributions.`;
-  }
-  if (q.includes('skill') || q.includes('missing')) {
-    return `Review the Missing Required Skills section in your Diagnostic Report. If you have coursework or personal projects using those technologies, add a bullet detailing your implementation; never list isolated keywords without project evidence.`;
-  }
-  return `Based on your alignment score of ${score}/100, your systems and algorithmic projects are solid. Focus on eliminating passive phrasing in your secondary bullets and specifying exact cloud/framework versions.`;
+  return `${intro}\n\nA strong resume bullet names the starting point, what you did, and the measured result. Use only numbers you can defend in an interview.`;
 }
 
 
@@ -5779,6 +5791,7 @@ function setDesignheadMode(mode, triggerToast = true) {
 // 15. LLM SERVICE RUNTIME MANAGEMENT & TELEMETRY HUB
 // ==============================================================================
 let cachedLLMProviders = [];
+let activeEngine = null; // { name, isLocal } from GET /api/llm/providers
 
 function initLLMControlHub() {
   const openBtn = document.getElementById('btn-llm-control-hub');
@@ -5807,6 +5820,8 @@ async function refreshLLMProvidersList() {
     // model; say so instead of showing a model name. Detect it by its stable
     // model id rather than by a display string.
     const isLocalEngine = data.active_model === 'deterministic-fallback';
+    activeEngine = { name: data.active_provider, isLocal: isLocalEngine };
+    updateCoachContextNote();
     const navLabel = document.getElementById('nav-active-llm-label');
     const activeName = document.getElementById('llm-active-name');
     const activeModel = document.getElementById('llm-active-model-tag');
@@ -6232,6 +6247,7 @@ document.addEventListener('DOMContentLoaded', () => {
   initVoiceAssistantController();
   initSpeechSynthesisController();
   initCareerCoachController();
+  initSpatialAudioController();
 
 });
 

@@ -23,6 +23,7 @@ BASE_URL = os.environ.get("UI_BROWSER_BASE_URL", "")
 PROBES = [
     ("analyzer_inputs.js", "", "1440,375"),
     ("analyzer_states.js", "", "1440,375"),
+    ("coach_and_sound.js", "", "1440,375"),
 ]
 
 pytestmark = pytest.mark.skipif(

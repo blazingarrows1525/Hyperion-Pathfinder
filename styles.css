@@ -5552,6 +5552,21 @@ main section[id] {
   color: var(--text-primary);
 }
 
+.coach-msg-body {
+  font-size: 0.88rem;
+  line-height: 1.55;
+  overflow-wrap: anywhere;
+}
+
+.coach-msg-body > * + * {
+  margin-top: 8px;
+}
+
+.coach-msg-body ul,
+.coach-msg-body ol {
+  padding-left: 18px;
+}
+
 .msg-content p {
   margin: 0;
 }
@@ -5899,6 +5914,10 @@ main section[id] {
   max-width: 280px;
 }
 
+
+.fw-active-badge.is-active {
+  color: var(--color-forest-ink);
+}
 
 .fw-active-badge {
   font-size: 0.72rem;
