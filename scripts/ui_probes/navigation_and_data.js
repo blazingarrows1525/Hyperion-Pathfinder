@@ -446,5 +446,24 @@ check('Open preferences opens them', visible(prefs));
 ESC();
 showcase.open = false;
 
+// --- A sample that cannot run says why ------------------------------------------
+applyMotionSetting('calm', { persist: false });
+triggerConfetti();
+check('in Calm the celebration sample says it is off', /Calm motion is on/.test($('toast-message').textContent), $('toast-message').textContent);
+applyMotionSetting('full', { persist: false });
+
+// --- Engine status when the server does not answer -----------------------------
+const fetchBefore = window.fetch;
+window.fetch = (url, opts) => (String(url).includes('/api/llm/providers') ? Promise.reject(new TypeError('Failed to fetch')) : fetchBefore(url, opts));
+await refreshLLMProvidersList();
+check('an unreachable engine status is reported, not left loading', $('llm-active-name').textContent === 'Status unavailable' && $('nav-active-llm-label').textContent === 'Status unavailable', `${$('llm-active-name').textContent} / ${$('nav-active-llm-label').textContent}`);
+window.fetch = (url, opts) => (String(url).includes('/api/llm/providers') ? Promise.resolve(new Response('no', { status: 503 })) : fetchBefore(url, opts));
+$('llm-active-name').textContent = 'Checking…';
+await refreshLLMProvidersList();
+check('so is an error response', $('llm-active-name').textContent === 'Status unavailable');
+window.fetch = fetchBefore;
+await refreshLLMProvidersList();
+check('a later answer replaces it', $('llm-active-name').textContent !== 'Status unavailable', $('llm-active-name').textContent);
+
 window.scrollTo(0, 0);
 return { checks };

@@ -4045,7 +4045,10 @@ function showToast(msg) {
 }
 
 function triggerConfetti() {
-  if (appState.motionMode === 'reduced') return;
+  if (appState.motionMode === 'reduced') {
+    showToast('Calm motion is on, so the celebration effect is off.');
+    return;
+  }
   if (typeof confetti === 'function') {
     confetti({
       particleCount: 75,
@@ -6048,10 +6051,22 @@ function initLLMControlHub() {
 
 // Read-only view of GET /api/llm/providers. Switching engines is a server
 // configuration task; the browser never sends or stores provider credentials.
+function showEngineStatusUnavailable() {
+  const navLabel = document.getElementById('nav-active-llm-label');
+  const activeName = document.getElementById('llm-active-name');
+  const activeNote = document.getElementById('llm-active-note');
+  if (navLabel) navLabel.textContent = 'Status unavailable';
+  if (activeName) activeName.textContent = 'Status unavailable';
+  if (activeNote) activeNote.textContent = 'The server did not report which engine is active. Analysis may still work.';
+}
+
 async function refreshLLMProvidersList() {
   try {
     const res = await fetch(apiUrl('/api/llm/providers'));
-    if (!res.ok) return;
+    if (!res.ok) {
+      showEngineStatusUnavailable();
+      return;
+    }
     const data = await res.json();
     cachedLLMProviders = data.providers || [];
 
@@ -6094,6 +6109,7 @@ async function refreshLLMProvidersList() {
     }
   } catch (err) {
     console.warn('Unable to query /api/llm/providers:', err);
+    showEngineStatusUnavailable();
   }
 }
 
