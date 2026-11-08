@@ -78,7 +78,7 @@ covers it. Families, in page order:
 ## 4. Defects found and fixed
 
 Severity: P0 breaks a core workflow or misleads the user about a result; P1 a feature or accessibility failure;
-P2 a smaller defect; P3 polish. Every fix has a check that fails on the previous code, except where noted.
+P2 a smaller defect; P3 polish. Every fix has a regression check; most of them were also run against the previous code and failed there.
 
 | # | Sev | Defect | Root cause | Fix (commit) | Regression check |
 |---|---|---|---|---|---|
