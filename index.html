@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Resume Checker — Placement Intelligence</title>
+  <title>Hyperion Pathfinder — Career Intelligence</title>
   <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='8' fill='%231E6655'/%3E%3Ccircle cx='16' cy='16' r='9' fill='none' stroke='%23FFFCF6' stroke-width='2.2'/%3E%3Cpath d='M19.6 12.4l-2.3 5-5 2.3 2.3-5z' fill='%23FFFCF6'/%3E%3C/svg%3E">
   <meta name="description" content="Compare your resume with a target job description, see where the evidence falls short, and explore an indexed corpus of alumni resumes and the 2026 placement snapshot.">
   
@@ -21,7 +21,7 @@
   <!-- Type: DM Serif Display (headings), DM Sans (body), JetBrains Mono (data) -->
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,400;0,9..40,500;0,9..40,600;0,9..40,700;1,9..40,400&family=DM+Serif+Display:ital@0;1&family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600&family=Space+Grotesk:wght@500;600;700&display=swap">
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,400;0,9..40,500;0,9..40,600;0,9..40,700;1,9..40,400&family=DM+Serif+Display:ital@0;1&family=JetBrains+Mono:wght@400;500;600&display=swap">
 
   <link rel="stylesheet" href="styles.css">
   
@@ -48,7 +48,8 @@
 <body data-motion="full">
 
   <!-- Accessible Skip Link -->
-  <a href="#analyzer" class="skip-link">Skip to Resume Analyzer</a>
+  <a href="#main-content" class="skip-link">Skip to main content</a>
+  <a href="#analyzer" class="skip-link">Skip to the resume analyzer</a>
 
   <!-- Main Application Wrapper -->
   <div class="app-wrapper">
@@ -56,13 +57,13 @@
     <!-- Masthead: wordmark, primary sections, truthful status, one preferences entry, one CTA -->
     <header class="masthead" role="banner">
       <div class="masthead-inner">
-        <a href="#hero" class="wordmark" aria-label="Resume Checker, back to top">
+        <a href="#hero" class="wordmark" aria-label="Hyperion Pathfinder, back to top">
           <span class="wordmark-mark" aria-hidden="true">
             <i data-lucide="compass" style="width:19px;height:19px;"></i>
           </span>
           <span class="wordmark-text">
             <span class="brand-name">Hyperion Pathfinder</span>
-            <span class="brand-tag">Prismatic Career Intelligence</span>
+            <span class="brand-tag">Career intelligence</span>
           </span>
         </a>
 
@@ -117,7 +118,7 @@
               </div>
               <div class="prefs-row">
                 <span class="prefs-label">Sound</span>
-                <button type="button" id="btn-sound-toggle" class="pref-toggle" title="Interface sounds are off until you turn them on" aria-label="Toggle interface sound" aria-pressed="false">
+                <button type="button" id="btn-sound-toggle" class="pref-toggle" title="Interface sounds are off until you turn them on" aria-label="Interface sounds" aria-pressed="false">
                   <i data-lucide="volume-x" style="width:15px;height:15px;"></i>
                   <span id="sound-toggle-label">Off</span>
                 </button>
@@ -148,27 +149,21 @@
       </div>
     </header>
 
-    <main id="main-content" role="main">
+    <main id="main-content" role="main" tabindex="-1">
 
       <!-- =======================================================================
            SECTION 1: HERO & PRODUCT STATEMENT
            ======================================================================= -->
       <section id="hero" class="atlas-hero" aria-labelledby="hero-title-id">
-        <div class="container">
+        <div class="container atlas-hero-grid">
           <div class="atlas-hero-copy">
-            <div class="chapter-tag"><span class="chapter-badge">CH. 01 / FIVE BENCHMARK ARCHETYPES</span><span>226 Indexed Alumni Vectors</span></div>
+            <p class="hero-kicker">Career intelligence for placement preparation</p>
             <h1 id="hero-title-id" class="hero-title">
               Check your resume against the role you want, and see <span class="gradient-text">where the evidence falls short.</span>
             </h1>
-            <div class="atlas-hero-lede">
-              <p class="hero-subtitle">
-                Upload a resume PDF and paste a job description. Resume Checker compares the two, explains the score component by component and marks the lines worth rewriting. For reference it draws on an indexed corpus of alumni resumes grouped into five career archetypes.
-              </p>
-              <p class="hero-disclaimer">
-                <i data-lucide="info" style="width:16px;height:16px;"></i>
-                <span>The score measures textual alignment with the job description. It is not a hiring probability.</span>
-              </p>
-            </div>
+            <p class="hero-subtitle">
+              Upload a resume PDF and paste a job description. Hyperion Pathfinder compares the two, explains the score component by component and marks the lines worth rewriting, with an alumni corpus of five career archetypes for reference.
+            </p>
             <div class="hero-cta-group">
               <a href="#analyzer" class="btn-primary btn-lg">
                 <i data-lucide="file-search" style="width:18px;height:18px;"></i>
@@ -179,10 +174,34 @@
                 <span>Explore placement data</span>
               </a>
             </div>
+            <p class="hero-disclaimer">
+              <i data-lucide="info" style="width:15px;height:15px;" aria-hidden="true"></i>
+              <span>The score measures textual alignment with the job description. It is not a hiring probability.</span>
+            </p>
           </div>
 
-          <!-- Career Atlas: one wide 3D stage with a DOM legend of the five real archetypes -->
+          <!-- Career Atlas: controls, the instrument, then an index of the five real archetypes -->
           <figure class="atlas-stage" id="hero-3d-stage" aria-labelledby="atlas-stage-caption">
+            <!-- View modes and camera controls -->
+            <div class="atlas-toolbar" role="toolbar" aria-label="Career Atlas view">
+              <div class="atlas-modes" role="group" aria-label="View mode">
+                <button type="button" class="btn-3d-mode active" data-mode="atlas" aria-pressed="true">Atlas</button>
+                <button type="button" class="btn-3d-mode" data-mode="orbit" aria-pressed="false">Orbit</button>
+                <button type="button" class="btn-3d-mode" data-mode="evidence" aria-pressed="false">Evidence map</button>
+              </div>
+              <div class="spatial-zoom-controls" role="group" aria-label="Camera">
+                <button type="button" id="btn-3d-zoom-in" class="btn-3d-icon-sm" title="Zoom in" aria-label="Zoom in">
+                  <i data-lucide="zoom-in" style="width:15px;height:15px;"></i>
+                </button>
+                <button type="button" id="btn-3d-zoom-out" class="btn-3d-icon-sm" title="Zoom out" aria-label="Zoom out">
+                  <i data-lucide="zoom-out" style="width:15px;height:15px;"></i>
+                </button>
+                <button type="button" id="btn-3d-reset-cam-stage" class="btn-3d-icon-sm" title="Reset camera" aria-label="Reset camera">
+                  <i data-lucide="rotate-ccw" style="width:15px;height:15px;"></i>
+                </button>
+              </div>
+            </div>
+
             <div class="spatial-canvas-wrapper" id="spatial-canvas-wrapper">
               <canvas id="spatial-hero-canvas" class="spatial-hero-canvas" role="img" aria-label="Career Atlas: the five archetype clusters of the alumni corpus, sized by record count. Use the legend to select a cluster."></canvas>
               <div id="atlas-fallback" class="atlas-fallback" hidden></div>
@@ -198,79 +217,60 @@
                 </div>
               </div>
 
-              <!-- View modes and camera controls -->
-              <div class="atlas-toolbar" role="toolbar" aria-label="Career Atlas view">
-                <div class="atlas-modes" role="group" aria-label="View mode">
-                  <button type="button" class="btn-3d-mode active" data-mode="atlas" aria-pressed="true">Atlas</button>
-                  <button type="button" class="btn-3d-mode" data-mode="orbit" aria-pressed="false">Orbit</button>
-                  <button type="button" class="btn-3d-mode" data-mode="evidence" aria-pressed="false">Evidence map</button>
-                </div>
-                <div class="spatial-zoom-controls" role="group" aria-label="Camera">
-                  <button type="button" id="btn-3d-zoom-in" class="btn-3d-icon-sm" title="Zoom in" aria-label="Zoom in">
-                    <i data-lucide="zoom-in" style="width:15px;height:15px;"></i>
-                  </button>
-                  <button type="button" id="btn-3d-zoom-out" class="btn-3d-icon-sm" title="Zoom out" aria-label="Zoom out">
-                    <i data-lucide="zoom-out" style="width:15px;height:15px;"></i>
-                  </button>
-                  <button type="button" id="btn-3d-reset-cam-stage" class="btn-3d-icon-sm" title="Reset camera" aria-label="Reset camera">
-                    <i data-lucide="rotate-ccw" style="width:15px;height:15px;"></i>
-                  </button>
-                </div>
-              </div>
-
               <p class="spatial-drag-hint" id="spatial-drag-hint" hidden>
                 <i data-lucide="move" style="width:13px;height:13px;"></i> Drag inside the map to rotate · tap a cluster to select it
               </p>
 
-              <div id="atlas-evidence-card" class="atlas-evidence-card" aria-live="polite" hidden></div>
-
-              <p class="atlas-caption" id="canvas-engine-badge">
-                <span id="canvas-engine-text">Illustrative layout · cluster sizes from the alumni corpus</span>
-              </p>
             </div>
 
+            <p id="atlas-status" class="sr-only" role="status" aria-live="polite"></p>
+            <div id="atlas-evidence-card" class="atlas-evidence-card" aria-live="polite" hidden></div>
+
             <figcaption class="atlas-legend" id="atlas-stage-caption">
-              <p class="atlas-legend-title">Career Atlas <span>Five archetypes in the alumni corpus</span></p>
+              <div class="atlas-legend-head">
+                <p class="atlas-legend-title">Career Atlas <span>Five archetypes in the alumni corpus</span></p>
+                <a class="atlas-legend-link" href="#genome">Open the selected archetype in Career Genome</a>
+              </div>
               <ul class="atlas-legend-list" id="atlas-legend-list">
                 <li>
-                  <a class="atlas-legend-item" href="#genome" data-archetype-id="0">
+                  <button type="button" class="atlas-legend-item" data-archetype-id="0" aria-pressed="false">
                     <span class="legend-swatch" data-arch="0" aria-hidden="true"></span>
                     <span class="legend-name">Core Engineering &amp; Business</span>
                     <span class="legend-count" data-count-for="0">—</span>
-                  </a>
+                  </button>
                 </li>
                 <li>
-                  <a class="atlas-legend-item" href="#genome" data-archetype-id="1">
+                  <button type="button" class="atlas-legend-item" data-archetype-id="1" aria-pressed="false">
                     <span class="legend-swatch" data-arch="1" aria-hidden="true"></span>
                     <span class="legend-name">Data Science &amp; AI/ML</span>
                     <span class="legend-count" data-count-for="1">—</span>
-                  </a>
+                  </button>
                 </li>
                 <li>
-                  <a class="atlas-legend-item" href="#genome" data-archetype-id="2">
+                  <button type="button" class="atlas-legend-item" data-archetype-id="2" aria-pressed="false">
                     <span class="legend-swatch" data-arch="2" aria-hidden="true"></span>
                     <span class="legend-name">General CS &amp; Software Development</span>
                     <span class="legend-count" data-count-for="2">—</span>
-                  </a>
+                  </button>
                 </li>
                 <li>
-                  <a class="atlas-legend-item" href="#genome" data-archetype-id="3">
+                  <button type="button" class="atlas-legend-item" data-archetype-id="3" aria-pressed="false">
                     <span class="legend-swatch" data-arch="3" aria-hidden="true"></span>
                     <span class="legend-name">Full-Stack Web Development</span>
                     <span class="legend-count" data-count-for="3">—</span>
-                  </a>
+                  </button>
                 </li>
                 <li>
-                  <a class="atlas-legend-item" href="#genome" data-archetype-id="4">
+                  <button type="button" class="atlas-legend-item" data-archetype-id="4" aria-pressed="false">
                     <span class="legend-swatch" data-arch="4" aria-hidden="true"></span>
                     <span class="legend-name">Core Engineering (Mechanical/Civil)</span>
                     <span class="legend-count" data-count-for="4">—</span>
-                  </a>
+                  </button>
                 </li>
               </ul>
-              <p class="atlas-provenance">
-                Alumni corpus: <strong data-evidence="source_count">226</strong> indexed records · five K-Means archetypes ·
-                <a href="#faq">Methodology</a>
+              <p class="atlas-caption" id="canvas-engine-badge">
+                <span id="canvas-engine-text">Illustrative layout. Sizes follow corpus share; dots are not individual records; spokes show membership, not similarity.</span>
+                <span class="atlas-provenance"><strong data-evidence="source_count">—</strong> indexed records, five K-Means clusters. <a href="#faq">Methodology</a></span>
               </p>
             </figcaption>
           </figure>
@@ -325,7 +325,7 @@
           <header class="section-head">
             <p class="section-kicker"><span class="section-index">01</span> Method</p>
             <h2 id="how-it-works-heading" class="section-title">How a resume is read</h2>
-            <p class="section-lede">Four steps, from the PDF you upload to the changes worth making. Nothing is stored after the request finishes.</p>
+            <p class="section-lede">Four steps, from the PDF you upload to the changes worth making. The app reads the file in memory and does not save it.</p>
           </header>
 
           <ol class="process-rail">
@@ -450,6 +450,7 @@
                   <tbody id="snapshot-table-body"></tbody>
                 </table>
               </div>
+              <p id="snapshot-empty" class="snapshot-empty" role="status" hidden>No company in this list matches. It shows the top recruiters by offers, so a company missing here may still have made offers.</p>
             </article>
           </div>
 
@@ -475,7 +476,7 @@
               <p class="section-kicker"><span class="section-index">03</span> Analyzer</p>
               <h2 id="analyzer-heading" class="section-title">Resume analyzer</h2>
             </div>
-            <p class="section-lede">Upload a PDF, add the job description and run. The report streams in beside the form, and each score component points back to evidence in your resume.</p>
+            <p class="section-lede">Upload a PDF, add the job description and run. The report appears beside the form, and each score component points back to evidence in your resume.</p>
           </header>
 
           <div class="analyzer-grid">
@@ -495,20 +496,20 @@
               <ol class="input-steps">
                 <li class="input-step">
                   <div class="form-label-row">
-                    <label for="resume-file-input"><span class="step-no" aria-hidden="true">1</span>Resume PDF <span class="req" aria-hidden="true">*</span></label>
-                    <span class="form-hint">PDF only · up to 10 MB</span>
+                    <label for="resume-file-input"><span class="step-no" aria-hidden="true">1</span>Resume PDF <span class="req">required</span></label>
+                    <span class="form-hint" id="resume-file-hint">PDF only, up to 10 MB and 15 pages</span>
                   </div>
                   <p class="privacy-note">
                     <i data-lucide="shield-check" style="width:15px;height:15px;"></i>
-                    <span>Read in memory for this request only. The file is not stored.</span>
+                    <span>The app reads your PDF in memory and does not save the file. When an AI provider is configured, the extracted text is sent to it to write the feedback.</span>
                   </p>
-                  <div id="resume-dropzone" class="dropzone-container neu-dropzone" tabindex="0" role="button" aria-label="Upload resume PDF document">
-                    <input type="file" id="resume-file-input" class="dropzone-input-hidden" accept=".pdf" aria-label="Resume file input">
+                  <div id="resume-dropzone" class="dropzone-container">
+                    <input type="file" id="resume-file-input" class="dropzone-input-hidden" accept=".pdf,application/pdf" aria-describedby="resume-file-hint file-error-msg" title="Choose a resume PDF">
                     <div class="dropzone-icon">
                       <i data-lucide="upload-cloud" style="width:26px;height:26px;"></i>
                     </div>
-                    <div class="dropzone-title">Click to browse or drag & drop</div>
-                    <div class="dropzone-meta">PDF format up to 10 MB limit • In-memory privacy</div>
+                    <div class="dropzone-title">Choose a resume PDF</div>
+                    <div class="dropzone-meta">or drop it here</div>
 
                     <div id="selected-file-pill" class="selected-file-pill" style="display:none;">
                       <i data-lucide="file-check" style="width:16px;height:16px;"></i>
@@ -523,7 +524,7 @@
 
                 <li class="input-step">
                   <div class="form-label-row">
-                    <label for="jd-textarea"><span class="step-no" aria-hidden="true">2</span>Job description <span class="req" aria-hidden="true">*</span></label>
+                    <label for="jd-textarea"><span class="step-no" aria-hidden="true">2</span>Job description <span class="req">required</span></label>
                     <button type="button" id="btn-quick-dictate-jd" class="btn-text-action btn-dictate" title="Dictate the job description with your microphone">
                       <i data-lucide="mic" style="width:14px;height:14px;"></i>
                       <span>Dictate</span>
@@ -536,10 +537,10 @@
                     <button type="button" class="btn-preset-chip neu-btn" data-preset="amazon">Amazon Cloud</button>
                     <button type="button" class="btn-preset-chip neu-btn" data-preset="goldman">Goldman Analyst</button>
                   </div>
-                  <textarea id="jd-textarea" class="jd-textarea neu-textarea" aria-required="true" aria-describedby="jd-char-count jd-error-msg" placeholder="Paste the target job description, requirements, or qualifications here..."></textarea>
+                  <textarea id="jd-textarea" class="jd-textarea neu-textarea" required aria-describedby="jd-char-count jd-error-msg" placeholder="Paste the target job description, requirements, or qualifications here..."></textarea>
 
                   <div class="char-counter-row">
-                    <span id="jd-char-count">0 characters</span>
+                    <span id="jd-char-count">0 of 20,000 characters</span>
                     <button type="button" id="btn-clear-jd" class="btn-text-action">Clear JD</button>
                   </div>
                   <div id="jd-error-msg" class="field-error-msg" role="alert"></div>
@@ -555,9 +556,9 @@
                       <input type="radio" name="executive_persona" value="auto" checked class="sr-only">
                       <div class="persona-chip-head">
                         <i data-lucide="sparkles" style="width:15px;height:15px;color:var(--accent-cyan);"></i>
-                        <strong>Auto (Inferred)</strong>
+                        <strong>Auto</strong>
                       </div>
-                      <p class="persona-chip-desc">Infers lens from role &amp; JD requirements.</p>
+                      <p class="persona-chip-desc">Chooses a lens from keywords in the job description.</p>
                     </label>
 
                     <label class="persona-chip neu-card" data-persona="director_ai_research">
@@ -573,7 +574,7 @@
                       <input type="radio" name="executive_persona" value="principal_sde" class="sr-only">
                       <div class="persona-chip-head">
                         <i data-lucide="terminal" style="width:15px;height:15px;color:var(--color-lagoon);"></i>
-                        <strong>Principal SDE / VP Eng</strong>
+                        <strong>Principal SDE / VP of Engineering</strong>
                       </div>
                       <p class="persona-chip-desc">Audits API contracts, concurrency, error semantics, and scale.</p>
                     </label>
@@ -582,7 +583,7 @@
                       <input type="radio" name="executive_persona" value="cloud_infrastructure_director" class="sr-only">
                       <div class="persona-chip-head">
                         <i data-lucide="server" style="width:15px;height:15px;color:var(--color-forest);"></i>
-                        <strong>Cloud Infrastructure Dir.</strong>
+                        <strong>Cloud Infrastructure Director</strong>
                       </div>
                       <p class="persona-chip-desc">Audits cloud targets, CI/CD, Kubernetes, and reliability.</p>
                     </label>
@@ -607,7 +608,8 @@
             <div class="analyzer-results-card workspace-panel">
 
               <!-- Tabbed Results Navigation -->
-              <div class="results-tab-bar" role="tablist" aria-label="Diagnostic Workspace Tabs">
+              <div class="results-tab-bar">
+                <div class="results-tabs" role="tablist" aria-label="Report views">
                 <button type="button" class="results-tab-btn active" id="tab-btn-report" role="tab" aria-selected="true" aria-controls="pane-diagnostic-report">
                   <i data-lucide="file-text" style="width:14px;height:14px;"></i>
                   <span>Report</span>
@@ -625,6 +627,7 @@
                   <i data-lucide="messages-square" style="width:14px;height:14px;"></i>
                   <span>Career Coach</span>
                 </button>
+                </div>
 
                 <div class="results-actions-row">
                   <button type="button" class="btn-icon-circle" onclick="copyAnalysisToClipboard()" title="Copy Markdown Report to Clipboard" aria-label="Copy report">
@@ -641,8 +644,8 @@
                 <div class="empty-icon-ring" aria-hidden="true">
                   <i data-lucide="file-text" style="width:30px;height:30px;"></i>
                 </div>
-                <h4 class="empty-title">Your report will appear here</h4>
-                <p class="empty-desc">
+                <h4 class="empty-title" id="results-empty-title">Your report will appear here</h4>
+                <p class="empty-desc" id="results-empty-desc">
                   Add a resume PDF and a job description, then run the analysis. The report covers the score components, matched and missing evidence, reference resumes from the corpus and suggested rewrites.
                 </p>
                 <button type="button" class="btn-secondary" onclick="enableDemoAndRun()">
@@ -652,106 +655,143 @@
 
               <!-- Streaming Results Area -->
               <div id="streaming-results-area" class="streaming-results-area">
-                
+
+                <!-- Shown during a run. The stages are the ones the page can really observe: the
+                     server sends its whole report at the end, so there is no percentage to show. -->
+                <div id="analysis-progress-panel" class="analysis-progress" hidden>
+                  <div class="analysis-progress-head">
+                    <span class="analysis-progress-mark" aria-hidden="true"></span>
+                    <div class="analysis-progress-copy">
+                      <h4 id="analysis-progress-title" class="analysis-progress-title">Sending your resume</h4>
+                      <p id="analysis-progress-detail" class="analysis-progress-detail"></p>
+                    </div>
+                    <span id="analysis-progress-elapsed" class="analysis-progress-elapsed" aria-hidden="true"></span>
+                  </div>
+                  <ol id="analysis-stage-list" class="analysis-stage-list">
+                    <li data-stage="sending">Send the PDF and job description</li>
+                    <li data-stage="analyzing">The server reads the PDF, scores it and writes the report</li>
+                    <li data-stage="report">Show the report here</li>
+                  </ol>
+                  <div id="analysis-stream-preview" class="analysis-stream-preview" hidden></div>
+                </div>
+
+                <div id="analysis-report-body" class="analysis-report-body">
+
                 <!-- Score & Provenance Banner -->
-                <div class="score-banner-box">
+                <div class="score-banner-box" id="score-banner-box" hidden>
                   <div class="score-banner-left">
-                    <div class="mini-score-ring">
-                      <svg width="86" height="86" viewBox="0 0 86 86" style="transform:rotate(-90deg);">
+                    <div class="mini-score-ring" role="img" aria-labelledby="mini-score-val mini-score-of">
+                      <svg width="86" height="86" viewBox="0 0 86 86" style="transform:rotate(-90deg);" aria-hidden="true" focusable="false">
                         <circle cx="43" cy="43" r="38" fill="none" stroke="var(--color-surface-inset)" stroke-width="8" />
-                        <circle id="mini-progress-ring" cx="43" cy="43" r="38" fill="none" stroke="var(--accent-emerald)" stroke-width="8" stroke-linecap="round" style="transition: stroke-dashoffset 1.2s ease;" />
+                        <circle id="mini-progress-ring" cx="43" cy="43" r="38" fill="none" stroke="var(--color-forest)" stroke-width="8" stroke-linecap="round" style="transition: stroke-dashoffset 0.7s ease;" />
                       </svg>
-                      <div id="mini-score-val" class="mini-score-val">--</div>
+                      <div class="mini-score-readout">
+                        <span id="mini-score-val" class="mini-score-val">—</span>
+                        <span id="mini-score-of" class="mini-score-of">of 100</span>
+                      </div>
                     </div>
                     <div class="score-banner-meta">
                       <h4>Alignment score</h4>
                       <p>How closely the resume's evidence matches this job description. Not a hiring probability.</p>
-                      <span id="provenance-tag" class="provenance-tag provenance-live">Live Session</span>
+                      <span id="provenance-tag" class="provenance-tag">No report yet</span>
                     </div>
                   </div>
 
                   <div style="display:flex;align-items:center;gap:8px;">
                     <button type="button" id="btn-quick-play-tts" class="neu-btn" style="padding:7px 12px;font-size:0.78rem;gap:6px;" title="Listen to spoken diagnostic briefing">
                       <i data-lucide="volume-2" style="width:15px;height:15px;color:var(--accent-cyan);"></i>
-                      <span id="tts-quick-btn-label">Spoken Briefing</span>
+                      <span id="tts-quick-btn-label">Spoken briefing</span>
                     </button>
                   </div>
                 </div>
 
                 <!-- TAB PANE 1: MARKDOWN DIAGNOSTIC REPORT -->
-                <div id="pane-diagnostic-report" class="results-tab-pane active" role="tabpanel" aria-labelledby="tab-btn-report">
-                  <!-- Prismatic Deterministic Rubric Breakdown -->
+                <div id="pane-diagnostic-report" class="results-tab-pane active" role="tabpanel" aria-labelledby="tab-btn-report" tabindex="0">
+                  <!-- Deterministic rubric breakdown -->
                   <div id="diagnostic-rubric-canvas" class="diagnostic-rubric-canvas">
                     <div class="rubric-summary-card">
                       <div class="rubric-summary-header">
                         <div>
-                          <span class="rubric-kicker">100-Point Deterministic Rubric</span>
-                          <h4 class="rubric-title">Evidence-to-Job Alignment Breakdown</h4>
+                          <span class="rubric-kicker">100-point fixed rubric</span>
+                          <h4 class="rubric-title">How the score breaks down</h4>
                         </div>
                         <div class="rubric-provenance-pill" id="rubric-provenance-pill">
                           <i data-lucide="shield-check" style="width:14px;height:14px;"></i>
-                          <span>Deterministic Scoring Invariant</span>
+                          <span>Computed by rules, not by a language model</span>
                         </div>
                       </div>
                       <div class="rubric-meters-grid" id="rubric-meters-grid">
                         <div class="rubric-meter">
                           <div class="meter-head">
                             <span class="meter-label">Required Skills Coverage</span>
-                            <span class="meter-val" id="meter-val-skills">30<small>/35</small></span>
+                            <span class="meter-val" id="meter-val-skills">—<small>/35</small></span>
                           </div>
-                          <div class="meter-bar"><div class="meter-fill" id="meter-fill-skills" style="width:85%;"></div></div>
+                          <div class="meter-bar"><div class="meter-fill" id="meter-fill-skills" style="width:0%;"></div></div>
+                          <p class="meter-detail" id="meter-detail-skills"></p>
                         </div>
                         <div class="rubric-meter">
                           <div class="meter-head">
                             <span class="meter-label">Practical Project Evidence</span>
-                            <span class="meter-val" id="meter-val-projects">22<small>/25</small></span>
+                            <span class="meter-val" id="meter-val-projects">—<small>/25</small></span>
                           </div>
-                          <div class="meter-bar"><div class="meter-fill" id="meter-fill-projects" style="width:88%;"></div></div>
+                          <div class="meter-bar"><div class="meter-fill" id="meter-fill-projects" style="width:0%;"></div></div>
+                          <p class="meter-detail" id="meter-detail-projects"></p>
                         </div>
                         <div class="rubric-meter">
                           <div class="meter-head">
                             <span class="meter-label">Role Domain Responsibilities</span>
-                            <span class="meter-val" id="meter-val-domain">17<small>/20</small></span>
+                            <span class="meter-val" id="meter-val-domain">—<small>/20</small></span>
                           </div>
-                          <div class="meter-bar"><div class="meter-fill" id="meter-fill-domain" style="width:85%;"></div></div>
+                          <div class="meter-bar"><div class="meter-fill" id="meter-fill-domain" style="width:0%;"></div></div>
+                          <p class="meter-detail" id="meter-detail-domain"></p>
                         </div>
                         <div class="rubric-meter">
                           <div class="meter-head">
                             <span class="meter-label">Quantified Achievement Metrics</span>
-                            <span class="meter-val" id="meter-val-metrics">9<small>/10</small></span>
+                            <span class="meter-val" id="meter-val-metrics">—<small>/10</small></span>
                           </div>
-                          <div class="meter-bar"><div class="meter-fill" id="meter-fill-metrics" style="width:90%;"></div></div>
+                          <div class="meter-bar"><div class="meter-fill" id="meter-fill-metrics" style="width:0%;"></div></div>
+                          <p class="meter-detail" id="meter-detail-metrics"></p>
                         </div>
                         <div class="rubric-meter">
                           <div class="meter-head">
                             <span class="meter-label">Completeness &amp; Readability</span>
-                            <span class="meter-val" id="meter-val-structure">8<small>/10</small></span>
+                            <span class="meter-val" id="meter-val-structure">—<small>/10</small></span>
                           </div>
-                          <div class="meter-bar"><div class="meter-fill" id="meter-fill-structure" style="width:80%;"></div></div>
+                          <div class="meter-bar"><div class="meter-fill" id="meter-fill-structure" style="width:0%;"></div></div>
+                          <p class="meter-detail" id="meter-detail-structure"></p>
                         </div>
                       </div>
                     </div>
                   </div>
+                  <!-- What the server found for each skill. Absence from the document is stated as just that. -->
+                  <section id="skill-evidence-panel" class="skill-evidence" aria-labelledby="skill-evidence-title" hidden>
+                    <h4 id="skill-evidence-title" class="rubric-title">Skill evidence</h4>
+                    <p id="skill-evidence-context" class="skill-evidence-context"></p>
+                    <dl id="skill-evidence-groups" class="skill-evidence-groups"></dl>
+                    <p class="skill-evidence-note">A skill not found in this document may still be one you have. Add it only where you can show the work behind it.</p>
+                  </section>
                   <div id="markdown-stream-output" class="markdown-body"></div>
                 </div>
 
                 <!-- TAB PANE 2: SENIOR EXECUTIVE REVIEW LENS -->
-                <div id="pane-executive-review" class="results-tab-pane" role="tabpanel" aria-labelledby="tab-btn-persona" style="display:none;">
+                <div id="pane-executive-review" class="results-tab-pane" role="tabpanel" aria-labelledby="tab-btn-persona" tabindex="0" style="display:none;">
                   <div class="exec-review-container">
                     <div class="exec-disclaimer-banner">
                       <i data-lucide="info" style="width:16px;height:16px;flex-shrink:0;"></i>
-                      <span><strong>Simulated Executive Review Lens:</strong> This review simulates the skeptical scrutiny of a senior hiring leader based strictly on submitted resume evidence. It does not reflect official employer decisions or a hiring probability.</span>
+                      <span><strong>A simulated review.</strong> It imagines how a senior reviewer might read this resume, from its text alone. No employer or real person reviewed it, and it does not change the score.</span>
                     </div>
 
                     <div class="exec-header-card neu-card">
                       <div class="exec-title-row">
                         <div>
-                          <span class="exec-persona-label" id="exec-persona-title">Senior Engineering Reviewer</span>
-                          <h4 class="exec-role-subtitle" id="exec-target-role-label">Target Role: Software Engineer</h4>
+                          <span class="exec-persona-label" id="exec-persona-title"></span>
+                          <h4 class="exec-role-subtitle" id="exec-target-role-label"></h4>
                         </div>
-                        <div id="exec-verdict-badge" class="verdict-badge verdict-promising">Evaluating...</div>
+                        <div id="exec-verdict-badge" class="verdict-badge verdict-promising"></div>
                       </div>
-                      <p class="exec-reaction-text" id="exec-reaction-summary">Executive impression will populate after analysis completes.</p>
+                      <p class="exec-reaction-text" id="exec-reaction-summary"></p>
+                      <p class="exec-lens-note" id="exec-lens-note" hidden></p>
                     </div>
 
                     <!-- 4 Diagnostic Dimensions -->
@@ -760,7 +800,7 @@
                       <div class="exec-section-card neu-card">
                         <div class="exec-sec-header">
                           <i data-lucide="check-circle-2" style="color:var(--mark-green-border);width:16px;height:16px;"></i>
-                          <h5>What Catches Attention (Verified Proof)</h5>
+                          <h5>What stands out, from your resume</h5>
                         </div>
                         <div id="exec-attention-list" class="exec-obs-list">
                           <p class="empty-hint">Evidence items will appear here.</p>
@@ -771,7 +811,7 @@
                       <div class="exec-section-card neu-card">
                         <div class="exec-sec-header">
                           <i data-lucide="alert-triangle" style="color:var(--mark-yellow-border);width:16px;height:16px;"></i>
-                          <h5>Senior Skepticism &amp; Evidence Gaps</h5>
+                          <h5>What a reviewer would question</h5>
                         </div>
                         <div id="exec-skepticism-list" class="exec-obs-list">
                           <p class="empty-hint">Skepticism points will appear here.</p>
@@ -782,7 +822,7 @@
                       <div class="exec-section-card neu-card">
                         <div class="exec-sec-header">
                           <i data-lucide="help-circle" style="color:var(--accent-blue-light);width:16px;height:16px;"></i>
-                          <h5>Expected Technical Interview Questions</h5>
+                          <h5>Questions a reviewer might ask</h5>
                         </div>
                         <ul id="exec-questions-list" class="exec-questions-ul">
                           <li class="empty-hint">Expected questions will appear here.</li>
@@ -793,7 +833,7 @@
                       <div class="exec-section-card neu-card">
                         <div class="exec-sec-header">
                           <i data-lucide="list-ordered" style="color:var(--accent-cyan);width:16px;height:16px;"></i>
-                          <h5>Strategic Next Actions (Highest Impact)</h5>
+                          <h5>Suggested next steps</h5>
                         </div>
                         <div id="exec-priorities-list" class="exec-priorities-list">
                           <p class="empty-hint">Priorities will appear here.</p>
@@ -812,9 +852,9 @@
                       <div class="toolbar-left">
                         <span id="draft-revision-badge" class="revision-pill">Draft: rev_0 (Original)</span>
                         <div class="markup-legend-strip">
-                          <span class="legend-chip legend-green"><span class="legend-dot green"></span> Metric Proof</span>
-                          <span class="legend-chip legend-yellow"><span class="legend-dot yellow"></span> Passive Phrasing</span>
-                          <span class="legend-chip legend-red"><span class="legend-dot red"></span> Critical Gap</span>
+                          <span class="legend-chip legend-green"><span class="legend-dot green" aria-hidden="true"></span> Metric proof</span>
+                          <span class="legend-chip legend-yellow"><span class="legend-dot yellow" aria-hidden="true"></span> Passive phrasing</span>
+                          <span class="legend-chip legend-red"><span class="legend-dot red" aria-hidden="true"></span> Critical gap</span>
                         </div>
                       </div>
 
@@ -825,7 +865,7 @@
                         <button type="button" id="btn-draft-redo" class="neu-btn btn-sm" disabled title="Redo last replacement">
                           <i data-lucide="redo" style="width:13px;height:13px;"></i> Redo
                         </button>
-                        <button type="button" id="btn-toggle-diff" class="neu-btn btn-sm" title="Toggle before/after revision diff">
+                        <button type="button" id="btn-toggle-diff" class="neu-btn btn-sm" title="Toggle before/after revision diff" aria-expanded="false" aria-controls="draft-diff-drawer">
                           <i data-lucide="git-commit" style="width:13px;height:13px;"></i> Diff
                         </button>
                         <button type="button" id="btn-recalculate-draft" class="neu-btn neu-btn-primary btn-sm" title="Stateless diagnostic recalculation on in-memory draft">
@@ -840,12 +880,17 @@
                     <!-- Side-by-Side Diff Drawer (Collapsible) -->
                     <div id="draft-diff-drawer" class="diff-drawer neu-card" style="display:none;">
                       <div class="diff-header-row">
-                        <div style="font-size:0.8rem;font-weight:700;color:var(--text-primary);">
-                          <i data-lucide="git-compare" style="width:14px;height:14px;margin-right:6px;"></i>
-                          Revision Diff (Original vs Current In-Memory Draft)
+                        <div class="diff-title">
+                          <i data-lucide="git-compare" style="width:14px;height:14px;" aria-hidden="true"></i>
+                          Revision diff: original text and current draft
                         </div>
-                        <button type="button" id="btn-close-diff" class="btn-text-action">Close Diff</button>
+                        <div class="diff-header-actions">
+                          <button type="button" id="btn-diff-undo" class="btn-text-action" disabled>Undo last change</button>
+                          <button type="button" id="btn-close-diff" class="btn-text-action">Close diff</button>
+                        </div>
                       </div>
+                      <p id="diff-summary" class="diff-summary"></p>
+                      <ol id="diff-change-list" class="diff-change-list" hidden></ol>
                       <div class="diff-columns-grid">
                         <div class="diff-col">
                           <h6>Original Extracted Text</h6>
@@ -866,44 +911,45 @@
                     </div>
 
                     <!-- Floating Interactive Popover Card -->
-                    <div id="markup-detail-popover" class="markup-popover-card neu-card spatial-floating" style="display:none;" role="dialog" aria-modal="false" aria-labelledby="popover-category-tag">
+                    <div id="markup-detail-popover" class="markup-popover-card neu-card" style="display:none;" role="dialog" aria-modal="false" aria-labelledby="popover-category-tag" aria-describedby="popover-critique-text">
                       <div class="popover-header">
                         <div style="display:flex;align-items:center;gap:6px;">
-                          <span id="popover-color-dot" class="legend-dot green"></span>
+                          <span id="popover-color-dot" class="legend-dot green" aria-hidden="true"></span>
                           <span id="popover-category-tag" class="popover-category-badge">Metric Highlight</span>
                           <span id="popover-severity-tag" class="popover-severity-badge">Review</span>
                         </div>
-                        <button type="button" id="btn-close-popover" class="btn-icon-circle" aria-label="Close popover">
+                        <button type="button" id="btn-close-popover" class="btn-icon-circle" aria-label="Close this suggestion">
                           <i data-lucide="x" style="width:12px;height:12px;"></i>
                         </button>
                       </div>
 
                       <div class="popover-body">
                         <div class="popover-quoted-box">
-                          <span class="sub-label">Original Text:</span>
+                          <span class="sub-label">Original text</span>
                           <p id="popover-quoted-text">"..."</p>
                         </div>
                         
                         <div class="popover-critique-box">
-                          <span class="sub-label">Diagnosis:</span>
+                          <span class="sub-label">Why it is marked</span>
                           <p id="popover-critique-text">Explanation here...</p>
                         </div>
 
-                        <div class="popover-rewrite-box">
-                          <div style="display:flex;justify-content:space-between;align-items:center;">
-                            <span class="sub-label">Suggested Truthful Rewrite:</span>
-                            <span class="sub-hint">Placeholders preserve facts</span>
+                        <div class="popover-rewrite-box" id="popover-rewrite-box">
+                          <div style="display:flex;justify-content:space-between;align-items:center;gap:8px;flex-wrap:wrap;">
+                            <label class="sub-label" for="popover-rewrite-input">Suggested rewrite</label>
+                            <span class="sub-hint" id="popover-rewrite-hint">Replace anything in [brackets] with your own facts</span>
                           </div>
-                          <textarea id="popover-rewrite-input" class="popover-textarea neu-textarea"></textarea>
+                          <textarea id="popover-rewrite-input" class="popover-textarea neu-textarea" aria-describedby="popover-rewrite-hint popover-error"></textarea>
                         </div>
+                        <div id="popover-error" class="field-error-msg" role="alert"></div>
                       </div>
 
                       <div class="popover-actions">
                         <button type="button" id="popover-apply-btn" class="neu-btn neu-btn-primary btn-sm">
-                          <i data-lucide="check" style="width:13px;height:13px;"></i> Apply Replacement
+                          <i data-lucide="check" style="width:13px;height:13px;"></i> Apply replacement
                         </button>
                         <button type="button" id="popover-dismiss-btn" class="neu-btn btn-sm">
-                          Dismiss
+                          Close
                         </button>
                       </div>
                     </div>
@@ -921,7 +967,7 @@
                       </div>
                       <div>
                         <h5 id="coach-active-persona-title">Executive Career Coach</h5>
-                        <p>Ask natural-language questions grounded strictly in your resume evidence and target role requirements.</p>
+                        <p id="coach-context-note">No report yet, so answers are general guidance. Run an analysis to base them on your resume.</p>
                       </div>
                     </div>
 
@@ -946,41 +992,25 @@
                         <label for="coach-framework-select" style="font-size:0.75rem;font-weight:700;letter-spacing:0.04em;color:var(--text-secondary);">Framework Lens:</label>
                       </div>
                       <select id="coach-framework-select" class="neu-select-compact" aria-label="Select Prompt Framework Lens for Coach Responses">
-                        <option value="" selected>Direct Advice (Standard)</option>
-                        <option value="RACE">RACE — Role, Action, Context, Expectation</option>
-                        <option value="STAR">STAR — Situation, Task, Action, Result</option>
-                        <option value="PAR">PAR — Problem, Action, Result</option>
-                        <option value="CLEAR">CLEAR — Context, Logic, Expectations, Action, Restriction</option>
-                        <option value="SMART">SMART — Specific, Measurable, Achievable, Relevant, Time-bound</option>
-                        <option value="QUEST">QUEST — Question, Understanding, Expectation, Scope, Time</option>
-                        <option value="GUIDE">GUIDE — Goal, Understanding, Information, Direction, Evaluation</option>
-                        <option value="FOCUS">FOCUS — Function, Outcome, Criteria, Assumptions, Strategy</option>
-                        <option value="IDEA">IDEA — Intent, Details, Examples, Adjustments</option>
-                        <option value="RISEN">RISEN — Requirement, Information, Strategy, Evaluation, Negotiation</option>
-                        <option value="RHODES">RHODES — Research, Hypothesis, Objectives, Development, Execution, Synthesis</option>
-                        <option value="CREATE">CREATE — Conceptualize, Research, Experiment, Analyze, Transform, Evaluate</option>
-                        <option value="TAG">TAG — Task, Action, Goal</option>
-                        <option value="TRACE">TRACE — Task, Request, Action, Context, Example</option>
-                        <option value="CARE">CARE — Context, Action, Result, Example</option>
-                        <option value="APE">APE — Action, Purpose, Expectation</option>
-                        <option value="CRISPE">CRISPE — Capacity, Insight, Statement, Personality, Experiment</option>
-                        <option value="RTF">RTF — Role, Task, Finish</option>
+                        <option value="" selected>Direct advice</option>
                       </select>
-                      <span id="coach-framework-badge" class="fw-active-badge">Standard Mode</span>
+                      <span id="coach-framework-badge" class="fw-active-badge" hidden></span>
                     </div>
 
                     <div class="coach-input-bar">
                       <button type="button" id="btn-coach-voice-input" class="neu-btn btn-icon-round" title="Ask question with voice dictation" aria-label="Dictate voice question">
                         <i data-lucide="mic" style="width:16px;height:16px;color:var(--accent-cyan);"></i>
                       </button>
-                      <input type="text" id="coach-query-input" class="neu-textarea coach-text-input" placeholder="Ask your career coach a question (e.g. 'How should I explain my Docker experience?')...">
-                      <button type="button" id="btn-send-coach-msg" class="neu-btn neu-btn-primary" style="padding:10px 18px;font-size:0.85rem;">
+                      <textarea id="coach-query-input" class="neu-textarea coach-text-input" rows="1" aria-label="Question for the career coach" placeholder="For example: How should I explain my Docker experience?"></textarea>
+                      <button type="button" id="btn-send-coach-msg" class="neu-btn neu-btn-primary">
                         <i data-lucide="send" style="width:15px;height:15px;"></i>
                         <span>Ask</span>
                       </button>
                     </div>
 
                   </div>
+                </div>
+
                 </div>
 
               </div>
@@ -1079,12 +1109,12 @@
           <div class="studio-recommender">
             <p id="recommender-title" class="recommender-title">Not sure which framework to use? Pick what you are doing:</p>
             <div class="scenario-buttons-row" role="group" aria-labelledby="recommender-title">
-              <button type="button" class="btn-scenario-chip" data-scenario="research">Technical Research</button>
-              <button type="button" class="btn-scenario-chip" data-scenario="resume">Resume Bullet Point</button>
-              <button type="button" class="btn-scenario-chip" data-scenario="planning">Placement Plan</button>
-              <button type="button" class="btn-scenario-chip" data-scenario="interview">Behavioral Interview</button>
-              <button type="button" class="btn-scenario-chip" data-scenario="email">Alumni Outreach Email</button>
-              <button type="button" class="btn-scenario-chip" data-scenario="experiment">AI / ML Experiment</button>
+              <button type="button" class="btn-scenario-chip" data-scenario="research" aria-pressed="false">Technical Research</button>
+              <button type="button" class="btn-scenario-chip" data-scenario="resume" aria-pressed="false">Resume Bullet Point</button>
+              <button type="button" class="btn-scenario-chip" data-scenario="planning" aria-pressed="false">Placement Plan</button>
+              <button type="button" class="btn-scenario-chip" data-scenario="interview" aria-pressed="false">Behavioral Interview</button>
+              <button type="button" class="btn-scenario-chip" data-scenario="email" aria-pressed="false">Alumni Outreach Email</button>
+              <button type="button" class="btn-scenario-chip" data-scenario="experiment" aria-pressed="false">AI / ML Experiment</button>
             </div>
             <div id="recommendation-explanation-box" class="recommendation-explanation-box" role="status" aria-live="polite"></div>
           </div>
@@ -1138,10 +1168,10 @@
                   <i data-lucide="copy" style="width:16px;height:16px;"></i> Copy prompt
                 </button>
                 <button type="button" id="btn-prompt-to-coach" class="btn-secondary">
-                  <i data-lucide="messages-square" style="width:16px;height:16px;"></i> Use as Career Coach lens
+                  <i data-lucide="messages-square" style="width:16px;height:16px;"></i> Send to Career Coach
                 </button>
               </div>
-              <p class="preview-note">Copy puts the text on your clipboard only. "Use as Career Coach lens" switches the coach in the analyzer to this framework.</p>
+              <p class="preview-note">Copy puts the text on your clipboard only. "Send to Career Coach" sets the coach to this framework and puts your filled-in fields in its question box. Nothing is sent until you press Ask.</p>
             </div>
           </div>
         </div>
@@ -1158,7 +1188,7 @@
               <h2 id="lab-heading" class="section-title">Preferences and control samples</h2>
             </div>
             <div>
-              <p class="section-lede">Theme, motion, sound and 3D detail live in Preferences at the top of the page. The control samples below are a reference for the tactile buttons, toggles and sliders used across the product.</p>
+              <p class="section-lede">Theme, motion, sound and 3D detail live in Preferences at the top of the page. The samples below only show how the controls look and respond: they change nothing else in the product.</p>
               <button type="button" id="btn-open-prefs" class="btn-secondary showcase-prefs-btn">
                 <i data-lucide="sliders-horizontal" style="width:16px;height:16px;"></i> Open preferences
               </button>
@@ -1177,7 +1207,7 @@
               <div class="btn-lab-item">
                 <span class="btn-lab-label">Primary</span>
                 <button type="button" class="btn-magnetic-glow" onclick="showToast('Primary button pressed (sample)')">
-                  <i data-lucide="sparkles" style="width:16px;height:16px;"></i> Analyze
+                  <i data-lucide="scan-search" style="width:16px;height:16px;"></i> Analyze
                 </button>
               </div>
 
@@ -1250,46 +1280,46 @@
               <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:16px;margin-bottom:24px;border-bottom:1px solid rgba(var(--tint-rgb),0.06);padding-bottom:16px;">
                 <div>
                   <span class="neu-badge">
-                    <i data-lucide="layers" style="width:14px;height:14px;"></i>
-                    <span>Tactile surfaces</span>
+                    <i data-lucide="layers" style="width:14px;height:14px;" aria-hidden="true"></i>
+                    <span>Preview only</span>
                   </span>
-                  <h3 style="font-family:var(--font-display);font-size:1.4rem;font-weight:700;color:var(--text-primary);margin-top:8px;">
-                    Shadow depth, toggles and 3D camera controls
+                  <h3 style="font-family:var(--font-display);font-size:1.4rem;font-weight:400;color:var(--text-primary);margin-top:8px;">
+                    Surface preview
                   </h3>
+                  <p style="font-size:0.88rem;color:var(--text-secondary);margin-top:2px;">These controls change the sample card below and nothing else.</p>
                 </div>
-              
-                <div class="neu-segmented">
-                  <button type="button" class="neu-segmented-btn active" id="btn-neu-shape-raised" onclick="setNeuPreviewShape('raised')">Raised Pill</button>
-                  <button type="button" class="neu-segmented-btn" id="btn-neu-shape-inset" onclick="setNeuPreviewShape('inset')">Sunken Recessed</button>
-                  <button type="button" class="neu-segmented-btn" id="btn-neu-shape-convex" onclick="setNeuPreviewShape('convex')">Convex Surface</button>
+
+                <div class="neu-segmented" role="group" aria-label="Sample card shape">
+                  <button type="button" class="neu-segmented-btn active" id="btn-neu-shape-raised" aria-pressed="true">Raised</button>
+                  <button type="button" class="neu-segmented-btn" id="btn-neu-shape-inset" aria-pressed="false">Sunken</button>
+                  <button type="button" class="neu-segmented-btn" id="btn-neu-shape-convex" aria-pressed="false">Convex</button>
                 </div>
               </div>
 
-              <div style="display:grid;grid-template-columns:repeat(auto-fit, minmax(280px, 1fr));gap:24px;align-items:center;">
+              <div style="display:grid;grid-template-columns:repeat(auto-fit, minmax(min(280px, 100%), 1fr));gap:24px;align-items:center;">
               
                 <!-- Control 1: Real-Time Shadow Depth & 3D Perspective -->
                 <div class="neu-inset-panel">
                   <div style="display:flex;justify-content:space-between;margin-bottom:8px;">
                     <label for="neu-depth-range" style="font-size:0.85rem;font-weight:600;color:var(--text-primary);">
-                      Dynamic Shadow Depth: <span id="neu-depth-val" style="color:var(--accent-cyan);">8px</span>
+                      Shadow depth: <span id="neu-depth-val" style="color:var(--color-lagoon-ink);">8px</span>
                     </label>
-                    <span style="font-size:0.75rem;color:var(--text-muted);">Real-time CSS Shadow</span>
                   </div>
-                  <input type="range" id="neu-depth-range" class="neu-slider" min="2" max="20" value="8" aria-label="Dynamic shadow depth">
+                  <input type="range" id="neu-depth-range" class="neu-slider" min="2" max="20" value="8" aria-label="Shadow depth of the sample card">
                   <div style="display:flex;justify-content:space-between;font-size:0.7rem;color:var(--text-dim);margin-top:6px;">
-                    <span>Subtle (2px)</span>
-                    <span>Balanced (8px)</span>
-                    <span>Deep Extrusion (20px)</span>
+                    <span>2px</span>
+                    <span>8px</span>
+                    <span>20px</span>
                   </div>
                 </div>
 
                 <!-- Control 2: Tactile Soft Toggle Switch -->
                 <div class="neu-inset-panel" style="display:flex;justify-content:space-between;align-items:center;">
                   <div>
-                    <div style="font-size:0.85rem;font-weight:600;color:var(--text-primary);">Tactile Soft Switch</div>
-                    <div style="font-size:0.75rem;color:var(--text-muted);" id="neu-toggle-status-label">State: Active (Glow)</div>
+                    <div style="font-size:0.85rem;font-weight:600;color:var(--text-primary);" id="neu-tactile-toggle-name">Sample switch</div>
+                    <div style="font-size:0.75rem;color:var(--text-muted);" id="neu-toggle-status-label">On</div>
                   </div>
-                  <div class="neu-toggle-wrapper checked" id="neu-tactile-toggle" role="switch" aria-checked="true" tabindex="0">
+                  <div class="neu-toggle-wrapper checked" id="neu-tactile-toggle" role="switch" aria-checked="true" aria-labelledby="neu-tactile-toggle-name" tabindex="0">
                     <div class="neu-toggle-track">
                       <div class="neu-toggle-thumb"></div>
                     </div>
@@ -1300,13 +1330,13 @@
                 <div class="neu-inset-panel" style="display:flex;flex-direction:column;gap:8px;">
                   <div style="display:flex;justify-content:space-between;align-items:center;">
                     <span style="font-size:0.85rem;font-weight:600;color:var(--text-primary);display:flex;align-items:center;gap:6px;">
-                      <i data-lucide="sun" style="width:14px;height:14px;color:var(--accent-amber);"></i>
-                      <span>3D Light Vector Puck</span>
+                      <i data-lucide="sun" style="width:14px;height:14px;color:var(--color-ochre-ink);" aria-hidden="true"></i>
+                      <span>Light direction</span>
                     </span>
-                    <span id="neu-light-angle-label" style="font-size:0.75rem;color:var(--accent-cyan);font-weight:700;">135° (NW)</span>
+                    <span id="neu-light-angle-label" style="font-size:0.75rem;color:var(--color-lagoon-ink);font-weight:700;">225° (NW)</span>
                   </div>
-                  <div class="neu-light-puck-container" id="neu-light-well" title="Drag puck to rotate 3D shadows across all surfaces">
-                    <div class="neu-light-puck" id="neu-light-puck" tabindex="0" role="slider" aria-label="3D Lighting Direction Puck">
+                  <div class="neu-light-puck-container" id="neu-light-well" title="Drag to move the sample card's shadow">
+                    <div class="neu-light-puck" id="neu-light-puck" tabindex="0" role="slider" aria-label="Light direction for the sample card" aria-valuemin="0" aria-valuemax="359" aria-valuenow="225" aria-valuetext="225 degrees, north-west">
                       <span class="puck-center-glow"></span>
                     </div>
                     <span class="puck-axis-label axis-n">N</span>
@@ -1321,18 +1351,18 @@
 
               <!-- Tactile Interactive Preview Box -->
               <div id="neu-preview-surface" class="neu-card" style="margin-top:24px;text-align:center;padding:28px;transition:all 0.3s ease;">
-                <div style="font-size:0.8rem;text-transform:uppercase;letter-spacing:0.1em;color:var(--accent-cyan);font-weight:700;margin-bottom:8px;">
-                  Live Neumorphic Surface Preview
+                <div style="font-size:0.8rem;text-transform:uppercase;letter-spacing:0.1em;color:var(--color-lagoon-ink);font-weight:700;margin-bottom:8px;">
+                  Sample card
                 </div>
                 <p style="color:var(--text-secondary);font-size:0.92rem;max-width:540px;margin:0 auto 18px;line-height:1.6;">
-                  Notice how the soft highlights and shadows dynamically dance based on depth and light angles without harsh borders.
+                  Its shadow follows the depth and light direction you set above. The buttons here are samples too.
                 </p>
                 <div style="display:inline-flex;gap:12px;flex-wrap:wrap;justify-content:center;">
-                  <button type="button" class="neu-btn" onclick="showToast('Pressed Raised Soft Button')">
-                    <i data-lucide="fingerprint" style="width:16px;height:16px;"></i> Tactile Push
+                  <button type="button" class="neu-btn" onclick="showToast('Sample button pressed. Nothing else changes.')">
+                    <i data-lucide="fingerprint" style="width:16px;height:16px;"></i> Sample
                   </button>
-                  <button type="button" class="neu-btn neu-btn-primary" onclick="showToast('Pressed Accent Soft Button')">
-                    <i data-lucide="sparkles" style="width:16px;height:16px;"></i> Accent Pulse
+                  <button type="button" class="neu-btn neu-btn-primary" onclick="showToast('Sample button pressed. Nothing else changes.')">
+                    <i data-lucide="check" style="width:16px;height:16px;"></i> Accent sample
                   </button>
                 </div>
               </div>
@@ -1379,7 +1409,7 @@
                   <span>How is this different from an ATS keyword scanner?</span>
                   <i data-lucide="plus" style="width:18px;height:18px;" aria-hidden="true"></i>
                 </summary>
-                <div class="faq-answer-panel">Keyword scanners count term overlap. Resume Checker also embeds the resume and the job description with <code>all-MiniLM-L6-v2</code>, retrieves similar resumes from the alumni corpus for reference, and scores the match with a fixed rubric. It is still a comparison of text: it cannot see how an interviewer will judge you.</div>
+                <div class="faq-answer-panel">Keyword scanners count term overlap. Hyperion Pathfinder also embeds the resume and the job description with <code>all-MiniLM-L6-v2</code>, retrieves similar resumes from the alumni corpus for reference, and scores the match with a fixed rubric. It is still a comparison of text: it cannot see how an interviewer will judge you.</div>
               </details>
               <details class="faq-item">
                 <summary class="faq-summary">
@@ -1393,7 +1423,7 @@
                   <span>Is my resume stored or shared?</span>
                   <i data-lucide="plus" style="width:18px;height:18px;" aria-hidden="true"></i>
                 </summary>
-                <div class="faq-answer-panel">The PDF is read into memory for the request, parsed and discarded; the server does not write resume files or extracted text to disk or a database. The job description is currently sent as a URL parameter, so it can appear in server access logs. Your browser stores only display preferences (theme, motion, 3D detail).</div>
+                <div class="faq-answer-panel">The PDF is read into memory for the request and parsed. The code writes neither the file nor its extracted text to disk or a database. When an AI provider is configured, the extracted text is sent to it to write the feedback, under that provider's own terms. The job description is sent as a URL parameter, so it can appear in server access logs. Your browser stores only display preferences; drafts stay in memory until you close the page.</div>
               </details>
               <details class="faq-item">
                 <summary class="faq-summary">
@@ -1420,7 +1450,7 @@
     <footer class="app-footer" role="contentinfo">
       <div class="container footer-inner">
         <div class="footer-brand">
-          <span class="brand-name">Resume Checker</span>
+          <span class="brand-name">Hyperion Pathfinder</span>
           <p>Placement intelligence for resume evidence. Scores describe textual alignment, not hiring outcomes.</p>
         </div>
         <nav class="footer-nav-links" aria-label="Footer navigation">
@@ -1469,17 +1499,17 @@
 
   <!-- Toast Notification Container -->
   <div id="toast-notification" class="toast-notification" role="status" aria-live="polite">
-    <i data-lucide="sparkles" style="color:var(--accent-cyan);width:18px;height:18px;"></i>
-    <span id="toast-message">Notification message here</span>
+    <i data-lucide="info" style="width:17px;height:17px;flex-shrink:0;" aria-hidden="true"></i>
+    <span id="toast-message"></span>
   </div>
 
   <!-- ===========================================================================
        VOICE ASSISTANT: FLOATING ORB & ACCESSIBLE DICTATION / TTS DRAWER
        =========================================================================== -->
-  <aside id="voice-assistant-widget" class="voice-assistant-widget" aria-label="Hands-Free Voice Assistant">
+  <aside id="voice-assistant-widget" class="voice-assistant-widget" aria-label="Dictation and spoken briefing">
     
     <!-- Tactile Floating Orb Button -->
-    <button type="button" id="voice-orb-btn" class="voice-orb-btn" aria-label="Open Voice Assistant &amp; Dictation" aria-expanded="false" title="Click to open Hands-Free Voice Assistant">
+    <button type="button" id="voice-orb-btn" class="voice-orb-btn" aria-label="Open dictation and spoken briefing" aria-expanded="false" aria-controls="voice-assistant-drawer" title="Dictation and spoken briefing">
       <div class="voice-orb-pulse" id="voice-orb-pulse-ring" aria-hidden="true"></div>
       <div class="voice-orb-inner">
         <i data-lucide="mic" id="voice-orb-icon" style="width:22px;height:22px;"></i>
@@ -1488,15 +1518,15 @@
     </button>
 
     <!-- Collapsible Voice Assistant Drawer -->
-    <div id="voice-assistant-drawer" class="voice-drawer neu-card spatial-floating" style="display:none;" role="region" aria-labelledby="voice-drawer-title">
+    <div id="voice-assistant-drawer" class="voice-drawer neu-card" role="region" aria-labelledby="voice-drawer-title" hidden>
       <div class="voice-drawer-header">
         <div style="display:flex;align-items:center;gap:8px;">
           <div class="voice-status-dot idle" id="voice-status-dot"></div>
-          <h4 id="voice-drawer-title" style="font-family:var(--font-display);font-size:0.95rem;color:var(--text-primary);margin:0;">Voice Assistant</h4>
+          <h4 id="voice-drawer-title" style="font-family:var(--font-display);font-size:0.95rem;color:var(--text-primary);margin:0;">Dictation and briefing</h4>
         </div>
         <div style="display:flex;align-items:center;gap:6px;">
-          <span id="voice-status-badge" class="voice-status-pill">Idle</span>
-          <button type="button" id="voice-drawer-close-btn" class="btn-icon-circle" aria-label="Minimize voice assistant">
+          <span id="voice-status-badge" class="voice-status-pill">Ready</span>
+          <button type="button" id="voice-drawer-close-btn" class="btn-icon-circle" aria-label="Close dictation and briefing">
             <i data-lucide="chevron-down" style="width:14px;height:14px;"></i>
           </button>
         </div>
@@ -1510,48 +1540,48 @@
           <div class="pulse-bar bar-3"></div>
           <div class="pulse-bar bar-4"></div>
           <div class="pulse-bar bar-5"></div>
-          <span id="voice-live-status-desc" class="voice-live-label" aria-live="polite">Microphone ready. Click Record to speak.</span>
+          <span id="voice-live-status-desc" class="voice-live-label" aria-live="polite">Press Start listening to dictate, or type below.</span>
         </div>
 
         <!-- Destination Selector -->
         <div class="voice-setting-row">
-          <label for="voice-dest-select" style="font-size:0.75rem;color:var(--text-muted);font-weight:600;">Insert Destination:</label>
-          <select id="voice-dest-select" class="neu-select-compact" aria-label="Transcript Destination">
-            <option value="replace_jd" selected>Target Job Description (Replace)</option>
-            <option value="append_jd">Target Job Description (Append)</option>
-            <option value="coach_message">Ask Career Coach</option>
+          <label for="voice-dest-select" style="font-size:0.75rem;color:var(--text-muted);font-weight:600;">Insert into</label>
+          <select id="voice-dest-select" class="neu-select-compact" >
+            <option value="replace_jd" selected>Job description (replace)</option>
+            <option value="append_jd">Job description (add to the end)</option>
+            <option value="coach_message">Career Coach question</option>
           </select>
         </div>
 
         <!-- Locale Selector -->
         <div class="voice-setting-row">
-          <label for="voice-locale-select" style="font-size:0.75rem;color:var(--text-muted);font-weight:600;">Spoken Language / Locale:</label>
-          <select id="voice-locale-select" class="neu-select-compact" aria-label="Speech Recognition Locale">
-            <option value="en-IN" selected>English (India) — en-IN</option>
-            <option value="en-US">English (US) — en-US</option>
-            <option value="hi-IN">Hindi (India) — hi-IN</option>
+          <label for="voice-locale-select" style="font-size:0.75rem;color:var(--text-muted);font-weight:600;">Spoken language</label>
+          <select id="voice-locale-select" class="neu-select-compact" >
+            <option value="en-IN" selected>English (India)</option>
+            <option value="en-US">English (US)</option>
+            <option value="hi-IN">Hindi (India)</option>
           </select>
         </div>
 
         <!-- Live Transcript Preview Textarea -->
         <div class="voice-transcript-group">
           <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:4px;">
-            <label for="voice-transcript-preview" style="font-size:0.74rem;color:var(--text-muted);font-weight:600;">Transcript Preview (Editable):</label>
-            <span id="voice-source-indicator" class="sub-hint">Source: Browser STT</span>
+            <label for="voice-transcript-preview" style="font-size:0.74rem;color:var(--text-muted);font-weight:600;">Text to insert</label>
+            <span id="voice-source-indicator" class="sub-hint">Typed or dictated</span>
           </div>
-          <textarea id="voice-transcript-preview" class="neu-textarea voice-preview-area" placeholder="Spoken words will appear here live... You can edit before applying."></textarea>
+          <textarea id="voice-transcript-preview" class="neu-textarea voice-preview-area" placeholder="Dictated words appear here. You can also type, and edit before inserting."></textarea>
         </div>
 
         <!-- Primary Recognition Action Controls -->
         <div class="voice-actions-strip">
           <button type="button" id="voice-record-btn" class="neu-btn neu-btn-primary" style="flex:1;padding:9px 14px;font-size:0.82rem;gap:6px;">
             <i data-lucide="mic" id="voice-record-btn-icon" style="width:15px;height:15px;"></i>
-            <span id="voice-record-btn-text">Start Listening</span>
+            <span id="voice-record-btn-text">Start listening</span>
           </button>
-          <button type="button" id="voice-apply-btn" class="neu-btn" style="padding:9px 14px;font-size:0.82rem;" disabled title="Insert transcript into selected destination">
-            <i data-lucide="check" style="width:14px;height:14px;"></i> Apply
+          <button type="button" id="voice-apply-btn" class="neu-btn" style="padding:9px 14px;font-size:0.82rem;" disabled>
+            <i data-lucide="check" style="width:14px;height:14px;" aria-hidden="true"></i> Insert
           </button>
-          <button type="button" id="voice-discard-btn" class="neu-btn" style="padding:9px 12px;font-size:0.82rem;" title="Clear transcript preview">
+          <button type="button" id="voice-discard-btn" class="neu-btn" style="padding:9px 12px;font-size:0.82rem;" title="Clear the text" aria-label="Clear the text">
             <i data-lucide="trash-2" style="width:14px;height:14px;"></i>
           </button>
         </div>
@@ -1561,23 +1591,23 @@
           <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px;">
             <div style="display:flex;align-items:center;gap:6px;">
               <i data-lucide="volume-2" style="width:14px;height:14px;color:var(--accent-cyan);"></i>
-              <strong style="font-size:0.78rem;color:var(--text-primary);">Diagnostic Audio Briefing</strong>
+              <strong style="font-size:0.78rem;color:var(--text-primary);">Spoken briefing of the report</strong>
             </div>
             <div class="tts-speed-controls">
-              <button type="button" class="btn-tts-speed active" data-rate="1.0">1.0x</button>
-              <button type="button" class="btn-tts-speed" data-rate="0.85">0.85x</button>
+              <button type="button" class="btn-tts-speed active" data-rate="1.0" aria-pressed="true" aria-label="Normal speed">1.0x</button>
+              <button type="button" class="btn-tts-speed" data-rate="0.85" aria-pressed="false" aria-label="Slower speed">0.85x</button>
             </div>
           </div>
           
           <div class="tts-playback-row">
             <button type="button" id="voice-tts-play-btn" class="neu-btn btn-sm" style="flex:1;gap:6px;" title="Play spoken summary of current diagnostic report">
               <i data-lucide="play" id="tts-play-icon" style="width:13px;height:13px;"></i>
-              <span id="tts-play-label">Play Briefing</span>
+              <span id="tts-play-label">Play briefing</span>
             </button>
-            <button type="button" id="voice-tts-pause-btn" class="neu-btn btn-sm" disabled title="Pause playback">
+            <button type="button" id="voice-tts-pause-btn" class="neu-btn btn-sm" disabled title="Pause" aria-label="Pause the briefing">
               <i data-lucide="pause" style="width:13px;height:13px;"></i>
             </button>
-            <button type="button" id="voice-tts-stop-btn" class="neu-btn btn-sm" disabled title="Stop playback">
+            <button type="button" id="voice-tts-stop-btn" class="neu-btn btn-sm" disabled title="Stop" aria-label="Stop the briefing">
               <i data-lucide="square" style="width:13px;height:13px;"></i>
             </button>
           </div>
@@ -1586,7 +1616,7 @@
         <!-- Privacy & Transparency Disclosure -->
         <p class="voice-privacy-note">
           <i data-lucide="shield" style="width:11px;height:11px;vertical-align:middle;margin-right:2px;"></i>
-          <strong>Privacy:</strong> Speech recognition runs locally in your browser or through standard vendor speech services. Audio recordings and personal identifiers are never stored on our servers.
+          <strong>Privacy:</strong> Dictation uses your browser's speech recognition, which may send audio to the browser maker's service. This app receives only the text you insert.
         </p>
 
       </div>

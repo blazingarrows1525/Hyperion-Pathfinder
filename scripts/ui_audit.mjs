@@ -4,14 +4,16 @@
 //   node scripts/ui_audit.mjs --out docs/terra-atelier/after [--url http://127.0.0.1:8000/]
 //        [--widths 360,375,1440] [--sections hero,analyzer] [--no-shots] [--theme grove]
 //        [--reduced-motion] [--eval "js run in the page before measuring"] [--tag name]
+//        [--eval-file scripts/ui_probes/<probe>.js]
 //
-// --eval may return a Promise; it runs after load (and after --theme). --tag names
-// the screenshot files <section>.<tag>.jpg so several states can share one folder.
+// --eval may return a Promise; it runs after load (and after --theme). --eval-file reads
+// the same kind of body from a file (see scripts/ui_probes/). --tag names the screenshot
+// files <section>.<tag>.jpg so several states can share one folder.
 //
 // Writes <out>/<width>/<section>.jpg and <out>/audit.json (overflow, console errors,
 // failed requests, static DOM checks). Requires the backend to be running.
 import { spawn } from 'node:child_process';
-import { mkdirSync, writeFileSync, existsSync, rmSync } from 'node:fs';
+import { mkdirSync, mkdtempSync, writeFileSync, readFileSync, existsSync, rmSync } from 'node:fs';
 import { join, resolve } from 'node:path';
 import { tmpdir } from 'node:os';
 
@@ -27,7 +29,8 @@ const OUT = resolve(opt('out', 'ui-audit-out'));
 const SHOTS = !flag('no-shots');
 const THEME = opt('theme', '');
 const REDUCED = flag('reduced-motion');
-const EVAL = opt('eval', '');
+const EVAL_FILE = opt('eval-file', '');
+const EVAL = EVAL_FILE ? readFileSync(EVAL_FILE, 'utf8') : opt('eval', '');
 const TAG = opt('tag', '');
 const VIEWPORTS = {
   320: 640, 360: 780, 375: 812, 390: 844, 414: 896, 430: 932, 768: 1024, 800: 900,
@@ -45,10 +48,10 @@ const browserPath = BROWSERS.find(existsSync);
 if (!browserPath) throw new Error('No Chrome/Edge executable found');
 
 const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
-const port = 9300 + Math.floor(Math.random() * 500);
-const profile = join(tmpdir(), `ui-audit-${port}`);
+// Port 0 lets the browser pick a free port, so concurrent runs cannot collide.
+const profile = mkdtempSync(join(tmpdir(), 'ui-audit-'));
 const proc = spawn(browserPath, [
-  '--headless=new', `--remote-debugging-port=${port}`, `--user-data-dir=${profile}`,
+  '--headless=new', '--remote-debugging-port=0', `--user-data-dir=${profile}`,
   '--no-first-run', '--no-default-browser-check', '--hide-scrollbars',
   '--use-angle=swiftshader', '--enable-unsafe-swiftshader', 'about:blank',
 ], { stdio: 'ignore' });
@@ -56,6 +59,7 @@ const proc = spawn(browserPath, [
 async function connect() {
   for (let i = 0; i < 50; i++) {
     try {
+      const port = readFileSync(join(profile, 'DevToolsActivePort'), 'utf8').trim().split(/\s+/)[0];
       const list = await (await fetch(`http://127.0.0.1:${port}/json/list`)).json();
       const page = list.find((t) => t.type === 'page');
       if (page) return page.webSocketDebuggerUrl;
@@ -80,13 +84,18 @@ ws.addEventListener('message', (ev) => {
     listeners.forEach((fn) => fn(msg));
   }
 });
+ws.addEventListener('close', () => {
+  pending.forEach(({ rej }) => rej(new Error('The browser closed the DevTools connection')));
+  pending.clear();
+});
 const send = (method, params = {}) => new Promise((res, rej) => {
   const id = ++seq;
   pending.set(id, { res, rej });
   ws.send(JSON.stringify({ id, method, params }));
 });
 const evaluate = async (expression) => {
-  const r = await send('Runtime.evaluate', { expression, awaitPromise: true, returnByValue: true });
+  // includeCommandLineAPI exposes getEventListeners() to probes (scripts/ui_probes/control_census.js).
+  const r = await send('Runtime.evaluate', { expression, awaitPromise: true, returnByValue: true, includeCommandLineAPI: true });
   if (r.exceptionDetails) throw new Error(r.exceptionDetails.exception?.description || 'evaluate failed');
   return r.result.value;
 };
@@ -105,10 +114,82 @@ listeners.push((msg) => {
   }
 });
 
+// Real input for probes: synthetic el.click() cannot tell whether a pointer would hit a control
+// or whether a key reaches it. window.__real sends genuine mouse, touch and keyboard events over
+// DevTools; window.__cdp is the raw call, and DevTools events collect in window.__cdpEvents.
+const REAL_INPUT_BRIDGE = `(() => {
+  if (window.__real) return;
+  let seq = 0;
+  const waiting = new Map();
+  window.__cdpEvents = [];
+  window.__cdp = (method, params = {}) => new Promise((res, rej) => {
+    const id = ++seq;
+    waiting.set(id, { res, rej });
+    window.__cdpSend(JSON.stringify({ id, method, params }));
+  });
+  window.__cdpDone = (id, result, error) => {
+    const w = waiting.get(id);
+    waiting.delete(id);
+    if (error) w.rej(new Error(error)); else w.res(result);
+  };
+  const KEYS = {
+    Tab: 9, Enter: 13, Escape: 27, Space: 32, End: 35, Home: 36,
+    ArrowLeft: 37, ArrowUp: 38, ArrowRight: 39, ArrowDown: 40,
+  };
+  const mouse = (type, x, y, extra = {}) => window.__cdp('Input.dispatchMouseEvent', { type, x, y, button: 'left', buttons: type === 'mousePressed' ? 1 : 0, clickCount: 1, ...extra });
+  window.__real = {
+    key: async (name, modifiers = 0) => {
+      const code = name === 'Space' ? 'Space' : name;
+      const key = name === 'Space' ? ' ' : name;
+      const text = name === 'Enter' ? String.fromCharCode(13) : name === 'Space' ? ' ' : undefined;
+      const common = { key, code, windowsVirtualKeyCode: KEYS[name], nativeVirtualKeyCode: KEYS[name], modifiers };
+      await window.__cdp('Input.dispatchKeyEvent', { type: text ? 'keyDown' : 'rawKeyDown', text, ...common });
+      await window.__cdp('Input.dispatchKeyEvent', { type: 'keyUp', ...common });
+    },
+    tab: (backwards = false) => window.__real.key('Tab', backwards ? 8 : 0),
+    type: async (text) => { for (const ch of text) await window.__cdp('Input.dispatchKeyEvent', { type: 'char', text: ch }); },
+    click: async (x, y) => {
+      await window.__cdp('Input.dispatchMouseEvent', { type: 'mouseMoved', x, y });
+      await mouse('mousePressed', x, y);
+      await mouse('mouseReleased', x, y);
+    },
+    drag: async (x1, y1, x2, y2, steps = 6) => {
+      await window.__cdp('Input.dispatchMouseEvent', { type: 'mouseMoved', x: x1, y: y1 });
+      await mouse('mousePressed', x1, y1);
+      for (let i = 1; i <= steps; i++) {
+        await window.__cdp('Input.dispatchMouseEvent', { type: 'mouseMoved', x: x1 + ((x2 - x1) * i) / steps, y: y1 + ((y2 - y1) * i) / steps, button: 'left', buttons: 1 });
+      }
+      await mouse('mouseReleased', x2, y2);
+    },
+    tap: async (x, y) => {
+      await window.__cdp('Input.dispatchTouchEvent', { type: 'touchStart', touchPoints: [{ x, y }] });
+      await window.__cdp('Input.dispatchTouchEvent', { type: 'touchEnd', touchPoints: [] });
+    },
+    centerOf: (el) => { const r = el.getBoundingClientRect(); return [r.left + r.width / 2, r.top + r.height / 2]; },
+    clickEl: async (el) => { el.scrollIntoView({ block: 'center', behavior: 'auto' }); await new Promise((r) => setTimeout(r, 60)); const [x, y] = window.__real.centerOf(el); await window.__real.click(x, y); },
+    tapEl: async (el) => { el.scrollIntoView({ block: 'center', behavior: 'auto' }); await new Promise((r) => setTimeout(r, 60)); const [x, y] = window.__real.centerOf(el); await window.__real.tap(x, y); },
+  };
+})()`;
+
 await send('Page.enable');
 await send('Runtime.enable');
 await send('Network.enable');
 await send('Network.setCacheDisabled', { cacheDisabled: true });
+await send('Runtime.addBinding', { name: '__cdpSend' });
+const toPage = (expression) => send('Runtime.evaluate', { expression }).catch(() => {});
+listeners.push(async (msg) => {
+  if (msg.method === 'Runtime.bindingCalled' && msg.params.name === '__cdpSend') {
+    const { id, method, params } = JSON.parse(msg.params.payload);
+    try {
+      const result = await send(method, params);
+      await toPage(`window.__cdpDone(${id}, ${JSON.stringify(result)})`);
+    } catch (err) {
+      await toPage(`window.__cdpDone(${id}, null, ${JSON.stringify(err.message)})`);
+    }
+  } else if (msg.method === 'Page.fileChooserOpened') {
+    await toPage(`window.__cdpEvents && window.__cdpEvents.push(${JSON.stringify({ method: msg.method, params: msg.params })})`);
+  }
+});
 if (REDUCED) {
   await send('Emulation.setEmulatedMedia', { features: [{ name: 'prefers-reduced-motion', value: 'reduce' }] });
 }
@@ -129,6 +210,7 @@ async function load(width, height) {
   await sleep(2500);
   let evalResult = null;
   if (EVAL) {
+    await evaluate(REAL_INPUT_BRIDGE);
     evalResult = await evaluate(`(async () => { ${EVAL}\n })()`);
     await sleep(800);
   }

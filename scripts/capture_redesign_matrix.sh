@@ -1,14 +1,19 @@
 #!/usr/bin/env bash
-# Regenerates the Terra Atelier "after" screenshot matrix (brief §19.2).
-# Needs the backend on http://127.0.0.1:8000 and Chrome or Edge installed.
-#   bash scripts/capture_redesign_matrix.sh [out_dir]
+# Regenerates the UI screenshot matrix (viewports and states of the UI brief, section 15.1).
+# Needs a keys-off server and Chrome or Edge:
+#   GEMINI_API_KEY= GOOGLE_API_KEY= OPENAI_API_KEY= GROQ_API_KEY= GITHUB_TOKEN= #     .venv/Scripts/python.exe -m uvicorn main:app --port 8010
+#   bash scripts/capture_redesign_matrix.sh [out_dir] [url]
 set -euo pipefail
-OUT="${1:-docs/terra-atelier/after}"
-AUDIT="node scripts/ui_audit.mjs --out $OUT"
+OUT="${1:-docs/ui-refresh/after}"
+URL="${2:-http://127.0.0.1:8010/}"
+AUDIT="node scripts/ui_audit.mjs --url $URL --out $OUT"
+SECTIONS=hero,evidence,how-it-works,placement-snapshot,analyzer,genome,company-intel,prompt-studio,faq
 
-# Layout matrix at the seven review viewports, default Terra theme
-$AUDIT --widths 1440,1280,1024,800,768,390,375 \
-  --sections hero,placement-snapshot,analyzer,genome,company-intel,prompt-studio
+# Layout: every section at desktop, tablet and phone; the hero at the other widths of the matrix
+$AUDIT --widths 1440,768,375 --sections $SECTIONS
+$AUDIT --widths 1920,1280,1024,980,800,430,414,390,360,320 --sections hero
+# Midnight Grove
+$AUDIT --widths 1440,375 --sections $SECTIONS --theme grove --tag grove
 
 DEMO_DONE="enableDemoAndRun(); await new Promise(r => setTimeout(r, 7000));"
 PDF="const lines = ['Sample Candidate - Software Engineer', 'Skills: Python, FastAPI, SQL, Docker, AWS'];
@@ -29,7 +34,10 @@ state() { # tag, sections, eval, [extra flags]
 }
 
 state selected-node hero-3d-stage "selectArchetype(2);"
+state prefs-open hero "document.getElementById('btn-prefs').click();"
+state engine-dialog hero "document.getElementById('btn-llm-control-hub').click();"
 state file-selected analyzer "$PDF"
+state invalid-file analyzer "const dt = new DataTransfer(); dt.items.add(new File(['not a pdf'], 'notes.txt', { type: 'text/plain' })); const input = document.getElementById('resume-file-input'); input.files = dt.files; input.dispatchEvent(new Event('change', { bubbles: true }));"
 state streaming analyzer "enableDemoAndRun(); await new Promise(r => setTimeout(r, 1200));"
 state report analyzer "$DEMO_DONE"
 state executive-review pane-executive-review "$DEMO_DONE document.getElementById('tab-btn-persona').click();"
@@ -37,9 +45,20 @@ state markup-popover pane-interactive-tailoring "$DEMO_DONE document.getElementB
 state diff-drawer pane-interactive-tailoring "$DEMO_DONE document.getElementById('tab-btn-tailoring').click(); document.querySelectorAll('.doc-markup-span')[1].click(); document.getElementById('popover-apply-btn').click(); document.getElementById('btn-toggle-diff').click();"
 state career-coach pane-career-coach "$DEMO_DONE document.getElementById('tab-btn-coach').click();"
 state genome-selected genome "selectArchetype(1);"
+state genome-compare genome "selectArchetype(1); openArchetypeComparisonModal(1);"
 state company-modal company-intel "setCompanyFilter('in-snapshot'); openCompanyModal('google');"
 state prompt-rhodes prompt-studio "window.confirm = () => true; selectFramework('RHODES'); fillFrameworkExample();"
+state prompt-race prompt-studio "window.confirm = () => true; selectFramework('RACE'); fillFrameworkExample();"
 state webgl-fallback hero-3d-stage "cleanup3DScene(); showAtlasFallback('Interactive 3D is unavailable in this browser; the career map remains available in 2D.');"
-state engine-dialog hero "document.getElementById('btn-llm-control-hub').click();"
-state grove hero,placement-snapshot,analyzer "" "--theme grove"
-state reduced-motion hero "" "--reduced-motion"
+state report-grove analyzer "$DEMO_DONE" "--theme grove"
+state reduced-motion hero,analyzer "" "--reduced-motion"
+
+# States that exist only after the refresh (no before pair): the voice panel, a failed
+# request, an applied edit in the diff drawer, a coach answer and the evidence map mode.
+if [ "${AFTER_ONLY:-1}" = "1" ]; then
+  state voice-panel hero "document.getElementById('voice-orb-btn').click();"
+  state api-failure persona-select-container "$PDF const realFetch = window.fetch; window.fetch = (url, opts) => String(url).includes('/analyze') ? Promise.resolve(new Response('upstream failure', { status: 502 })) : realFetch(url, opts); document.getElementById('btn-analyze-submit').click(); await new Promise(r => setTimeout(r, 900));"
+  state diff-drawer-edited pane-interactive-tailoring "$DEMO_DONE document.getElementById('tab-btn-tailoring').click(); document.querySelector('.doc-markup-span.mark-yellow').click(); document.getElementById('popover-rewrite-input').value = 'Built the data loading and preprocessing pipeline in Python.'; document.getElementById('popover-apply-btn').click(); document.getElementById('btn-toggle-diff').click(); await new Promise(r => setTimeout(r, 300));"
+  state coach-answer pane-career-coach "$DEMO_DONE document.getElementById('tab-btn-coach').click(); document.getElementById('coach-query-input').value = 'What is my biggest evidence gap?'; document.getElementById('btn-send-coach-msg').click(); await new Promise(r => setTimeout(r, 2500));"
+  state evidence-map hero-3d-stage "document.querySelector('.btn-3d-mode[data-mode=evidence]').click(); await new Promise(r => setTimeout(r, 1500));"
+fi

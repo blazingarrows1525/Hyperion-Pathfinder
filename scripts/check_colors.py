@@ -15,7 +15,7 @@ ROOT = Path(__file__).resolve().parent.parent
 HEX = re.compile(r"#[0-9a-fA-F]{3,8}\b")
 RGB = re.compile(r"rgba?\(\s*\d+\s*,\s*\d+\s*,\s*\d+")
 WHITE_HIGHLIGHT = re.compile(r"rgba\(\s*255\s*,\s*255\s*,\s*255\s*,\s*[\d.]+\s*\)")
-TOKEN_LAYER_END = "2. ACCESSIBILITY & REDUCED MOTION"
+TOKEN_LAYER_END = "ACCESSIBILITY & REDUCED MOTION PREFERENCES"
 
 
 def css_violations():

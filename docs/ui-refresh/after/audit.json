@@ -1,0 +1,348 @@
+{
+  "url": "http://127.0.0.1:8010/",
+  "browser": "C:/Program Files/Google/Chrome/Application/chrome.exe",
+  "theme": "default",
+  "reducedMotion": false,
+  "viewports": {
+    "320": {
+      "height": 640,
+      "static": {
+        "duplicateIds": [],
+        "untypedButtons": 0,
+        "missingHandlers": [],
+        "sections": [
+          "hero",
+          "evidence",
+          "how-it-works",
+          "placement-snapshot",
+          "analyzer",
+          "skill-evidence-panel",
+          "genome",
+          "company-intel",
+          "prompt-studio",
+          "buttons-lab",
+          "faq"
+        ],
+        "theme": "terra",
+        "canvases": 1
+      },
+      "overflow": {
+        "scrollWidth": 320,
+        "clientWidth": 320,
+        "overflow": false,
+        "offenders": []
+      },
+      "shots": [
+        "320/hero.jpg"
+      ],
+      "consoleErrors": [],
+      "failedRequests": []
+    },
+    "360": {
+      "height": 780,
+      "static": {
+        "duplicateIds": [],
+        "untypedButtons": 0,
+        "missingHandlers": [],
+        "sections": [
+          "hero",
+          "evidence",
+          "how-it-works",
+          "placement-snapshot",
+          "analyzer",
+          "skill-evidence-panel",
+          "genome",
+          "company-intel",
+          "prompt-studio",
+          "buttons-lab",
+          "faq"
+        ],
+        "theme": "terra",
+        "canvases": 1
+      },
+      "overflow": {
+        "scrollWidth": 360,
+        "clientWidth": 360,
+        "overflow": false,
+        "offenders": []
+      },
+      "shots": [
+        "360/hero.jpg"
+      ],
+      "consoleErrors": [],
+      "failedRequests": []
+    },
+    "390": {
+      "height": 844,
+      "static": {
+        "duplicateIds": [],
+        "untypedButtons": 0,
+        "missingHandlers": [],
+        "sections": [
+          "hero",
+          "evidence",
+          "how-it-works",
+          "placement-snapshot",
+          "analyzer",
+          "skill-evidence-panel",
+          "genome",
+          "company-intel",
+          "prompt-studio",
+          "buttons-lab",
+          "faq"
+        ],
+        "theme": "terra",
+        "canvases": 1
+      },
+      "overflow": {
+        "scrollWidth": 390,
+        "clientWidth": 390,
+        "overflow": false,
+        "offenders": []
+      },
+      "shots": [
+        "390/hero.jpg"
+      ],
+      "consoleErrors": [],
+      "failedRequests": []
+    },
+    "414": {
+      "height": 896,
+      "static": {
+        "duplicateIds": [],
+        "untypedButtons": 0,
+        "missingHandlers": [],
+        "sections": [
+          "hero",
+          "evidence",
+          "how-it-works",
+          "placement-snapshot",
+          "analyzer",
+          "skill-evidence-panel",
+          "genome",
+          "company-intel",
+          "prompt-studio",
+          "buttons-lab",
+          "faq"
+        ],
+        "theme": "terra",
+        "canvases": 1
+      },
+      "overflow": {
+        "scrollWidth": 414,
+        "clientWidth": 414,
+        "overflow": false,
+        "offenders": []
+      },
+      "shots": [
+        "414/hero.jpg"
+      ],
+      "consoleErrors": [],
+      "failedRequests": []
+    },
+    "430": {
+      "height": 932,
+      "static": {
+        "duplicateIds": [],
+        "untypedButtons": 0,
+        "missingHandlers": [],
+        "sections": [
+          "hero",
+          "evidence",
+          "how-it-works",
+          "placement-snapshot",
+          "analyzer",
+          "skill-evidence-panel",
+          "genome",
+          "company-intel",
+          "prompt-studio",
+          "buttons-lab",
+          "faq"
+        ],
+        "theme": "terra",
+        "canvases": 1
+      },
+      "overflow": {
+        "scrollWidth": 430,
+        "clientWidth": 430,
+        "overflow": false,
+        "offenders": []
+      },
+      "shots": [
+        "430/hero.jpg"
+      ],
+      "consoleErrors": [],
+      "failedRequests": []
+    },
+    "800": {
+      "height": 900,
+      "static": {
+        "duplicateIds": [],
+        "untypedButtons": 0,
+        "missingHandlers": [],
+        "sections": [
+          "hero",
+          "evidence",
+          "how-it-works",
+          "placement-snapshot",
+          "analyzer",
+          "skill-evidence-panel",
+          "genome",
+          "company-intel",
+          "prompt-studio",
+          "buttons-lab",
+          "faq"
+        ],
+        "theme": "terra",
+        "canvases": 1
+      },
+      "overflow": {
+        "scrollWidth": 800,
+        "clientWidth": 800,
+        "overflow": false,
+        "offenders": []
+      },
+      "shots": [
+        "800/hero.jpg"
+      ],
+      "consoleErrors": [],
+      "failedRequests": []
+    },
+    "980": {
+      "height": 900,
+      "static": {
+        "duplicateIds": [],
+        "untypedButtons": 0,
+        "missingHandlers": [],
+        "sections": [
+          "hero",
+          "evidence",
+          "how-it-works",
+          "placement-snapshot",
+          "analyzer",
+          "skill-evidence-panel",
+          "genome",
+          "company-intel",
+          "prompt-studio",
+          "buttons-lab",
+          "faq"
+        ],
+        "theme": "terra",
+        "canvases": 1
+      },
+      "overflow": {
+        "scrollWidth": 980,
+        "clientWidth": 980,
+        "overflow": false,
+        "offenders": []
+      },
+      "shots": [
+        "980/hero.jpg"
+      ],
+      "consoleErrors": [],
+      "failedRequests": []
+    },
+    "1024": {
+      "height": 768,
+      "static": {
+        "duplicateIds": [],
+        "untypedButtons": 0,
+        "missingHandlers": [],
+        "sections": [
+          "hero",
+          "evidence",
+          "how-it-works",
+          "placement-snapshot",
+          "analyzer",
+          "skill-evidence-panel",
+          "genome",
+          "company-intel",
+          "prompt-studio",
+          "buttons-lab",
+          "faq"
+        ],
+        "theme": "terra",
+        "canvases": 1
+      },
+      "overflow": {
+        "scrollWidth": 1024,
+        "clientWidth": 1024,
+        "overflow": false,
+        "offenders": []
+      },
+      "shots": [
+        "1024/hero.jpg"
+      ],
+      "consoleErrors": [],
+      "failedRequests": []
+    },
+    "1280": {
+      "height": 800,
+      "static": {
+        "duplicateIds": [],
+        "untypedButtons": 0,
+        "missingHandlers": [],
+        "sections": [
+          "hero",
+          "evidence",
+          "how-it-works",
+          "placement-snapshot",
+          "analyzer",
+          "skill-evidence-panel",
+          "genome",
+          "company-intel",
+          "prompt-studio",
+          "buttons-lab",
+          "faq"
+        ],
+        "theme": "terra",
+        "canvases": 1
+      },
+      "overflow": {
+        "scrollWidth": 1280,
+        "clientWidth": 1280,
+        "overflow": false,
+        "offenders": []
+      },
+      "shots": [
+        "1280/hero.jpg"
+      ],
+      "consoleErrors": [],
+      "failedRequests": []
+    },
+    "1920": {
+      "height": 1080,
+      "static": {
+        "duplicateIds": [],
+        "untypedButtons": 0,
+        "missingHandlers": [],
+        "sections": [
+          "hero",
+          "evidence",
+          "how-it-works",
+          "placement-snapshot",
+          "analyzer",
+          "skill-evidence-panel",
+          "genome",
+          "company-intel",
+          "prompt-studio",
+          "buttons-lab",
+          "faq"
+        ],
+        "theme": "terra",
+        "canvases": 1
+      },
+      "overflow": {
+        "scrollWidth": 1920,
+        "clientWidth": 1920,
+        "overflow": false,
+        "offenders": []
+      },
+      "shots": [
+        "1920/hero.jpg"
+      ],
+      "consoleErrors": [],
+      "failedRequests": []
+    }
+  }
+}

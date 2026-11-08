@@ -21,6 +21,36 @@ def theme_block(selector):
     return CSS[start:CSS.index("}", start)]
 
 
+def test_only_the_two_active_themes_define_tokens():
+    assert "prism-day" not in CSS and "afterglow-night" not in CSS
+    assert "prism-day" not in JS and "afterglow-night" not in JS
+    assert ":root,\nhtml[data-theme=\"terra\"]" in CSS.replace("\r\n", "\n")
+
+
+def test_stylesheet_braces_balance():
+    # A stray "}" at the top level is folded into the next selector, and the browser drops
+    # that rule without a console message.
+    text = re.sub(r"/\*.*?\*/", "", CSS, flags=re.S)
+    text = re.sub(r'"(?:\\.|[^"\\])*"|\'(?:\\.|[^\'\\])*\'', '""', text)
+    depth = 0
+    for number, line in enumerate(text.splitlines(), 1):
+        for char in line:
+            depth += {"{": 1, "}": -1}.get(char, 0)
+            assert depth >= 0, f"unmatched closing brace on line {number}"
+    assert depth == 0, "a block is never closed"
+
+
+def test_the_override_layer_stays_gone():
+    assert "ART DIRECTION REFRESH" not in CSS
+    assert "--hp-shadow" not in CSS and "--hp-glass" not in CSS and "--hp-ease" not in CSS
+
+
+def test_only_the_three_chosen_font_families_load():
+    fonts = re.search(r'fonts\.googleapis\.com/css2\?([^"]+)"', HTML).group(1)
+    assert sorted(re.findall(r"family=([A-Za-z+]+)", fonts)) == ["DM+Sans", "DM+Serif+Display", "JetBrains+Mono"]
+    assert "Space Grotesk" not in CSS and "'Inter'" not in CSS
+
+
 def test_terra_is_the_first_load_theme():
     assert re.search(r'<html[^>]*\bdata-theme="terra"', HTML)
     terra = theme_block('html[data-theme="terra"]')
@@ -60,3 +90,45 @@ def test_selector_contract_holds():
     assert inventory["duplicate_ids"] == []
     assert inventory["js_ids_missing_from_html"] == []
     assert inventory["inline_handlers_undefined"] == []
+
+
+def test_editorial_reveal_system_respects_reduced_motion():
+    assert "function initEditorialRevealSystem()" in JS
+    assert "initEditorialRevealSystem();" in JS
+    assert ".hp-reveal.hp-reveal-visible" in CSS
+    assert '[data-motion="reduced"] .hp-reveal' in CSS
+    assert "@media (prefers-reduced-motion: reduce)" in CSS
+
+
+def test_reveal_system_only_touches_static_discovery_panels():
+    start = JS.index("function initEditorialRevealSystem()")
+    body = JS[start:JS.index("function initNeumorphicWorkbench()")]
+    assert "MutationObserver" not in body  # re-rendered rows must not animate on every keystroke
+    assert "observer.unobserve(entry.target)" in body
+    assert "observer.disconnect()" in body
+    selector = JS[JS.index("const REVEAL_SELECTOR"):start]
+    for tool in (".analyzer-form-card", ".analyzer-results-card", ".company-directory", ".prompt-composer", ".atlas-hero-copy"):
+        assert tool not in selector
+
+
+def test_atlas_frame_loop_allocates_nothing_and_rests():
+    source = JS.replace("\r\n", "\n")
+    start = source.index("  tick() {\n    this.frame = null;")
+    body = source[start:source.index("  clampRotation() {", start)]
+    assert "new THREE." not in body  # no per-frame geometry, vector or colour allocation
+    assert "=>" not in body  # no per-frame closures
+    assert "ambient-drift" in body
+    assert "if (!this.reducedMotion) moving = true" not in source  # the old endless loop
+
+
+def test_atlas_has_no_links_implying_similarity():
+    assert "beamCurves" not in JS and "buildFlowParticles" not in JS and "buildAmbientParticles" not in JS
+    assert "membership, not similarity" in HTML
+
+
+def test_career_atlas_has_adaptive_continuous_render_scheduling():
+    assert "scheduleContinuousRender()" in JS
+    assert "const interval = this.lowDetail ? (1000 / 24) : (1000 / 30);" in JS
+    assert "clearTimeout(this.frameTimer)" in JS
+    assert "else if (reasons.size) {\n      this.scheduleContinuousRender();" in JS.replace("\r\n", "\n")
+    assert "this.renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, this.lowDetail ? 1 : 1.5));" in JS

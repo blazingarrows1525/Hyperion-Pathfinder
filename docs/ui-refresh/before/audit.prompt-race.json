@@ -1,0 +1,74 @@
+{
+  "url": "http://127.0.0.1:8010/",
+  "browser": "C:/Program Files/Google/Chrome/Application/chrome.exe",
+  "theme": "default",
+  "reducedMotion": false,
+  "viewports": {
+    "375": {
+      "height": 812,
+      "static": {
+        "duplicateIds": [],
+        "untypedButtons": 0,
+        "missingHandlers": [],
+        "sections": [
+          "hero",
+          "evidence",
+          "how-it-works",
+          "placement-snapshot",
+          "analyzer",
+          "genome",
+          "company-intel",
+          "prompt-studio",
+          "buttons-lab",
+          "faq"
+        ],
+        "theme": "terra",
+        "canvases": 1
+      },
+      "overflow": {
+        "scrollWidth": 375,
+        "clientWidth": 375,
+        "overflow": false,
+        "offenders": []
+      },
+      "shots": [
+        "375/prompt-studio.prompt-race.jpg"
+      ],
+      "consoleErrors": [],
+      "failedRequests": []
+    },
+    "1440": {
+      "height": 900,
+      "static": {
+        "duplicateIds": [],
+        "untypedButtons": 0,
+        "missingHandlers": [],
+        "sections": [
+          "hero",
+          "evidence",
+          "how-it-works",
+          "placement-snapshot",
+          "analyzer",
+          "genome",
+          "company-intel",
+          "prompt-studio",
+          "buttons-lab",
+          "faq"
+        ],
+        "theme": "terra",
+        "canvases": 1
+      },
+      "overflow": {
+        "scrollWidth": 1440,
+        "clientWidth": 1440,
+        "overflow": false,
+        "offenders": []
+      },
+      "shots": [
+        "1440/prompt-studio.prompt-race.jpg"
+      ],
+      "consoleErrors": [],
+      "failedRequests": []
+    }
+  }
+}

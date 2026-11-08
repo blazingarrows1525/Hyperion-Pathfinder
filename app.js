@@ -29,7 +29,7 @@ class SpatialAudioEngine {
     }
     if (label) label.textContent = this.enabled ? 'On' : 'Off';
     if (this.enabled) this.click();
-    showToast(this.enabled ? 'Spatial Audio Synthesizer: Active' : 'Spatial Audio: Muted');
+    showToast(this.enabled ? 'Interface sounds on.' : 'Interface sounds off.');
     return this.enabled;
   }
   playTone(freq, type = 'sine', duration = 0.08, gainVal = 0.04) {
@@ -104,6 +104,7 @@ function apiUrl(path) {
 const PALETTE_TOKENS = {
   canvas: '--color-canvas',
   surface: '--color-surface',
+  surfaceRaised: '--color-surface-raised',
   ink: '--color-ink',
   inkSoft: '--color-ink-soft',
   muted: '--color-muted',
@@ -150,9 +151,11 @@ const appState = {
   analyzer: {
     selectedFile: null,
     jobDescription: '',
-    status: 'idle', // 'idle' | 'validating' | 'uploading' | 'analyzing' | 'streaming' | 'complete' | 'error'
+    status: 'idle', // 'idle' | 'submitting' | 'streaming' | 'complete' | 'cancelled' | 'error'
     abortController: null,
-    streamBuffer: '',
+    activeRun: null, // the one run allowed to change anything; see startAnalysisRun
+    streamBuffer: '', // the report on screen; only a validated new report replaces it
+    reportJobDescription: '', // the job description that report was made for
     extractedScore: null,
     demoMode: false,
     reportIsDemo: false, // provenance of the report currently in streamBuffer
@@ -225,8 +228,12 @@ const appState = {
     originalText: '',
     markupItems: [],
     selectedMarkupId: null,
-    draftHistory: [], // [{ revisionId, text, markups, score }]
+    // [{ revisionId, text, markups, score, breakdown, scored, edits: [{ before, after }] }]
+    // score and breakdown belong to the revision; scored is false after an edit until it is re-scored.
+    draftHistory: [],
     historyIndex: -1,
+    lastRevisionNumber: 0,
+    popoverAnchorId: null,
     unsavedChanges: false,
     recalculationStatus: 'idle',
     diffOpen: false
@@ -250,15 +257,12 @@ const appState = {
 // registry by normalised field name; their other fields are a fallback used
 // only if the registry cannot be loaded.
 // ==============================================================================
+// Writing help only: a sample and a placeholder and hint per field. The registry served by
+// GET /api/frameworks (prompt_frameworks.json) owns every name, definition, group and field order.
 const promptFrameworksRegistry = [
   // --- POSTER A: RESEARCH & STRUCTURED WORK ---
   {
     id: 'CLEAR',
-    name: 'CLEAR Framework',
-    acronym: 'CLEAR',
-    category: 'research',
-    expansion: 'Context, Logic, Expectations, Action, Restriction',
-    bestFor: 'Detailed, structured research with fewer ambiguities.',
     sample: {
       Context: 'Senior year CSE student targeting Tier-1 AI Research/ML Engineer campus placements.',
       Logic: 'Need to isolate metric-driven project bullet points that distinguish academic prototypes from production-ready systems.',
@@ -267,20 +271,15 @@ const promptFrameworksRegistry = [
       Restriction: 'Do not use buzzwords like "spearheaded" or "passionate". Focus strictly on measurable throughput, latency, or accuracy.'
     },
     fields: [
-      { key: 'Context', label: 'C — Context', placeholder: 'Describe your background, domain, and objective...', hint: 'Who are you and what is the situation?' },
-      { key: 'Logic', label: 'L — Logic', placeholder: 'Explain the reasoning, rationale, or necessity...', hint: 'Why are you seeking this specific output?' },
-      { key: 'Expectations', label: 'E — Expectations', placeholder: 'Detail the format, depth, and output structure...', hint: 'What exactly must the result look like?' },
-      { key: 'Action', label: 'A — Action', placeholder: 'Specify the direct task for the AI to execute...', hint: 'What command or analysis should be run?' },
-      { key: 'Restriction', label: 'R — Restriction', placeholder: 'List constraints, taboos, or negative rules...', hint: 'What should be avoided or excluded?' }
+      { key: 'Context', placeholder: 'Describe your background, domain, and objective...', hint: 'Who are you and what is the situation?' },
+      { key: 'Logic', placeholder: 'Explain the reasoning, rationale, or necessity...', hint: 'Why are you seeking this specific output?' },
+      { key: 'Expectations', placeholder: 'Detail the format, depth, and output structure...', hint: 'What exactly must the result look like?' },
+      { key: 'Action', placeholder: 'Specify the direct task for the AI to execute...', hint: 'What command or analysis should be run?' },
+      { key: 'Restriction', placeholder: 'List constraints, taboos, or negative rules...', hint: 'What should be avoided or excluded?' }
     ]
   },
   {
     id: 'SMART',
-    name: 'SMART Framework',
-    acronym: 'SMART',
-    category: 'goal',
-    expansion: 'Specific, Measurable, Achievable, Relevant, Time-bound',
-    bestFor: 'Focused, measurable placement and learning objectives.',
     sample: {
       Specific: 'Upskill in Distributed Systems and System Design for Microsoft SDE-1 placement rounds.',
       Measurable: 'Implement an in-memory Redis-compatible distributed cache and complete 40 LeetCode Medium graph problems.',
@@ -289,20 +288,15 @@ const promptFrameworksRegistry = [
       TimeBound: 'Complete within 4 weeks before campus hiring drives begin.'
     },
     fields: [
-      { key: 'Specific', label: 'S — Specific', placeholder: 'What precise goal are you setting?' },
-      { key: 'Measurable', label: 'M — Measurable', placeholder: 'How will success and completion be quantified?' },
-      { key: 'Achievable', label: 'A — Achievable', placeholder: 'Is this realistic within your current bandwidth?' },
-      { key: 'Relevant', label: 'R — Relevant', placeholder: 'Why does this matter to your placement trajectory?' },
-      { key: 'TimeBound', label: 'T — Time-bound', placeholder: 'What is the strict deadline or schedule?' }
+      { key: 'Specific', placeholder: 'What precise goal are you setting?' },
+      { key: 'Measurable', placeholder: 'How will success and completion be quantified?' },
+      { key: 'Achievable', placeholder: 'Is this realistic within your current bandwidth?' },
+      { key: 'Relevant', placeholder: 'Why does this matter to your placement trajectory?' },
+      { key: 'TimeBound', placeholder: 'What is the strict deadline or schedule?' }
     ]
   },
   {
     id: 'QUEST',
-    name: 'QUEST Framework',
-    acronym: 'QUEST',
-    category: 'research',
-    expansion: 'Question, Understanding, Expectation, Scope, Time',
-    bestFor: 'Narrowing a broad technical topic into manageable focus.',
     sample: {
       Question: 'How does FAISS IndexFlatL2 compare with HNSW indexing for 100k resume embeddings on memory-constrained servers?',
       Understanding: 'I understand cosine similarity and basic Euclidean distance search.',
@@ -311,20 +305,15 @@ const promptFrameworksRegistry = [
       Time: 'Evaluate for deployment in the current sprint.'
     },
     fields: [
-      { key: 'Question', label: 'Q — Question', placeholder: 'What core question are you investigating?' },
-      { key: 'Understanding', label: 'U — Understanding', placeholder: 'What is your current level of knowledge?' },
-      { key: 'Expectation', label: 'E — Expectation', placeholder: 'What deliverable are you expecting?' },
-      { key: 'Scope', label: 'S — Scope', placeholder: 'What boundaries, technologies, or limits apply?' },
-      { key: 'Time', label: 'T — Time', placeholder: 'What time horizon or timeframe is relevant?' }
+      { key: 'Question', placeholder: 'What core question are you investigating?' },
+      { key: 'Understanding', placeholder: 'What is your current level of knowledge?' },
+      { key: 'Expectation', placeholder: 'What deliverable are you expecting?' },
+      { key: 'Scope', placeholder: 'What boundaries, technologies, or limits apply?' },
+      { key: 'Time', placeholder: 'What time horizon or timeframe is relevant?' }
     ]
   },
   {
     id: 'GUIDE',
-    name: 'GUIDE Framework',
-    acronym: 'GUIDE',
-    category: 'planning',
-    expansion: 'Goal, Understanding, Information, Direction, Evaluation',
-    bestFor: 'Step-by-step research breakdown and curriculum planning.',
     sample: {
       Goal: 'Master Spring Boot microservices architecture for Goldman Sachs technical interviews.',
       Understanding: 'Proficient in Core Java, basic SQL, and REST principles.',
@@ -333,20 +322,15 @@ const promptFrameworksRegistry = [
       Evaluation: 'Include self-check verification questions at each milestone.'
     },
     fields: [
-      { key: 'Goal', label: 'G — Goal', placeholder: 'State the primary end objective...' },
-      { key: 'Understanding', label: 'U — Understanding', placeholder: 'Current familiarity and prerequisites...' },
-      { key: 'Information', label: 'I — Information', placeholder: 'What knowledge components are needed?' },
-      { key: 'Direction', label: 'D — Direction', placeholder: 'How should the instruction proceed?' },
-      { key: 'Evaluation', label: 'E — Evaluation', placeholder: 'How will comprehension be validated?' }
+      { key: 'Goal', placeholder: 'State the primary end objective...' },
+      { key: 'Understanding', placeholder: 'Current familiarity and prerequisites...' },
+      { key: 'Information', placeholder: 'What knowledge components are needed?' },
+      { key: 'Direction', placeholder: 'How should the instruction proceed?' },
+      { key: 'Evaluation', placeholder: 'How will comprehension be validated?' }
     ]
   },
   {
     id: 'FOCUS',
-    name: 'FOCUS Framework',
-    acronym: 'FOCUS',
-    category: 'research',
-    expansion: 'Function, Outcome, Criteria, Underlying Assumptions, Strategy',
-    bestFor: 'Cutting unnecessary details to build high-efficiency prompts.',
     sample: {
       Function: 'Technical resume bullet points optimization.',
       Outcome: 'A set of 5 concise, high-impact bullet points for a Cloud/DevOps internship.',
@@ -355,20 +339,15 @@ const promptFrameworksRegistry = [
       Strategy: 'Use Google XYZ formula: Accomplished [X] as measured by [Y], by doing [Z].'
     },
     fields: [
-      { key: 'Function', label: 'F — Function', placeholder: 'What is the operational function?' },
-      { key: 'Outcome', label: 'O — Outcome', placeholder: 'What is the desired end outcome?' },
-      { key: 'Criteria', label: 'C — Criteria', placeholder: 'What mandatory criteria must be met?' },
-      { key: 'UnderlyingAssumptions', label: 'U — Underlying Assumptions', placeholder: 'What assumptions are in play?' },
-      { key: 'Strategy', label: 'S — Strategy', placeholder: 'What execution strategy should be followed?' }
+      { key: 'Function', placeholder: 'What is the operational function?' },
+      { key: 'Outcome', placeholder: 'What is the desired end outcome?' },
+      { key: 'Criteria', placeholder: 'What mandatory criteria must be met?' },
+      { key: 'UnderlyingAssumptions', placeholder: 'What assumptions are in play?' },
+      { key: 'Strategy', placeholder: 'What execution strategy should be followed?' }
     ]
   },
   {
     id: 'IDEA',
-    name: 'IDEA Framework',
-    acronym: 'IDEA',
-    category: 'writing',
-    expansion: 'Intent, Details, Examples, Adjustments',
-    bestFor: 'Iterative refinement and stylistic fine-tuning.',
     sample: {
       Intent: 'Rewrite a bland capstone project summary into an industry-grade portfolio description.',
       Details: 'Full-stack e-commerce project with Next.js, Stripe, Redis, and PostgreSQL.',
@@ -376,19 +355,14 @@ const promptFrameworksRegistry = [
       Adjustments: 'Keep tone technical, authoritative, and concise.'
     },
     fields: [
-      { key: 'Intent', label: 'I — Intent', placeholder: 'What are you trying to accomplish?' },
-      { key: 'Details', label: 'D — Details', placeholder: 'Provide the raw facts, components, and tools...' },
-      { key: 'Examples', label: 'E — Examples', placeholder: 'Supply positive or negative reference examples...' },
-      { key: 'Adjustments', label: 'A — Adjustments', placeholder: 'What stylistic tweaks should be applied?' }
+      { key: 'Intent', placeholder: 'What are you trying to accomplish?' },
+      { key: 'Details', placeholder: 'Provide the raw facts, components, and tools...' },
+      { key: 'Examples', placeholder: 'Supply positive or negative reference examples...' },
+      { key: 'Adjustments', placeholder: 'What stylistic tweaks should be applied?' }
     ]
   },
   {
     id: 'RISEN',
-    name: 'RISEN Framework',
-    acronym: 'RISEN',
-    category: 'research',
-    expansion: 'Requirement, Information, Strategy, Evaluation, Negotiation',
-    bestFor: 'Complex multi-criteria planning with trade-off negotiation.',
     sample: {
       Requirement: 'Choose between accepting a ₹12 LPA Fintech offer or continuing into Super Dream hiring drives.',
       Information: 'Have strong algorithmic foundation (400+ LC), CGPA 8.9, 2 top-tier internships.',
@@ -397,20 +371,15 @@ const promptFrameworksRegistry = [
       Negotiation: 'Determine possible start-date deferral or competing offer negotiation strategies.'
     },
     fields: [
-      { key: 'Requirement', label: 'R — Requirement', placeholder: 'What is the core decision requirement?' },
-      { key: 'Information', label: 'I — Information', placeholder: 'What background data and facts are known?' },
-      { key: 'Strategy', label: 'S — Strategy', placeholder: 'What evaluation strategy should be used?' },
-      { key: 'Evaluation', label: 'E — Evaluation', placeholder: 'How should outcomes be judged?' },
-      { key: 'Negotiation', label: 'N — Negotiation', placeholder: 'What trade-offs or negotiation room exist?' }
+      { key: 'Requirement', placeholder: 'What is the core decision requirement?' },
+      { key: 'Information', placeholder: 'What background data and facts are known?' },
+      { key: 'Strategy', placeholder: 'What evaluation strategy should be used?' },
+      { key: 'Evaluation', placeholder: 'How should outcomes be judged?' },
+      { key: 'Negotiation', placeholder: 'What trade-offs or negotiation room exist?' }
     ]
   },
   {
     id: 'RHODES',
-    name: 'RHODES Framework',
-    acronym: 'RHODES',
-    category: 'experiment',
-    expansion: 'Research, Hypothesis, Objectives, Development, Execution, Synthesis',
-    bestFor: 'Hypothesis-based technical research and experiment design.',
     sample: {
       Research: 'Investigating impact of fine-tuning small LLMs (Llama 3 8B) for automated resume skill gap extraction.',
       Hypothesis: 'LoRA fine-tuning will outperform zero-shot GPT-4o-mini on proprietary university resume phrasing by >15% F1.',
@@ -420,21 +389,16 @@ const promptFrameworksRegistry = [
       Synthesis: 'Summarize deployment trade-offs in an academic conference format.'
     },
     fields: [
-      { key: 'Research', label: 'R — Research', placeholder: 'What domain or phenomenon is being studied?' },
-      { key: 'Hypothesis', label: 'H — Hypothesis', placeholder: 'What testable hypothesis is proposed?' },
-      { key: 'Objectives', label: 'O — Objectives', placeholder: 'What specific targets define success?' },
-      { key: 'Development', label: 'D — Development', placeholder: 'What dataset, methodology, or pipeline is built?' },
-      { key: 'Execution', label: 'E — Execution', placeholder: 'How will the trial be executed?' },
-      { key: 'Synthesis', label: 'S — Synthesis', placeholder: 'How should findings be reported?' }
+      { key: 'Research', placeholder: 'What domain or phenomenon is being studied?' },
+      { key: 'Hypothesis', placeholder: 'What testable hypothesis is proposed?' },
+      { key: 'Objectives', placeholder: 'What specific targets define success?' },
+      { key: 'Development', placeholder: 'What dataset, methodology, or pipeline is built?' },
+      { key: 'Execution', placeholder: 'How will the trial be executed?' },
+      { key: 'Synthesis', placeholder: 'How should findings be reported?' }
     ]
   },
   {
     id: 'CREATE',
-    name: 'CREATE Framework',
-    acronym: 'CREATE',
-    category: 'experiment',
-    expansion: 'Conceptualize, Research, Experiment, Analyze, Transform, Evaluate',
-    bestFor: 'End-to-end project ideation and prototype development.',
     sample: {
       Conceptualize: 'A real-time voice interview simulator for technical campus interviews.',
       Research: 'Inspect WebRTC, Whisper speech-to-text, and low-latency LLM streaming.',
@@ -444,23 +408,18 @@ const promptFrameworksRegistry = [
       Evaluate: 'Validate candidate stress levels and feedback quality against real mock interviews.'
     },
     fields: [
-      { key: 'Conceptualize', label: 'C — Conceptualize', placeholder: 'Initial concept or idea...' },
-      { key: 'Research', label: 'R — Research', placeholder: 'Technical references and prior art...' },
-      { key: 'Experiment', label: 'E — Experiment', placeholder: 'Test scenario or prototype...' },
-      { key: 'Analyze', label: 'A — Analyze', placeholder: 'Metrics and bottlenecks to observe...' },
-      { key: 'Transform', label: 'T — Transform', placeholder: 'How the prototype is optimized...' },
-      { key: 'Evaluate', label: 'E — Evaluate', placeholder: 'Final validation against success criteria...' }
+      { key: 'Conceptualize', placeholder: 'Initial concept or idea...' },
+      { key: 'Research', placeholder: 'Technical references and prior art...' },
+      { key: 'Experiment', placeholder: 'Test scenario or prototype...' },
+      { key: 'Analyze', placeholder: 'Metrics and bottlenecks to observe...' },
+      { key: 'Transform', placeholder: 'How the prototype is optimized...' },
+      { key: 'Evaluate', placeholder: 'Final validation against success criteria...' }
     ]
   },
 
   // --- POSTER B: TASK & RESPONSE STRUCTURE ---
   {
     id: 'RACE',
-    name: 'RACE Framework',
-    acronym: 'RACE',
-    category: 'task',
-    expansion: 'Role, Action, Context, Expectation',
-    bestFor: 'Clear role-guided instruction with bounded output expectations.',
     sample: {
       Role: 'Principal Software Architect at a Big Tech company conducting candidate screening.',
       Action: 'Critique my system design project (Scalable Distributed Log Aggregator).',
@@ -468,37 +427,27 @@ const promptFrameworksRegistry = [
       Expectation: 'List 3 critical failure points in high-concurrency partitions and recommend resilient patterns.'
     },
     fields: [
-      { key: 'Role', label: 'R — Role', placeholder: 'Who should the AI act as?' },
-      { key: 'Action', label: 'A — Action', placeholder: 'What specific task must be executed?' },
-      { key: 'Context', label: 'C — Context', placeholder: 'What is the background or situation?' },
-      { key: 'Expectation', label: 'E — Expectation', placeholder: 'What is the expected deliverable?' }
+      { key: 'Role', placeholder: 'Who should the AI act as?' },
+      { key: 'Action', placeholder: 'What specific task must be executed?' },
+      { key: 'Context', placeholder: 'What is the background or situation?' },
+      { key: 'Expectation', placeholder: 'What is the expected deliverable?' }
     ]
   },
   {
     id: 'TAG',
-    name: 'TAG Framework',
-    acronym: 'TAG',
-    category: 'task',
-    expansion: 'Task, Action, Goal',
-    bestFor: 'Quick, ultra-concise operational assignments.',
     sample: {
       Task: 'Extract required technical keywords from a Google Cloud Architect JD.',
       Action: 'Categorize keywords into Infrastructure, Networking, Databases, and CI/CD.',
       Goal: 'Identify missing competencies in my resume before applying.'
     },
     fields: [
-      { key: 'Task', label: 'T — Task', placeholder: 'What is the primary task?' },
-      { key: 'Action', label: 'A — Action', placeholder: 'What action should be performed?' },
-      { key: 'Goal', label: 'G — Goal', placeholder: 'What is the ultimate goal?' }
+      { key: 'Task', placeholder: 'What is the primary task?' },
+      { key: 'Action', placeholder: 'What action should be performed?' },
+      { key: 'Goal', placeholder: 'What is the ultimate goal?' }
     ]
   },
   {
     id: 'TRACE',
-    name: 'TRACE Framework',
-    acronym: 'TRACE',
-    category: 'task',
-    expansion: 'Task, Request, Action, Context, Example',
-    bestFor: 'Comprehensive task definition with grounding reference examples.',
     sample: {
       Task: 'Draft cold outreach LinkedIn messages to industry engineers at Microsoft.',
       Request: 'Write 3 personalized message variants under 300 characters each.',
@@ -507,20 +456,15 @@ const promptFrameworksRegistry = [
       Example: 'Reference example: "Hi [Name], inspired by your work on Azure networking..."'
     },
     fields: [
-      { key: 'Task', label: 'T — Task', placeholder: 'What task is being tackled?' },
-      { key: 'Request', label: 'R — Request', placeholder: 'What exact output are you requesting?' },
-      { key: 'Action', label: 'A — Action', placeholder: 'What specific direction must be followed?' },
-      { key: 'Context', label: 'C — Context', placeholder: 'What context informs the request?' },
-      { key: 'Example', label: 'E — Example', placeholder: 'Provide a sample format or style reference...' }
+      { key: 'Task', placeholder: 'What task is being tackled?' },
+      { key: 'Request', placeholder: 'What exact output are you requesting?' },
+      { key: 'Action', placeholder: 'What specific direction must be followed?' },
+      { key: 'Context', placeholder: 'What context informs the request?' },
+      { key: 'Example', placeholder: 'Provide a sample format or style reference...' }
     ]
   },
   {
     id: 'CARE',
-    name: 'CARE Framework',
-    acronym: 'CARE',
-    category: 'story',
-    expansion: 'Context, Action, Result, Example',
-    bestFor: 'Framing impactful professional experiences and case stories.',
     sample: {
       Context: 'During my backend internship, database query spikes were causing 504 gateway timeouts on customer dashboards.',
       Action: 'Profiled slow queries using EXPLAIN ANALYZE, added composite indexes, and implemented a 60-second Redis cache.',
@@ -528,37 +472,27 @@ const promptFrameworksRegistry = [
       Example: 'Translate this into 2 resume bullet points and 1 behavioral interview talking point.'
     },
     fields: [
-      { key: 'Context', label: 'C — Context', placeholder: 'Describe the problem setting...' },
-      { key: 'Action', label: 'A — Action', placeholder: 'What specific actions did you take?' },
-      { key: 'Result', label: 'R — Result', placeholder: 'What quantifiable results were achieved?' },
-      { key: 'Example', label: 'E — Example', placeholder: 'How should this be packaged or formulated?' }
+      { key: 'Context', placeholder: 'Describe the problem setting...' },
+      { key: 'Action', placeholder: 'What specific actions did you take?' },
+      { key: 'Result', placeholder: 'What quantifiable results were achieved?' },
+      { key: 'Example', placeholder: 'How should this be packaged or formulated?' }
     ]
   },
   {
     id: 'PAR',
-    name: 'PAR Framework',
-    acronym: 'PAR',
-    category: 'story',
-    expansion: 'Problem, Action, Result',
-    bestFor: 'High-density, metric-driven technical resume bullet points.',
     sample: {
       Problem: 'Manual PDF invoice parsing was error-prone and took 12 human hours weekly.',
       Action: 'Engineered an asynchronous Celery pipeline using OpenCV and Tesseract OCR with automated schema validation.',
       Result: 'Processed 5,000+ monthly documents with 99.2% extraction accuracy, saving 10+ hours per week.'
     },
     fields: [
-      { key: 'Problem', label: 'P — Problem', placeholder: 'What friction, bottleneck, or bug existed?' },
-      { key: 'Action', label: 'A — Action', placeholder: 'What engineering steps did you implement?' },
-      { key: 'Result', label: 'R — Result', placeholder: 'What measurable business/system delta occurred?' }
+      { key: 'Problem', placeholder: 'What friction, bottleneck, or bug existed?' },
+      { key: 'Action', placeholder: 'What engineering steps did you implement?' },
+      { key: 'Result', placeholder: 'What measurable business/system delta occurred?' }
     ]
   },
   {
     id: 'STAR',
-    name: 'STAR Framework',
-    acronym: 'STAR',
-    category: 'story',
-    expansion: 'Situation, Task, Action, Result',
-    bestFor: 'Behavioral placement interviews (Amazon Leadership, Googleyness).',
     sample: {
       Situation: 'Two weeks before hackathon finals, our team lead left the project, leaving authentication incomplete.',
       Task: 'Step in as technical coordinator to finish JWT auth and ensure deployment on AWS.',
@@ -566,37 +500,27 @@ const promptFrameworksRegistry = [
       Result: 'Shipped on schedule, handled 2,000 concurrent demo users, and won 2nd place overall.'
     },
     fields: [
-      { key: 'Situation', label: 'S — Situation', placeholder: 'Set the scene and background...' },
-      { key: 'Task', label: 'T — Task', placeholder: 'What responsibility were you assigned?' },
-      { key: 'Action', label: 'A — Action', placeholder: 'What specific steps did you champion?' },
-      { key: 'Result', label: 'R — Result', placeholder: 'What outcome was achieved?' }
+      { key: 'Situation', placeholder: 'Set the scene and background...' },
+      { key: 'Task', placeholder: 'What responsibility were you assigned?' },
+      { key: 'Action', placeholder: 'What specific steps did you champion?' },
+      { key: 'Result', placeholder: 'What outcome was achieved?' }
     ]
   },
   {
     id: 'APE',
-    name: 'APE Framework',
-    acronym: 'APE',
-    category: 'task',
-    expansion: 'Action, Purpose, Expectation',
-    bestFor: 'Direct, unambiguous single-shot generation prompts.',
     sample: {
       Action: 'Summarize the Top 10 Dynamic Programming patterns for tech placement interviews.',
       Purpose: 'Enable quick revision 24 hours prior to an online coding assessment.',
       Expectation: 'Provide pattern name, time complexity, and one classic LeetCode problem link.'
     },
     fields: [
-      { key: 'Action', label: 'A — Action', placeholder: 'What must be performed?' },
-      { key: 'Purpose', label: 'P — Purpose', placeholder: 'Why is this being done?' },
-      { key: 'Expectation', label: 'E — Expectation', placeholder: 'What are the strict output bounds?' }
+      { key: 'Action', placeholder: 'What must be performed?' },
+      { key: 'Purpose', placeholder: 'Why is this being done?' },
+      { key: 'Expectation', placeholder: 'What are the strict output bounds?' }
     ]
   },
   {
     id: 'CRISPE',
-    name: 'CRISPE Framework',
-    acronym: 'CRISPE',
-    category: 'experiment',
-    expansion: 'Capacity, Insight, Statement, Personality, Experiment',
-    bestFor: 'Multi-perspective persona prompting and exploratory tests.',
     sample: {
       Capacity: 'Senior Staff Engineer and Placement Hiring Committee Chair at Cisco.',
       Insight: 'Students frequently list too many shallow tools without deep networking fundamentals.',
@@ -605,29 +529,24 @@ const promptFrameworksRegistry = [
       Experiment: 'Provide 3 tough technical interview questions that would instantly expose shallow knowledge.'
     },
     fields: [
-      { key: 'Capacity', label: 'C — Capacity', placeholder: 'What role capacity does the model adopt?' },
-      { key: 'Insight', label: 'I — Insight', placeholder: 'What context or insider perspective informs this?' },
-      { key: 'Statement', label: 'S — Statement', placeholder: 'What statement or item is under review?' },
-      { key: 'Personality', label: 'P — Personality', placeholder: 'What tone or demeanor should be used?' },
-      { key: 'Experiment', label: 'E — Experiment', placeholder: 'What test or simulation should be performed?' }
+      { key: 'Capacity', placeholder: 'What role capacity does the model adopt?' },
+      { key: 'Insight', placeholder: 'What context or insider perspective informs this?' },
+      { key: 'Statement', placeholder: 'What statement or item is under review?' },
+      { key: 'Personality', placeholder: 'What tone or demeanor should be used?' },
+      { key: 'Experiment', placeholder: 'What test or simulation should be performed?' }
     ]
   },
   {
     id: 'RTF',
-    name: 'RTF Framework',
-    acronym: 'RTF',
-    category: 'task',
-    expansion: 'Role, Task, Finish',
-    bestFor: 'Fast-paced, formatted task delivery with explicit finish criteria.',
     sample: {
       Role: 'Expert ATS Resume Screener.',
       Task: 'Extract 5 missing hard skills by comparing my resume against the target Amazon SDE-1 JD.',
       Finish: 'Return a bulleted list where each bullet starts with the skill in bold, followed by a 1-sentence explanation of where it appears in the JD.'
     },
     fields: [
-      { key: 'Role', label: 'R — Role', placeholder: 'Define persona or position...' },
-      { key: 'Task', label: 'T — Task', placeholder: 'Define the explicit task...' },
-      { key: 'Finish', label: 'F — Finish', placeholder: 'Define the strict delivery format and style...' }
+      { key: 'Role', placeholder: 'Define persona or position...' },
+      { key: 'Task', placeholder: 'Define the explicit task...' },
+      { key: 'Finish', placeholder: 'Define the strict delivery format and style...' }
     ]
   }
 ];
@@ -1028,6 +947,26 @@ let renderer = null;
 let careerAtlas = null;
 
 const ATLAS_MODE_LABELS = { atlas: 'Atlas', orbit: 'Orbit', evidence: 'Evidence map' };
+const ATLAS_DIAL_RADIUS = 306;
+const ATLAS_ORBIT_RADIUS = 196;
+// Full motion keeps the scene gently alive this long after load or the last interaction;
+// then the ambient motion fades out and nothing renders until something changes.
+const ATLAS_AMBIENT_MS = 10000;
+const ATLAS_ZOOM_MIN = 0.62;
+const ATLAS_ZOOM_MAX = 1.45;
+// A press that travels further than this is a drag, not a click on a node.
+const ATLAS_CLICK_SLOP_PX = 6;
+// Below this stage width the legend alone names the clusters; labels would collide.
+const ATLAS_LABEL_MIN_WIDTH = 720;
+// Each cluster's solid, by cluster id. The legend's glyphs (styles.css, .legend-swatch) use the
+// same silhouettes, so a cluster can be told apart by shape as well as by colour.
+const ATLAS_SOLIDS = [
+  { make: () => new THREE.CylinderGeometry(0.82, 0.96, 1.5, 6), halfHeight: 0.75, flat: true, turn: 0.26 }, // hexagon
+  { make: () => new THREE.IcosahedronGeometry(1.04, 1), halfHeight: 1.04, flat: true, turn: 0 },              // circle
+  { make: () => new THREE.OctahedronGeometry(1.22, 0), halfHeight: 1.22, flat: true, turn: 0.52 },            // diamond
+  { make: () => new THREE.TorusGeometry(0.78, 0.34, 14, 40), halfHeight: 1.12, flat: false, turn: 0.3 },      // ring
+  { make: () => new THREE.BoxGeometry(1.36, 1.36, 1.36), halfHeight: 0.68, flat: true, turn: 0.42 }           // square
+];
 
 function webglAvailable() {
   try {
@@ -1041,7 +980,7 @@ function webglAvailable() {
 // Cluster i sits on an ellipse around the disc centre.
 function atlasNodePosition(index, total) {
   const angle = (index / total) * Math.PI * 2 - Math.PI / 2 - 0.3;
-  return { x: Math.cos(angle) * 185, z: Math.sin(angle) * 118 };
+  return { x: Math.cos(angle) * ATLAS_ORBIT_RADIUS, z: Math.sin(angle) * ATLAS_ORBIT_RADIUS };
 }
 
 function getAtlasNodeData() {
@@ -1071,12 +1010,24 @@ class CareerAtlas {
     this.hoverId = null;
     this.previewId = null;
     this.reducedMotion = appState.motionMode === 'reduced';
+    // Rendering stops while any pause reason holds: offscreen, document-hidden or context-lost.
     this.pauseReasons = new Set();
+    // Why the last frame asked for another: camera-easing, node-selection,
+    // user-initiated-orbit or ambient-drift. Empty once the scene is at rest.
+    this.frameReasons = new Set();
     this.frame = null;
+    this.frameTimer = null;
+    this.boundTick = () => this.tick();
+    this.ambientUntil = 0;
+    this.ambientMix = 0;
+    this.easeK = 1;
     this.disposed = false;
     this.listeners = [];
     this.dragging = false;
     this.lastPointer = { x: 0, y: 0 };
+    this.pressPoint = { x: 0, y: 0 };
+    this.pressMoved = false;
+    this.nodes = [];
     this.rot = { x: 0, y: 0 };
     this.targetRot = { x: 0, y: 0 };
     this.velocity = { x: 0, y: 0 };
@@ -1108,308 +1059,259 @@ class CareerAtlas {
     scene = this.scene;
     camera = this.camera;
 
-    this.buildScene();
-    this.applyPalette();
+    // A scene that cannot be built must not leave a half-bound instance behind.
+    try {
+      this.buildScene();
+      this.applyPalette();
+    } catch (err) {
+      console.warn('Career Atlas: the scene could not be built', err);
+      return false;
+    }
     this.bindEvents();
     this.resize();
+    this.armAmbient();
     return true;
   }
 
   // ---- scene graph --------------------------------------------------------------
+  // An instrument, not a particle demo: an engraved dial, a small armillary marking the corpus,
+  // and five matte solids on it. Each solid's shape identifies its cluster (see the legend), its
+  // size follows the cluster's share of the corpus, and its spoke says only "part of the corpus".
   buildScene() {
     this.root = new THREE.Group();
     this.scene.add(this.root);
     this.clock = new THREE.Clock();
     this.elapsed = 0;
-    this.introProgress = 0;
-    this.introComplete = false;
+    this.projected = new THREE.Vector3();
 
-    // Atmospheric depth fog
-    this.scene.fog = new THREE.FogExp2(0x000000, 0.00032);
+    // A little haze seats the far edge of the dial in the stage background.
+    this.scene.fog = new THREE.FogExp2(0x000000, 0.00026);
 
-    // Multi-light rig: hemisphere fill + warm key + soft cool rim
-    this.hemi = new THREE.HemisphereLight(0xffffff, 0x888888, 0.65);
-    this.sun = new THREE.DirectionalLight(0xffffff, 0.88);
+    // One key light and a soft fill: the solids read through their facets, not through glow.
+    this.hemi = new THREE.HemisphereLight(0xffffff, 0x888888, 0.7);
+    this.sun = new THREE.DirectionalLight(0xffffff, 0.9);
     this.sun.position.set(-280, 460, 300);
-    this.rimLight = new THREE.DirectionalLight(0x88aaff, 0.32);
-    this.rimLight.position.set(200, 80, -400);
-    this.scene.add(this.hemi, this.sun, this.rimLight);
+    this.scene.add(this.hemi, this.sun);
 
-    // Matte paper disc with subtle contour rings
-    this.discGeo = new THREE.CylinderGeometry(300, 306, 10, 80);
+    // A soft round blob, used for contact shadows and the illustrative dots.
+    const sprite = document.createElement('canvas');
+    sprite.width = sprite.height = 64;
+    const ctx = sprite.getContext('2d');
+    const grad = ctx.createRadialGradient(32, 32, 0, 32, 32, 32);
+    grad.addColorStop(0, 'rgba(255,255,255,1)');
+    grad.addColorStop(0.55, 'rgba(255,255,255,0.55)');
+    grad.addColorStop(1, 'rgba(255,255,255,0)');
+    ctx.fillStyle = grad;
+    ctx.fillRect(0, 0, 64, 64);
+    this.softTexture = new THREE.CanvasTexture(sprite);
+
+    this.shadowGeo = new THREE.PlaneGeometry(1, 1);
+    this.shadowMat = new THREE.MeshBasicMaterial({ map: this.softTexture, transparent: true, depthWrite: false, opacity: 0.3 });
+
+    this.buildDial();
+    this.buildArmillary();
+    this.buildNodes();
+    this.buildSpokes();
+
+    // Illustrative dots: they suggest each cluster's share of the corpus and are not records.
+    this.dotGeo = new THREE.BufferGeometry();
+    this.dotMat = new THREE.PointsMaterial({ size: 9, map: this.softTexture, vertexColors: true, transparent: true, depthWrite: false });
+    this.dots = new THREE.Points(this.dotGeo, this.dotMat);
+    this.root.add(this.dots);
+
+    this.updateNodeSizes();
+    this.buildDots();
+    this.buildLabels();
+    this.syncSelection();
+  }
+
+  makeShadow(size, x, z) {
+    const shadow = new THREE.Mesh(this.shadowGeo, this.shadowMat);
+    shadow.rotation.x = -Math.PI / 2;
+    shadow.position.set(x, 0.4, z);
+    shadow.scale.set(size, size, 1);
+    this.root.add(shadow);
+    return shadow;
+  }
+
+  buildDial() {
+    this.discGeo = new THREE.CylinderGeometry(ATLAS_DIAL_RADIUS, ATLAS_DIAL_RADIUS + 6, 8, 96);
     this.discMat = new THREE.MeshStandardMaterial({ roughness: 1, metalness: 0 });
     const disc = new THREE.Mesh(this.discGeo, this.discMat);
-    disc.scale.set(1, 1, 0.64);
-    disc.position.y = -6;
+    disc.position.y = -4.2;
     this.root.add(disc);
 
-    // Glowing ground aura ring
-    this.groundRingGeo = new THREE.RingGeometry(294, 308, 120);
-    this.groundRingMat = new THREE.MeshBasicMaterial({ 
-      transparent: true, opacity: 0.16, side: THREE.DoubleSide, depthWrite: false 
-    });
-    const groundRing = new THREE.Mesh(this.groundRingGeo, this.groundRingMat);
-    groundRing.rotation.x = -Math.PI / 2;
-    groundRing.position.y = 0.5;
-    groundRing.scale.set(1, 0.64, 1);
-    this.root.add(groundRing);
-
-    // Thin contour lines on disc
-    this.lineMat = new THREE.LineBasicMaterial({ transparent: true, opacity: 0.45 });
-    this.ringGeos = [150, 238].map(r => {
-      const pts = [];
-      for (let i = 0; i <= 120; i++) {
-        const a = (i / 120) * Math.PI * 2;
-        pts.push(new THREE.Vector3(Math.cos(a) * r, 0, Math.sin(a) * r * 0.64));
+    this.lineMat = new THREE.LineBasicMaterial({ transparent: true, opacity: 0.55 });
+    const ringGeos = [108, ATLAS_ORBIT_RADIUS, 256, ATLAS_DIAL_RADIUS - 8].map(radius => {
+      const points = [];
+      for (let i = 0; i < 144; i++) {
+        const angle = (i / 144) * Math.PI * 2;
+        points.push(new THREE.Vector3(Math.cos(angle) * radius, 0.3, Math.sin(angle) * radius));
       }
-      const geo = new THREE.BufferGeometry().setFromPoints(pts);
-      this.root.add(new THREE.Line(geo, this.lineMat));
+      const geo = new THREE.BufferGeometry().setFromPoints(points);
+      this.root.add(new THREE.LineLoop(geo, this.lineMat));
       return geo;
     });
+    this.ringGeos = ringGeos;
 
-    // Five archetype nodes with distinctive prismatic silhouettes, gyroscopic orbital rings, and breathing physics
+    // The graduated rim is what makes the disc read as an instrument.
+    const ticks = [];
+    for (let i = 0; i < 72; i++) {
+      const angle = (i / 72) * Math.PI * 2;
+      const inner = i % 6 === 0 ? ATLAS_DIAL_RADIUS - 26 : ATLAS_DIAL_RADIUS - 16;
+      const outer = ATLAS_DIAL_RADIUS - 8;
+      ticks.push(Math.cos(angle) * inner, 0.3, Math.sin(angle) * inner, Math.cos(angle) * outer, 0.3, Math.sin(angle) * outer);
+    }
+    this.tickGeo = new THREE.BufferGeometry();
+    this.tickGeo.setAttribute('position', new THREE.Float32BufferAttribute(ticks, 3));
+    this.root.add(new THREE.LineSegments(this.tickGeo, this.lineMat));
+  }
+
+  // The corpus marker: a brass armillary at the centre of the dial.
+  buildArmillary() {
+    this.brassMat = new THREE.MeshStandardMaterial({ roughness: 0.48, metalness: 0.3 });
+    this.armillary = new THREE.Group();
+    const base = new THREE.Mesh(new THREE.CylinderGeometry(15, 19, 5, 40), this.brassMat);
+    base.position.y = 2.5;
+    const pin = new THREE.Mesh(new THREE.CylinderGeometry(1.1, 1.8, 40, 12), this.brassMat);
+    pin.position.y = 24;
+    const globe = new THREE.Mesh(new THREE.IcosahedronGeometry(7.5, 2), this.brassMat);
+    globe.position.y = 48;
+    this.ringGeo = new THREE.TorusGeometry(19, 0.55, 8, 72);
+    this.armillaryRingA = new THREE.Mesh(this.ringGeo, this.brassMat);
+    this.armillaryRingB = new THREE.Mesh(this.ringGeo, this.brassMat);
+    this.armillaryRingA.position.y = 48;
+    this.armillaryRingB.position.y = 48;
+    this.armillaryRingA.rotation.set(1.18, 0, 0);
+    this.armillaryRingB.rotation.set(0.42, 0.9, 0);
+    this.armillary.add(base, pin, globe, this.armillaryRingA, this.armillaryRingB);
+    this.root.add(this.armillary);
+    this.makeShadow(74, 0, 0);
+  }
+
+  buildNodes() {
     const data = getAtlasNodeData();
-    this.nodeGeo = new THREE.SphereGeometry(1, 40, 28);
     this.plinthGeo = new THREE.CylinderGeometry(1, 1.12, 1, 40);
-    this.haloGeo = new THREE.RingGeometry(1.3, 1.48, 64);
-    this.orbitalRingGeo = new THREE.TorusGeometry(1.75, 0.038, 12, 80);
-
-    // Prismatic geometry profiles tailored to each archetype cluster identity
-    const getArchetypePrismaticGeometry = (clusterId) => {
-      switch (clusterId % 5) {
-        case 0: return new THREE.CylinderGeometry(0.85, 1.05, 1.6, 6); // 0: Core Eng & Business (Faceted Prism)
-        case 1: return new THREE.IcosahedronGeometry(1.05, 2);          // 1: Data Science & AI/ML (Precision Geodesic)
-        case 2: return new THREE.OctahedronGeometry(1.22, 0);           // 2: General CS & Software Dev (Largest Octahedral Core)
-        case 3: return new THREE.TorusGeometry(0.85, 0.36, 16, 40);     // 3: Full-Stack Web Dev (Ribbon Loop Silhouette)
-        case 4: return new THREE.DodecahedronGeometry(1.02, 0);         // 4: Core Engineering Mech/Civil (Faceted Polyhedron)
-        default: return new THREE.SphereGeometry(1, 32, 24);
-      }
-    };
+    this.haloGeo = new THREE.RingGeometry(1.24, 1.38, 72);
+    this.plinthMat = new THREE.MeshStandardMaterial({ roughness: 0.95, metalness: 0, transparent: true });
+    this.hitGeo = new THREE.SphereGeometry(1, 12, 8);
+    this.hitMat = new THREE.MeshBasicMaterial();
 
     this.nodes = data.map((d, i) => {
       const pos = atlasNodePosition(i, data.length);
+      const solid = ATLAS_SOLIDS[d.id % ATLAS_SOLIDS.length];
       const group = new THREE.Group();
       group.position.set(pos.x, 0, pos.z);
 
-      const mat = new THREE.MeshStandardMaterial({ 
-        roughness: 0.28, metalness: 0.18, transparent: true,
+      const mat = new THREE.MeshStandardMaterial({
+        roughness: 0.62, metalness: 0, flatShading: solid.flat, transparent: true,
         emissive: new THREE.Color(0x000000), emissiveIntensity: 0
       });
-      const plinthMat = new THREE.MeshStandardMaterial({ roughness: 0.95, metalness: 0, transparent: true });
+      const mesh = new THREE.Mesh(solid.make(), mat);
+      mesh.rotation.y = solid.turn;
+      mesh.userData.archetypeId = d.id;
+      // An invisible sphere takes the pointer, so the hole in the ring and a small solid's
+      // edge still count. Raycasting tests it; rendering skips it.
+      const hit = new THREE.Mesh(this.hitGeo, this.hitMat);
+      hit.visible = false;
+      mesh.add(hit);
+
+      const plinth = new THREE.Mesh(this.plinthGeo, this.plinthMat);
       const haloMat = new THREE.MeshBasicMaterial({ transparent: true, opacity: 0, side: THREE.DoubleSide, depthWrite: false });
-      const geo = getArchetypePrismaticGeometry(d.id);
-      const mesh = new THREE.Mesh(geo, mat);
-      const plinth = new THREE.Mesh(this.plinthGeo, plinthMat);
       const halo = new THREE.Mesh(this.haloGeo, haloMat);
       halo.rotation.x = -Math.PI / 2;
-      mesh.userData.archetypeId = d.id;
 
-      // Outer gyroscopic orbital ring
-      const orbRingMat = new THREE.MeshBasicMaterial({ transparent: true, opacity: 0.35, depthWrite: false, side: THREE.DoubleSide });
-      const orbRing = new THREE.Mesh(this.orbitalRingGeo, orbRingMat);
-      orbRing.rotation.x = Math.PI / 2.2 + (i * 0.35);
-      orbRing.rotation.z = i * 0.45;
-
-      // Inner intersecting orbital ring
-      const orbRing2Mat = new THREE.MeshBasicMaterial({ transparent: true, opacity: 0.22, depthWrite: false, side: THREE.DoubleSide });
-      const orbRing2 = new THREE.Mesh(this.orbitalRingGeo, orbRing2Mat);
-      orbRing2.rotation.x = Math.PI / 3.4 + (i * 0.4);
-      orbRing2.rotation.y = Math.PI / 4 + (i * 0.5);
-
-      // Soft glow corona
-      const glowGeo = new THREE.SphereGeometry(1.3, 20, 16);
-      const glowMat = new THREE.MeshBasicMaterial({ transparent: true, opacity: 0, depthWrite: false });
-      const glow = new THREE.Mesh(glowGeo, glowMat);
-
-      group.add(plinth, mesh, halo, orbRing, orbRing2, glow);
+      group.add(plinth, mesh, halo);
       this.root.add(group);
-      return { 
-        ...d, pos, group, mesh, plinth, halo, orbRing, orbRing2, glow,
-        mat, plinthMat, haloMat, orbRingMat, orbRing2Mat, glowMat,
+      return {
+        ...d, pos, group, mesh, hit, plinth, halo, mat, haloMat,
+        shadow: this.makeShadow(60, pos.x, pos.z),
+        halfHeight: solid.halfHeight,
         radius: 30, lift: 1, opacity: 1, haloOpacity: 0,
         pulsePhase: i * 1.25, bobPhase: i * 0.85
       };
     });
-    this.pickables = this.nodes.map(n => n.mesh);
-
-    // Connection beams between neighbouring clusters with energy tubes
-    this.beamCurves = [];
-    this.beamMeshes = [];
-    this.linkGeos = this.nodes.map((a, i) => {
-      const b = this.nodes[(i + 1) % this.nodes.length];
-      const curve = new THREE.QuadraticBezierCurve3(
-        new THREE.Vector3(a.pos.x, 8, a.pos.z),
-        new THREE.Vector3((a.pos.x + b.pos.x) / 2, 54, (a.pos.z + b.pos.z) / 2),
-        new THREE.Vector3(b.pos.x, 8, b.pos.z)
-      );
-      this.beamCurves.push(curve);
-
-      // Base contour line
-      const geo = new THREE.BufferGeometry().setFromPoints(curve.getPoints(24));
-      this.root.add(new THREE.Line(geo, this.lineMat));
-
-      // Animated energy beam tube
-      const tubeGeo = new THREE.TubeGeometry(curve, 36, 0.75, 8, false);
-      const tubeMat = new THREE.MeshBasicMaterial({ transparent: true, opacity: 0.12, depthWrite: false });
-      const tube = new THREE.Mesh(tubeGeo, tubeMat);
-      this.root.add(tube);
-      this.beamMeshes.push({ mesh: tube, mat: tubeMat, curve });
-
-      return geo;
-    });
-
-    // Flowing energy data particles traveling along connection beams
-    this.flowParticles = this.buildFlowParticles();
-
-    // Central holographic intelligence core (icosahedron + octahedron)
-    this.coreGeo = new THREE.IcosahedronGeometry(18, 1);
-    this.coreMat = new THREE.MeshBasicMaterial({ wireframe: true, transparent: true, opacity: 0.28, depthWrite: false });
-    this.core = new THREE.Mesh(this.coreGeo, this.coreMat);
-    this.core.position.y = 35;
-    this.root.add(this.core);
-
-    this.innerCoreGeo = new THREE.OctahedronGeometry(7, 0);
-    this.innerCoreMat = new THREE.MeshBasicMaterial({ transparent: true, opacity: 0.45 });
-    this.innerCore = new THREE.Mesh(this.innerCoreGeo, this.innerCoreMat);
-    this.innerCore.position.y = 35;
-    this.root.add(this.innerCore);
-
-    // Illustrative corpus dots: round sprites, colors per cluster
-    const sprite = document.createElement('canvas');
-    sprite.width = sprite.height = 32;
-    const ctx = sprite.getContext('2d');
-    const grad = ctx.createRadialGradient(16, 16, 0, 16, 16, 16);
-    grad.addColorStop(0, 'rgba(255,255,255,1)');
-    grad.addColorStop(0.6, 'rgba(255,255,255,0.9)');
-    grad.addColorStop(1, 'rgba(255,255,255,0)');
-    ctx.fillStyle = grad;
-    ctx.fillRect(0, 0, 32, 32);
-    this.dotTexture = new THREE.CanvasTexture(sprite);
-    this.dotGeo = new THREE.BufferGeometry();
-    this.dotMat = new THREE.PointsMaterial({ size: 7, map: this.dotTexture, vertexColors: true, transparent: true, depthWrite: false, opacity: 0.85 });
-    this.dots = new THREE.Points(this.dotGeo, this.dotMat);
-    this.root.add(this.dots);
-
-    // Ambient floating stardust particles
-    this.ambientParticles = this.buildAmbientParticles();
-
-    this.updateNodeSizes();
-    this.buildDots();
+    this.pickables = this.nodes.map(n => n.hit);
   }
 
-  buildFlowParticles() {
-    const particlesPerBeam = 10;
-    const totalCount = this.beamCurves.length * particlesPerBeam;
-    const positions = new Float32Array(totalCount * 3);
-    const colors = new Float32Array(totalCount * 3);
+  // Spokes run from the corpus marker to each cluster. They say "part of the corpus"; nothing
+  // connects clusters to each other, because no measured similarity between them is shown.
+  buildSpokes() {
+    const positions = [];
+    this.nodes.forEach(n => positions.push(0, 0.5, 0, n.pos.x, 0.5, n.pos.z));
+    this.spokeGeo = new THREE.BufferGeometry();
+    this.spokeGeo.setAttribute('position', new THREE.Float32BufferAttribute(positions, 3));
+    this.root.add(new THREE.LineSegments(this.spokeGeo, this.lineMat));
 
-    this.flowData = [];
-    let idx = 0;
-    this.beamCurves.forEach((curve, beamIdx) => {
-      for (let p = 0; p < particlesPerBeam; p++) {
-        const t = p / particlesPerBeam;
-        const pt = curve.getPoint(t);
-        positions[idx * 3] = pt.x;
-        positions[idx * 3 + 1] = pt.y;
-        positions[idx * 3 + 2] = pt.z;
-        colors[idx * 3] = 1;
-        colors[idx * 3 + 1] = 1;
-        colors[idx * 3 + 2] = 1;
-        this.flowData.push({ beamIdx, t, speed: 0.09 + (p % 3) * 0.04 });
-        idx++;
-      }
-    });
-
-    const flowGeo = new THREE.BufferGeometry();
-    flowGeo.setAttribute('position', new THREE.Float32BufferAttribute(positions, 3));
-    flowGeo.setAttribute('color', new THREE.Float32BufferAttribute(colors, 3));
-
-    const flowSprite = document.createElement('canvas');
-    flowSprite.width = flowSprite.height = 16;
-    const fctx = flowSprite.getContext('2d');
-    const fgrad = fctx.createRadialGradient(8, 8, 0, 8, 8, 8);
-    fgrad.addColorStop(0, 'rgba(255,255,255,1)');
-    fgrad.addColorStop(0.5, 'rgba(255,255,255,0.7)');
-    fgrad.addColorStop(1, 'rgba(255,255,255,0)');
-    fctx.fillStyle = fgrad;
-    fctx.fillRect(0, 0, 16, 16);
-    this.flowTexture = new THREE.CanvasTexture(flowSprite);
-
-    const flowMat = new THREE.PointsMaterial({
-      size: 5, map: this.flowTexture, vertexColors: true,
-      transparent: true, depthWrite: false, opacity: 0.65,
-      blending: THREE.AdditiveBlending
-    });
-    const flowPoints = new THREE.Points(flowGeo, flowMat);
-    this.root.add(flowPoints);
-    return { geometry: flowGeo, material: flowMat, points: flowPoints };
+    this.activeSpokeGeo = new THREE.BoxGeometry(1, 0.4, 2.4);
+    this.activeSpokeMat = new THREE.MeshBasicMaterial({ transparent: true, opacity: 0.85 });
+    this.activeSpoke = new THREE.Mesh(this.activeSpokeGeo, this.activeSpokeMat);
+    this.root.add(this.activeSpoke);
   }
 
-  buildAmbientParticles() {
-    const count = this.lowDetail ? 60 : 160;
-    const positions = new Float32Array(count * 3);
-    const colors = new Float32Array(count * 3);
-    const rand = seededRandom(42);
-
-    this.ambientData = [];
-    for (let i = 0; i < count; i++) {
-      const x = (rand() - 0.5) * 800;
-      const y = rand() * 220 + 8;
-      const z = (rand() - 0.5) * 600;
-      positions[i * 3] = x;
-      positions[i * 3 + 1] = y;
-      positions[i * 3 + 2] = z;
-      colors[i * 3] = 0.8;
-      colors[i * 3 + 1] = 0.85;
-      colors[i * 3 + 2] = 0.8;
-      this.ambientData.push({
-        baseY: y,
-        speed: 0.35 + rand() * 0.65,
-        phase: rand() * Math.PI * 2,
-        driftX: (rand() - 0.5) * 0.25,
-        driftZ: (rand() - 0.5) * 0.25
-      });
-    }
-
-    const ambGeo = new THREE.BufferGeometry();
-    ambGeo.setAttribute('position', new THREE.Float32BufferAttribute(positions, 3));
-    ambGeo.setAttribute('color', new THREE.Float32BufferAttribute(colors, 3));
-
-    const ambSprite = document.createElement('canvas');
-    ambSprite.width = ambSprite.height = 16;
-    const actx = ambSprite.getContext('2d');
-    const agrad = actx.createRadialGradient(8, 8, 0, 8, 8, 8);
-    agrad.addColorStop(0, 'rgba(255,255,255,0.9)');
-    agrad.addColorStop(1, 'rgba(255,255,255,0)');
-    actx.fillStyle = agrad;
-    actx.fillRect(0, 0, 16, 16);
-    this.ambientTexture = new THREE.CanvasTexture(ambSprite);
-
-    const ambMat = new THREE.PointsMaterial({
-      size: 4, map: this.ambientTexture, vertexColors: true,
-      transparent: true, depthWrite: false, opacity: 0.38,
-      blending: THREE.AdditiveBlending
+  // Names on the stage, placed from the 3D scene. The legend carries the same facts for
+  // assistive technology, so this layer is decorative for it, and it stays out of the pointer's way.
+  buildLabels() {
+    if (this.labelLayer) this.labelLayer.remove();
+    this.labelLayer = document.createElement('div');
+    this.labelLayer.className = 'atlas-node-labels';
+    this.labelLayer.setAttribute('aria-hidden', 'true');
+    this.nodes.forEach(n => {
+      n.labelEl = document.createElement('span');
+      n.labelEl.className = 'atlas-node-label';
+      this.labelLayer.appendChild(n.labelEl);
     });
-    const ambPoints = new THREE.Points(ambGeo, ambMat);
-    this.root.add(ambPoints);
-    return { geometry: ambGeo, material: ambMat, points: ambPoints };
+    this.corpusLabelEl = document.createElement('span');
+    this.corpusLabelEl.className = 'atlas-node-label atlas-corpus-label';
+    this.labelLayer.appendChild(this.corpusLabelEl);
+    this.wrapper.appendChild(this.labelLayer);
+    this.renderLabelText();
+  }
+
+  renderLabelText() {
+    if (!this.labelLayer) return;
+    this.nodes.forEach(n => {
+      n.labelEl.textContent = n.label;
+    });
+    const known = this.nodes.every(n => typeof n.count === 'number');
+    const total = known ? this.nodes.reduce((sum, n) => sum + n.count, 0) : null;
+    this.corpusLabelEl.textContent = total === null ? 'Alumni corpus' : `Alumni corpus · ${total} resumes`;
+  }
+
+  placeLabel(el, x, y, z) {
+    this.projected.set(x, y, z).project(this.camera);
+    const px = Math.round((this.projected.x * 0.5 + 0.5) * this.size.w);
+    const py = Math.round((-this.projected.y * 0.5 + 0.5) * this.size.h);
+    el.style.transform = `translate(-50%, -100%) translate(${px}px, ${py}px)`;
+  }
+
+  updateLabels() {
+    if (!this.labelLayer || this.labelLayer.hidden) return;
+    this.nodes.forEach(n => {
+      const top = n.mesh.position.y + n.radius * n.lift * n.halfHeight + 8;
+      this.placeLabel(n.labelEl, n.pos.x, top, n.pos.z);
+    });
+    this.placeLabel(this.corpusLabelEl, 0, 70, 0);
   }
 
   updateNodeSizes() {
     const counts = this.nodes.map(n => n.count).filter(c => typeof c === 'number');
     const max = counts.length ? Math.max(...counts) : null;
     this.nodes.forEach(n => {
-      n.radius = max && typeof n.count === 'number' ? 15 + 27 * Math.sqrt(n.count / max) : 30;
-      n.plinth.scale.set(n.radius * 0.64, 6, n.radius * 0.64);
-      n.plinth.position.y = 3;
+      // Square root, so a solid's visible area rather than its width follows the count.
+      n.radius = max && typeof n.count === 'number' ? 15 + 27 * Math.sqrt(n.count / max) : 28;
+      n.plinth.scale.set(n.radius * 0.6, 3, n.radius * 0.6);
+      n.plinth.position.y = 1.5;
       n.halo.scale.setScalar(n.radius);
-      n.halo.position.y = 1.5;
+      n.halo.position.y = 0.7;
+      n.shadow.scale.set(n.radius * 3.1, n.radius * 3.1, 1);
+      n.hit.scale.setScalar(Math.max(1.3, 30 / n.radius));
     });
   }
 
   // Dot count per cluster follows its share of the corpus, capped overall.
   buildDots() {
-    const total = this.lowDetail ? 70 : 150;
+    const total = this.lowDetail ? 60 : 120;
     const known = this.nodes.every(n => typeof n.count === 'number');
     const sum = known ? this.nodes.reduce((s, n) => s + n.count, 0) : this.nodes.length;
     const rand = seededRandom(226);
@@ -1420,14 +1322,14 @@ class CareerAtlas {
       const count = Math.max(4, Math.round(total * share));
       for (let k = 0; k < count; k++) {
         const angle = rand() * Math.PI * 2;
-        const dist = n.radius + 10 + rand() * 46;
-        positions.push(n.pos.x + Math.cos(angle) * dist, 2 + rand() * 18, n.pos.z + Math.sin(angle) * dist * 0.7);
+        const dist = n.radius * 1.5 + 8 + rand() * 40;
+        positions.push(n.pos.x + Math.cos(angle) * dist, 1.2, n.pos.z + Math.sin(angle) * dist);
         this.dotOwners.push(i);
       }
     });
     this.dotGeo.setAttribute('position', new THREE.Float32BufferAttribute(positions, 3));
     this.dotGeo.setAttribute('color', new THREE.Float32BufferAttribute(new Array(this.dotOwners.length * 3).fill(1), 3));
-    this.dotMat.size = this.lowDetail ? 6 : 7;
+    this.dotMat.size = this.lowDetail ? 8 : 9;
     this.paintDots();
   }
 
@@ -1446,58 +1348,25 @@ class CareerAtlas {
   applyPalette() {
     this.palette = getThemePalette();
     const p = this.palette;
-    this.discMat.color.set(p.isDark ? p.surface : p.canvas);
+    this.discMat.color.set(p.isDark ? p.surface : p.surfaceRaised);
     this.lineMat.color.set(p.borderStrong);
-    this.hemi.color.set(p.surface);
+    this.hemi.color.set(p.isDark ? p.ink : '#ffffff');
     this.hemi.groundColor.set(p.border);
-    this.hemi.intensity = p.isDark ? 0.55 : 0.75;
-    this.sun.intensity = p.isDark ? 0.7 : 0.9;
-
-    if (this.scene.fog) {
-      this.scene.fog.color.set(p.isDark ? 0x161422 : p.canvas);
-    }
+    this.hemi.intensity = p.isDark ? 0.6 : 0.78;
+    this.sun.intensity = p.isDark ? 0.75 : 0.85;
+    this.scene.fog.color.set(p.canvas);
+    this.shadowMat.color.set(p.isDark ? '#000000' : p.ink);
+    this.shadowMat.opacity = p.isDark ? 0.5 : 0.24;
+    this.brassMat.color.set(p.ochre);
+    this.plinthMat.color.set(p.border);
 
     this.nodes.forEach(n => {
       const c = p.archetypes[n.id];
       n.mat.color.set(c);
       n.mat.emissive.set(c);
-      n.plinthMat.color.set(p.isDark ? p.border : p.canvas);
       n.haloMat.color.set(c);
-      if (n.orbRingMat) n.orbRingMat.color.set(c);
-      if (n.orbRing2Mat) n.orbRing2Mat.color.set(c);
-      if (n.glowMat) n.glowMat.color.set(c);
     });
-
-    if (this.groundRingMat) {
-      this.groundRingMat.color.set(p.isDark ? p.forest : p.borderStrong);
-    }
-
-    if (this.coreMat) this.coreMat.color.set(p.isDark ? (p.orchid || 0x7965A8) : p.forest);
-    if (this.innerCoreMat) this.innerCoreMat.color.set(p.isDark ? (p.lagoon || 0x277C7D) : p.terracotta);
-
-    if (this.beamMeshes) {
-      this.beamMeshes.forEach((bm, i) => {
-        bm.mat.color.set(p.archetypes[this.nodes[i % this.nodes.length].id]);
-      });
-    }
-
-    if (this.flowParticles && this.flowData) {
-      const fc = this.flowParticles.geometry.getAttribute('color');
-      const c = new THREE.Color();
-      this.flowData.forEach((fd, i) => {
-        c.set(p.archetypes[this.nodes[fd.beamIdx % this.nodes.length].id]);
-        fc.setXYZ(i, c.r, c.g, c.b);
-      });
-      fc.needsUpdate = true;
-      this.flowParticles.material.blending = p.isDark ? THREE.AdditiveBlending : THREE.NormalBlending;
-    }
-
-    if (this.ambientParticles) {
-      this.ambientParticles.material.blending = p.isDark ? THREE.AdditiveBlending : THREE.NormalBlending;
-      this.ambientParticles.material.opacity = p.isDark ? 0.45 : 0.25;
-    }
-
-    this.dotMat.blending = p.isDark ? THREE.AdditiveBlending : THREE.NormalBlending;
+    this.syncSelection();
     this.paintDots();
     this.requestRender();
   }
@@ -1507,7 +1376,8 @@ class CareerAtlas {
     this.nodes.forEach((n, i) => Object.assign(n, { label: data[i].label, count: data[i].count, pct: data[i].pct }));
     this.updateNodeSizes();
     this.buildDots();
-    this.requestRender();
+    this.renderLabelText();
+    this.armAmbient();
   }
 
   // ---- state changes -----------------------------------------------------------
@@ -1520,51 +1390,118 @@ class CareerAtlas {
       this.targetRot.y = 0;
       this.velocity.x = this.velocity.y = 0;
     }
+    this.syncSelection();
     this.paintDots();
-    this.requestRender();
+    this.armAmbient();
   }
 
   setSelected(id) {
     this.selectedId = id;
+    this.syncSelection();
     this.paintDots();
-    this.requestRender();
+    this.armAmbient();
+  }
+
+  // Everything that follows the selected cluster and is not eased frame by frame.
+  syncSelection() {
+    const selected = this.nodes.find(n => n.id === this.selectedId);
+    if (selected && this.activeSpoke) {
+      const length = Math.hypot(selected.pos.x, selected.pos.z);
+      this.activeSpoke.position.set(selected.pos.x / 2, 0.6, selected.pos.z / 2);
+      this.activeSpoke.scale.x = length;
+      this.activeSpoke.rotation.y = -Math.atan2(selected.pos.z, selected.pos.x);
+      if (this.palette) this.activeSpokeMat.color.set(this.palette.archetypes[selected.id]);
+    }
+    if (this.labelLayer) {
+      this.nodes.forEach(n => {
+        n.labelEl.classList.toggle('is-selected', n.id === this.selectedId);
+        n.labelEl.classList.toggle('is-dim', this.mode === 'evidence' && n.id !== this.selectedId);
+      });
+    }
   }
 
   // Keyboard focus or hover on a legend item highlights its node.
   preview(id) {
     this.previewId = id;
-    this.requestRender();
+    this.armAmbient();
   }
 
   setReducedMotion(reduced) {
     this.reducedMotion = reduced;
-    this.requestRender();
+    if (reduced) {
+      this.ambientUntil = 0;
+      this.ambientMix = 0;
+    }
+    this.armAmbient();
   }
 
   zoomBy(factor) {
-    this.targetZoom = Math.min(1.45, Math.max(0.62, this.targetZoom * factor));
-    this.requestRender();
+    this.targetZoom = Math.min(ATLAS_ZOOM_MAX, Math.max(ATLAS_ZOOM_MIN, this.targetZoom * factor));
+    syncAtlasZoomButtons();
+    this.armAmbient();
   }
 
   resetCamera() {
     this.targetRot.x = this.targetRot.y = 0;
     this.velocity.x = this.velocity.y = 0;
     this.targetZoom = 1;
+    syncAtlasZoomButtons();
+    this.armAmbient();
+  }
+
+  // Render the change now, and in Full motion (re)open the ambient window.
+  // Calm and system-reduced motion never get ambient frames.
+  armAmbient() {
+    if (!this.reducedMotion) this.ambientUntil = performance.now() + ATLAS_AMBIENT_MS;
     this.requestRender();
   }
 
-  // ---- loop: one frame per request, more only while something is easing ---------
+  get ambientActive() {
+    return !this.reducedMotion && performance.now() < this.ambientUntil;
+  }
+
+  // Diagnostics for the lifecycle probes.
+  get schedulerState() {
+    if (this.disposed) return 'disposed';
+    if (this.pauseReasons.size) return `paused-${[...this.pauseReasons][0]}`;
+    if (this.frame) return 'frame-pending';
+    if (this.frameTimer) return 'ambient-timer-pending';
+    return 'at-rest';
+  }
+
+  // ---- loop ------------------------------------------------------------------------
+  // At most one thing is ever pending: an animation frame or one cadence timer.
+  // Direct input and easing get an immediate frame. Ambient motion runs at a capped cadence for
+  // a bounded time after load or interaction, then the scene rests and renders nothing.
   requestRender() {
     if (this.disposed || this.frame || this.pauseReasons.size) return;
-    this.frame = requestAnimationFrame(() => this.tick());
+    if (this.frameTimer) {
+      clearTimeout(this.frameTimer);
+      this.frameTimer = null;
+    }
+    this.frame = requestAnimationFrame(this.boundTick);
+  }
+
+  scheduleContinuousRender() {
+    if (this.disposed || this.frame || this.frameTimer || this.pauseReasons.size) return;
+    const interval = this.lowDetail ? (1000 / 24) : (1000 / 30);
+    this.frameTimer = window.setTimeout(() => {
+      this.frameTimer = null;
+      if (this.disposed || this.pauseReasons.size) return;
+      this.frame = requestAnimationFrame(this.boundTick);
+    }, interval);
+  }
+
+  cancelPendingFrame() {
+    if (this.frame) cancelAnimationFrame(this.frame);
+    if (this.frameTimer) clearTimeout(this.frameTimer);
+    this.frame = null;
+    this.frameTimer = null;
   }
 
   pause(reason) {
     this.pauseReasons.add(reason);
-    if (this.frame) {
-      cancelAnimationFrame(this.frame);
-      this.frame = null;
-    }
+    this.cancelPendingFrame();
   }
 
   resume(reason) {
@@ -1572,138 +1509,103 @@ class CareerAtlas {
     this.requestRender();
   }
 
+  // Eases toward a target at a rate normalised to time; a value still on its way keeps the loop alive.
+  easeTo(from, to, reason) {
+    const next = from + (to - from) * this.easeK;
+    if (Math.abs(to - next) <= 0.0005) return to;
+    this.frameReasons.add(reason);
+    return next;
+  }
+
   tick() {
     this.frame = null;
     if (this.disposed || this.pauseReasons.size) return;
-    const dt = this.clock ? Math.min(0.05, this.clock.getDelta()) : 0.016;
+    const dt = Math.min(0.05, this.clock.getDelta());
     this.elapsed += dt;
-    const k = this.reducedMotion ? 1 : 0.16;
-    let moving = false;
-    const ease = (from, to) => {
-      const next = from + (to - from) * k;
-      if (Math.abs(to - next) > 0.0005) moving = true;
-      return Math.abs(to - next) > 0.0005 ? next : to;
-    };
+    const frameScale = dt * 60;
+    this.easeK = this.reducedMotion ? 1 : 1 - Math.pow(1 - 0.16, frameScale);
+    const reasons = this.frameReasons;
+    reasons.clear();
 
-    // Inertia drag decay
+    // The ambient weight fades in and out, so the end of the window settles the scene
+    // instead of snapping it. Every decorative motion below is scaled by it.
+    const ambientTarget = this.ambientActive ? 1 : 0;
+    this.ambientMix += (ambientTarget - this.ambientMix) * (this.reducedMotion ? 1 : 1 - Math.pow(1 - 0.06, frameScale));
+    if (Math.abs(ambientTarget - this.ambientMix) < 0.002) this.ambientMix = ambientTarget;
+    const amb = this.ambientMix;
+    if (amb > 0) reasons.add('ambient-drift');
+
+    // Orbit inertia after a drag
     if (!this.dragging && (Math.abs(this.velocity.x) > 0.0004 || Math.abs(this.velocity.y) > 0.0004)) {
-      this.targetRot.y += this.velocity.x;
-      this.targetRot.x += this.velocity.y;
-      this.velocity.x *= this.reducedMotion ? 0 : 0.82;
-      this.velocity.y *= this.reducedMotion ? 0 : 0.82;
+      this.targetRot.y += this.velocity.x * frameScale;
+      this.targetRot.x += this.velocity.y * frameScale;
+      const decay = this.reducedMotion ? 0 : Math.pow(0.82, frameScale);
+      this.velocity.x *= decay;
+      this.velocity.y *= decay;
       this.clampRotation();
-      moving = true;
+      reasons.add('user-initiated-orbit');
     }
 
-    // Slow cinematic drift in Atlas mode when not dragging
-    if (this.mode === 'atlas' && !this.dragging && !this.reducedMotion) {
-      this.targetRot.y += dt * 0.012;
+    // Slow drift in Atlas mode, only inside the ambient window. It moves the camera and its
+    // target together, so drifting is not "easing" and stays at the ambient cadence.
+    if (this.mode === 'atlas' && !this.dragging && amb > 0) {
+      const drift = dt * 0.012 * amb;
+      this.targetRot.y += drift;
+      this.rot.y += drift;
       this.clampRotation();
-      moving = true;
     }
 
-    this.rot.x = ease(this.rot.x, this.targetRot.x);
-    this.rot.y = ease(this.rot.y, this.targetRot.y);
-    this.zoom = ease(this.zoom, this.mode === 'evidence' ? this.targetZoom * 0.78 : this.targetZoom);
+    this.rot.x = this.easeTo(this.rot.x, this.targetRot.x, 'camera-easing');
+    this.rot.y = this.easeTo(this.rot.y, this.targetRot.y, 'camera-easing');
+    this.zoom = this.easeTo(this.zoom, this.mode === 'evidence' ? this.targetZoom * 0.82 : this.targetZoom, 'camera-easing');
 
-    const selected = this.nodes.find(n => n.id === this.selectedId);
-    const focusX = this.mode === 'evidence' && selected ? selected.pos.x * 0.55 + 120 : 0;
-    const focusZ = this.mode === 'evidence' && selected ? selected.pos.z * 0.55 : 0;
-    this.focus.x = ease(this.focus.x, focusX);
-    this.focus.z = ease(this.focus.z, focusZ);
+    let focusX = 0;
+    let focusZ = 0;
+    for (let i = 0; i < this.nodes.length; i++) {
+      const n = this.nodes[i];
+      if (this.mode === 'evidence' && n.id === this.selectedId) {
+        focusX = n.pos.x * 0.45;
+        focusZ = n.pos.z * 0.45;
+      }
+    }
+    this.focus.x = this.easeTo(this.focus.x, focusX, 'camera-easing');
+    this.focus.z = this.easeTo(this.focus.z, focusZ, 'camera-easing');
 
     const highlighted = this.previewId !== null ? this.previewId : this.hoverId;
-    this.nodes.forEach(n => {
+    for (let i = 0; i < this.nodes.length; i++) {
+      const n = this.nodes[i];
       const isSelected = n.id === this.selectedId;
       const isHighlighted = n.id === highlighted;
 
-      // Breathing pulse and gentle floating bob
-      const pulse = Math.sin(this.elapsed * 1.8 + n.pulsePhase) * 0.04;
-      const bob = Math.sin(this.elapsed * 0.9 + n.bobPhase) * 2.2;
+      // A very slight breath and bob, only inside the ambient window.
+      const pulse = Math.sin(this.elapsed * 1.4 + n.pulsePhase) * 0.018 * amb;
+      const bob = Math.sin(this.elapsed * 0.8 + n.bobPhase) * 1.6 * amb;
 
-      n.lift = ease(n.lift, isSelected ? 1.15 + pulse : isHighlighted ? 1.08 + pulse * 0.5 : 1 + pulse * 0.25);
-      n.opacity = ease(n.opacity, this.mode === 'evidence' && !isSelected ? 0.35 : 1);
-      n.haloOpacity = ease(n.haloOpacity, isSelected ? 0.9 : isHighlighted ? 0.45 : 0);
-      const r = n.radius * n.lift;
+      n.lift = this.easeTo(n.lift, isSelected ? 1.12 : isHighlighted ? 1.06 : 1, 'node-selection');
+      n.opacity = this.easeTo(n.opacity, this.mode === 'evidence' && !isSelected ? 0.32 : 1, 'node-selection');
+      n.haloOpacity = this.easeTo(n.haloOpacity, isSelected ? 0.95 : isHighlighted ? 0.5 : 0, 'node-selection');
+
+      const r = n.radius * (n.lift + pulse);
       n.mesh.scale.setScalar(r);
-      n.mesh.position.y = r + 6 + (this.reducedMotion ? 0 : bob);
+      n.mesh.position.y = 3 + r * n.halfHeight + bob;
       n.mat.opacity = n.opacity;
-      n.plinthMat.opacity = n.opacity;
       n.haloMat.opacity = n.haloOpacity;
-
-      // Emissive glow highlight
-      const targetEmissive = isSelected ? 0.22 : isHighlighted ? 0.12 : 0.02;
-      n.mat.emissiveIntensity += (targetEmissive - n.mat.emissiveIntensity) * 0.1;
-      n.mat.emissive.copy(n.mat.color).multiplyScalar(0.4);
-
-      // Gyroscopic orbital rings rotation
-      if (n.orbRing && !this.reducedMotion) {
-        n.orbRing.rotation.z += dt * (0.35 + n.id * 0.07);
-        n.orbRing.scale.setScalar(r * 0.038);
-        n.orbRing.position.y = n.mesh.position.y;
-        n.orbRingMat.opacity = isSelected ? 0.55 : isHighlighted ? 0.32 : 0.18;
-      }
-      if (n.orbRing2 && !this.reducedMotion) {
-        n.orbRing2.rotation.y += dt * (0.28 + n.id * 0.05);
-        n.orbRing2.scale.setScalar(r * 0.042);
-        n.orbRing2.position.y = n.mesh.position.y;
-        n.orbRing2Mat.opacity = isSelected ? 0.4 : isHighlighted ? 0.22 : 0.12;
-      }
-
-      // Soft glow corona
-      if (n.glow) {
-        const glowScale = r * (isSelected ? 1.4 : isHighlighted ? 1.25 : 1.12);
-        n.glow.scale.setScalar(glowScale);
-        n.glow.position.y = n.mesh.position.y;
-        n.glowMat.opacity = isSelected ? 0.12 : isHighlighted ? 0.07 : 0.02;
-      }
-    });
-
-    // Flowing energy data particles along bezier paths
-    if (this.flowParticles && this.flowData && !this.reducedMotion) {
-      const fp = this.flowParticles.geometry.getAttribute('position');
-      this.flowData.forEach((fd, i) => {
-        fd.t = (fd.t + dt * fd.speed) % 1;
-        const pt = this.beamCurves[fd.beamIdx].getPoint(fd.t);
-        fp.setXYZ(i, pt.x, pt.y, pt.z);
-      });
-      fp.needsUpdate = true;
-      moving = true;
+      n.mat.emissiveIntensity = this.easeTo(n.mat.emissiveIntensity, isSelected ? 0.16 : isHighlighted ? 0.09 : 0, 'node-selection');
     }
 
-    // Ambient floating stardust
-    if (this.ambientParticles && this.ambientData && !this.reducedMotion) {
-      const ap = this.ambientParticles.geometry.getAttribute('position');
-      this.ambientData.forEach((ad, i) => {
-        const y = ad.baseY + Math.sin(this.elapsed * ad.speed + ad.phase) * 14;
-        const x = ap.getX(i) + ad.driftX * dt;
-        const z = ap.getZ(i) + ad.driftZ * dt;
-        ap.setXYZ(i, x, y, z);
-      });
-      ap.needsUpdate = true;
-    }
-
-    // Central holographic intelligence core rotation
-    if (this.core && !this.reducedMotion) {
-      this.core.rotation.x += dt * 0.14;
-      this.core.rotation.y += dt * 0.2;
-      this.coreMat.opacity = 0.16 + Math.sin(this.elapsed * 1.4) * 0.07;
-    }
-    if (this.innerCore && !this.reducedMotion) {
-      this.innerCore.rotation.x -= dt * 0.26;
-      this.innerCore.rotation.z += dt * 0.22;
-      this.innerCoreMat.opacity = 0.32 + Math.sin(this.elapsed * 2.0) * 0.12;
-    }
-
-    // Ground ring pulse
-    if (this.groundRingMat) {
-      this.groundRingMat.opacity = 0.12 + Math.sin(this.elapsed * 0.8) * 0.04;
-    }
+    // The armillary turns slowly while the ambient window is open.
+    this.armillaryRingA.rotation.z += dt * 0.22 * amb;
+    this.armillaryRingB.rotation.y += dt * 0.16 * amb;
 
     this.updateCamera();
     this.renderer.render(this.scene, this.camera);
-    if (!this.reducedMotion) moving = true;
-    if (moving) this.requestRender();
+    this.updateLabels();
+
+    if (reasons.has('camera-easing') || reasons.has('node-selection') || reasons.has('user-initiated-orbit')) {
+      this.requestRender();
+    } else if (reasons.size) {
+      this.scheduleContinuousRender();
+    }
   }
 
   clampRotation() {
@@ -1713,12 +1615,14 @@ class CareerAtlas {
 
   updateCamera() {
     const aspect = this.size.w / this.size.h;
-    // keep the whole disc in frame on narrow stages
-    const fit = 335 / (Math.tan((this.camera.fov / 2) * Math.PI / 180) * aspect);
-    const distance = Math.max(600, fit) * this.zoom;
-    const elevation = 0.62 + this.rot.x + this.parallax.y;
+    const tanHalfFov = Math.tan((this.camera.fov / 2) * Math.PI / 180);
+    // Keep the whole dial in frame whichever side of the stage is the tight one.
+    const fit = Math.max((ATLAS_DIAL_RADIUS + 40) / (tanHalfFov * aspect), 292 / tanHalfFov);
+    const distance = fit * this.zoom;
+    const elevation = 0.66 + this.rot.x + this.parallax.y;
     const azimuth = this.rot.y + this.parallax.x;
-    this.cameraTarget.set(this.focus.x, 18, this.focus.z);
+    // Aimed a little in front of the centre, so the near rim of the dial stays in frame.
+    this.cameraTarget.set(this.focus.x, 22, this.focus.z + 26);
     this.camera.position.set(
       this.cameraTarget.x + distance * Math.cos(elevation) * Math.sin(azimuth),
       this.cameraTarget.y + distance * Math.sin(elevation),
@@ -1736,6 +1640,7 @@ class CareerAtlas {
     this.renderer.setSize(w, h, false);
     this.camera.aspect = w / h;
     this.camera.updateProjectionMatrix();
+    if (this.labelLayer) this.labelLayer.hidden = w < ATLAS_LABEL_MIN_WIDTH;
     if (sizeClassChanged) this.buildDots();
     this.requestRender();
   }
@@ -1751,22 +1656,31 @@ class CareerAtlas {
     this.pointerNdc.set(((clientX - rect.left) / rect.width) * 2 - 1, -((clientY - rect.top) / rect.height) * 2 + 1);
     this.raycaster.setFromCamera(this.pointerNdc, this.camera);
     const hit = this.raycaster.intersectObjects(this.pickables, false)[0];
-    return hit ? this.nodes.find(n => n.mesh === hit.object) : null;
+    return hit ? this.nodes.find(n => n.hit === hit.object) : null;
   }
 
   bindEvents() {
     this.on(this.canvas, 'pointerdown', (e) => {
+      this.pressPoint.x = e.clientX;
+      this.pressPoint.y = e.clientY;
+      this.pressMoved = false;
+      // Only Orbit takes over the pointer; Atlas and Evidence leave the page free to scroll.
       if (this.mode !== 'orbit') return;
       this.dragging = true;
-      this.lastPointer = { x: e.clientX, y: e.clientY };
+      this.lastPointer.x = e.clientX;
+      this.lastPointer.y = e.clientY;
       this.velocity.x = this.velocity.y = 0;
       this.canvas.setPointerCapture(e.pointerId);
     });
     this.on(this.canvas, 'pointermove', (e) => {
+      if (Math.hypot(e.clientX - this.pressPoint.x, e.clientY - this.pressPoint.y) > ATLAS_CLICK_SLOP_PX) {
+        this.pressMoved = true;
+      }
       if (this.dragging) {
         const dx = (e.clientX - this.lastPointer.x) / this.size.w;
         const dy = (e.clientY - this.lastPointer.y) / this.size.h;
-        this.lastPointer = { x: e.clientX, y: e.clientY };
+        this.lastPointer.x = e.clientX;
+        this.lastPointer.y = e.clientY;
         this.velocity.x = -dx * 2.0;
         this.velocity.y = dy * 1.4;
         this.targetRot.y += this.velocity.x;
@@ -1788,10 +1702,10 @@ class CareerAtlas {
         // a small parallax in Atlas mode only
         if (this.mode === 'atlas' && !this.reducedMotion) {
           const rect = this.canvas.getBoundingClientRect();
-          this.parallax.x = ((e.clientX - rect.left) / rect.width - 0.5) * -0.08;
-          this.parallax.y = ((e.clientY - rect.top) / rect.height - 0.5) * 0.04;
+          this.parallax.x = ((e.clientX - rect.left) / rect.width - 0.5) * -0.05;
+          this.parallax.y = ((e.clientY - rect.top) / rect.height - 0.5) * 0.025;
         }
-        this.requestRender();
+        this.armAmbient(); // exploring the scene keeps it alive; it settles once the pointer rests
       }
     });
     const endDrag = (e) => {
@@ -1802,6 +1716,7 @@ class CareerAtlas {
     };
     this.on(this.canvas, 'pointerup', endDrag);
     this.on(this.canvas, 'pointercancel', endDrag);
+    this.on(this.canvas, 'lostpointercapture', endDrag);
     this.on(this.canvas, 'pointerleave', () => {
       this.hoverId = null;
       this.parallax.x = this.parallax.y = 0;
@@ -1809,8 +1724,10 @@ class CareerAtlas {
       this.hideTooltip();
       this.requestRender();
     });
-    // Click or tap selects a cluster and syncs the Career Genome.
+    // Click or tap selects a cluster and syncs the legend and the Career Genome.
+    // The release at the end of a drag is not a click on whatever lies under it.
     this.on(this.canvas, 'click', (e) => {
+      if (this.pressMoved) return;
       const node = this.pickNode(e.clientX, e.clientY);
       if (!node) return;
       selectArchetype(node.id);
@@ -1828,23 +1745,34 @@ class CareerAtlas {
     }
     if ('IntersectionObserver' in window) {
       this.visibilityObserver = new IntersectionObserver((entries) => {
-        entries.forEach(entry => (entry.isIntersecting ? this.resume('offscreen') : this.pause('offscreen')));
+        entries.forEach(entry => {
+          if (!entry.isIntersecting) {
+            this.pause('offscreen');
+            return;
+          }
+          this.resume('offscreen');
+          this.armAmbient(); // a brief settle-in when the stage scrolls back into view
+        });
       });
       this.visibilityObserver.observe(this.wrapper);
     }
-    this.on(document, 'visibilitychange', () => (document.hidden ? this.pause('hidden') : this.resume('hidden')));
+    this.on(document, 'visibilitychange', () => (document.hidden ? this.pause('document-hidden') : this.resume('document-hidden')));
 
     this.on(this.canvas, 'webglcontextlost', (e) => {
       e.preventDefault();
-      this.pause('context');
-      showAtlasFallback('Interactive 3D paused while the graphics context recovers; the map is shown in 2D.');
+      this.pause('context-lost');
+      this.hideTooltip();
+      showAtlasFallback('The 3D view paused because the graphics context was lost. The map is shown in 2D until it recovers.');
+      announceAtlasStatus('The 3D view paused. The 2D map is available.');
     });
     this.on(this.canvas, 'webglcontextrestored', () => {
       hideAtlasFallback();
       this.disposeSceneObjects();
       this.buildScene();
       this.applyPalette();
-      this.resume('context');
+      this.resize();
+      this.resume('context-lost');
+      announceAtlasStatus('The 3D view is back.');
     });
   }
 
@@ -1860,12 +1788,13 @@ class CareerAtlas {
         : `Cluster ${node.id} · corpus count loading`;
     }
     tip.style.setProperty('--arch', `var(--arch-${node.id}-color)`);
-    const rect = this.wrapper.getBoundingClientRect();
-    const x = Math.min(rect.width - 230, Math.max(8, clientX - rect.left + 14));
-    const y = Math.max(8, clientY - rect.top - 64);
-    tip.style.left = `${x}px`;
-    tip.style.top = `${y}px`;
     tip.style.display = 'block';
+    // Inside the stage, whichever edge the pointer is near.
+    const rect = this.wrapper.getBoundingClientRect();
+    const maxX = Math.max(8, rect.width - tip.offsetWidth - 8);
+    const maxY = Math.max(8, rect.height - tip.offsetHeight - 8);
+    tip.style.left = `${Math.min(maxX, Math.max(8, clientX - rect.left + 14))}px`;
+    tip.style.top = `${Math.min(maxY, Math.max(8, clientY - rect.top - tip.offsetHeight - 12))}px`;
   }
 
   hideTooltip() {
@@ -1886,23 +1815,24 @@ class CareerAtlas {
       }
     });
     while (this.scene.children.length) this.scene.remove(this.scene.children[0]);
-    if (this.dotTexture) this.dotTexture.dispose();
-    if (this.flowTexture) this.flowTexture.dispose();
-    if (this.ambientTexture) this.ambientTexture.dispose();
-    this.beamMeshes = [];
-    this.beamCurves = [];
-    this.flowData = null;
-    this.ambientData = null;
+    if (this.softTexture) this.softTexture.dispose();
+    if (this.labelLayer) this.labelLayer.remove();
+    this.labelLayer = null;
+    this.corpusLabelEl = null;
+    this.nodes = [];
+    this.pickables = [];
   }
 
   dispose() {
+    if (this.disposed) return;
     this.disposed = true;
-    if (this.frame) cancelAnimationFrame(this.frame);
-    this.frame = null;
+    this.cancelPendingFrame();
     this.listeners.forEach(off => off());
     this.listeners = [];
     if (this.resizeObserver) this.resizeObserver.disconnect();
     if (this.visibilityObserver) this.visibilityObserver.disconnect();
+    this.resizeObserver = null;
+    this.visibilityObserver = null;
     this.hideTooltip();
     this.disposeSceneObjects();
     if (this.renderer) this.renderer.dispose();
@@ -1911,48 +1841,63 @@ class CareerAtlas {
       camera = null;
       renderer = null;
     }
+    this.wrapper.classList.remove('is-orbit');
   }
 }
 
-// ---- SVG fallback: the same five clusters, still selectable ------------------------
-function showAtlasFallback(note) {
+// ---- 2D fallback: the same five clusters, as real buttons over a decorative dial ------
+function showAtlasFallback(note, { offerThreeD = false } = {}) {
   const box = document.getElementById('atlas-fallback');
   const canvas = document.getElementById('spatial-hero-canvas');
   if (!box) return;
   const data = getAtlasNodeData();
-  const counts = data.map(d => d.count).filter(c => typeof c === 'number');
-  const max = counts.length ? Math.max(...counts) : null;
-  const nodes = data.map((d, i) => {
+  const known = data.filter(d => typeof d.count === 'number');
+  const max = known.length ? Math.max(...known.map(d => d.count)) : null;
+  const selectedId = appState.genome.selectedArchetypeId;
+  const spots = data.map((d, i) => {
     const p = atlasNodePosition(i, data.length);
-    const r = max && typeof d.count === 'number' ? 14 + 22 * Math.sqrt(d.count / max) : 24;
-    return { ...d, x: 400 + p.x * 1.25, y: 200 + p.z * 1.05, r };
+    return { ...d, left: 50 + (p.x / ATLAS_DIAL_RADIUS) * 37, top: 47 + (p.z / ATLAS_DIAL_RADIUS) * 37 };
   });
-  const links = nodes.map((a, i) => {
-    const b = nodes[(i + 1) % nodes.length];
-    return `<path d="M${a.x} ${a.y} Q${(a.x + b.x) / 2} ${(a.y + b.y) / 2 - 36} ${b.x} ${b.y}" />`;
-  }).join('');
   box.innerHTML = `
-    <svg class="atlas-fallback-svg" viewBox="0 0 800 400" aria-hidden="true" focusable="false">
-      <ellipse class="fb-disc" cx="400" cy="205" rx="380" ry="170" />
-      <ellipse class="fb-ring" cx="400" cy="205" rx="190" ry="85" />
-      <ellipse class="fb-ring" cx="400" cy="205" rx="300" ry="134" />
-      <g class="fb-links">${links}</g>
-      ${nodes.map(n => `
-        <g class="fb-node${n.id === appState.genome.selectedArchetypeId ? ' is-selected' : ''}" data-arch="${n.id}" data-archetype-id="${n.id}">
-          <circle cx="${n.x}" cy="${n.y}" r="${n.r}" />
-          <text x="${n.x}" y="${n.y + n.r + 18}" text-anchor="middle">${escapeHTML(n.label)}</text>
-        </g>`).join('')}
+    <svg class="atlas-fallback-svg" viewBox="0 0 800 440" preserveAspectRatio="xMidYMid meet" aria-hidden="true" focusable="false">
+      <ellipse class="fb-disc" cx="400" cy="207" rx="372" ry="190" />
+      <ellipse class="fb-ring" cx="400" cy="207" rx="238" ry="122" />
+      <ellipse class="fb-ring" cx="400" cy="207" rx="134" ry="68" />
+      <g class="fb-links">${spots.map(s => `<line x1="400" y1="207" x2="${(s.left * 8).toFixed(1)}" y2="${(s.top * 4.4).toFixed(1)}" />`).join('')}</g>
+      <circle class="fb-corpus" cx="400" cy="207" r="9" />
     </svg>
-    <p class="atlas-fallback-note">${escapeHTML(note)}</p>`;
+    <ul class="atlas-fallback-nodes">
+      ${spots.map(s => {
+        const size = max && typeof s.count === 'number' ? Math.round(14 + 14 * Math.sqrt(s.count / max)) : 18;
+        const selected = s.id === selectedId;
+        const detail = typeof s.count === 'number' ? `${s.count} resumes · ${s.pct}%` : 'Count loading';
+        return `<li style="--spot-x:${s.left.toFixed(1)}%;--spot-y:${s.top.toFixed(1)}%">
+          <button type="button" class="fb-node${selected ? ' is-selected' : ''}" data-archetype-id="${s.id}" aria-pressed="${selected}">
+            <span class="legend-swatch" data-arch="${s.id}" style="--swatch-size:${size}px" aria-hidden="true"></span>
+            <span class="fb-node-text"><span class="fb-node-name">${escapeHTML(s.label)}</span><span class="fb-node-count">${escapeHTML(detail)}</span></span>
+          </button>
+        </li>`;
+      }).join('')}
+    </ul>
+    <div class="atlas-fallback-foot">
+      <p class="atlas-fallback-note">${escapeHTML(note)}</p>
+      ${offerThreeD ? '<button type="button" class="btn-text-action atlas-load-3d">Load the 3D view</button>' : ''}
+    </div>`;
   box.hidden = false;
   if (canvas) canvas.hidden = true;
   const wrapper = document.getElementById('spatial-canvas-wrapper');
   if (wrapper) wrapper.classList.add('is-fallback');
+  const stage = document.getElementById('hero-3d-stage');
+  if (stage) stage.classList.add('is-fallback');
   if (!box.dataset.bound) {
     box.dataset.bound = 'true';
     box.addEventListener('click', (e) => {
-      const g = e.target.closest('[data-archetype-id]');
-      if (g) selectArchetype(parseInt(g.getAttribute('data-archetype-id'), 10));
+      const node = e.target.closest('.fb-node');
+      if (node) {
+        selectArchetype(parseInt(node.getAttribute('data-archetype-id'), 10));
+        return;
+      }
+      if (e.target.closest('.atlas-load-3d')) init3DScene({ force: true });
     });
   }
 }
@@ -1964,38 +1909,76 @@ function hideAtlasFallback() {
   if (canvas) canvas.hidden = false;
   const wrapper = document.getElementById('spatial-canvas-wrapper');
   if (wrapper) wrapper.classList.remove('is-fallback');
+  const stage = document.getElementById('hero-3d-stage');
+  if (stage) stage.classList.remove('is-fallback');
 }
 
 function syncAtlasFallbackSelection() {
-  document.querySelectorAll('#atlas-fallback .fb-node').forEach(g => {
-    g.classList.toggle('is-selected', parseInt(g.getAttribute('data-archetype-id'), 10) === appState.genome.selectedArchetypeId);
+  document.querySelectorAll('#atlas-fallback .fb-node').forEach(node => {
+    const selected = parseInt(node.getAttribute('data-archetype-id'), 10) === appState.genome.selectedArchetypeId;
+    node.classList.toggle('is-selected', selected);
+    node.setAttribute('aria-pressed', String(selected));
   });
 }
 
+function announceAtlasStatus(message) {
+  const status = document.getElementById('atlas-status');
+  if (status) status.textContent = message;
+}
+
+// A device that says it is short of memory or data starts in 2D, with the choice to load 3D.
+function atlasShouldStartIn2D() {
+  const connection = navigator.connection;
+  return Boolean((connection && connection.saveData) || (navigator.deviceMemory && navigator.deviceMemory <= 2));
+}
+
+function syncAtlasZoomButtons() {
+  const zoomIn = document.getElementById('btn-3d-zoom-in');
+  const zoomOut = document.getElementById('btn-3d-zoom-out');
+  if (!zoomIn || !zoomOut) return;
+  const zoom = careerAtlas ? careerAtlas.targetZoom : 1;
+  const focused = document.activeElement;
+  zoomIn.disabled = zoom <= ATLAS_ZOOM_MIN + 0.0001;
+  zoomOut.disabled = zoom >= ATLAS_ZOOM_MAX - 0.0001;
+  // A button that just reached its limit must not take keyboard focus away with it.
+  if (focused === zoomIn && zoomIn.disabled) zoomOut.focus();
+  if (focused === zoomOut && zoomOut.disabled) zoomIn.focus();
+}
+
 // ---- lifecycle hooks used by the rest of the app -------------------------------------
-function init3DScene() {
+function init3DScene({ force = false } = {}) {
   const canvas = document.getElementById('spatial-hero-canvas');
   const wrapper = document.getElementById('spatial-canvas-wrapper');
   if (!canvas || !wrapper) return;
   initAtlasControls();
   if (careerAtlas) return;
 
+  const unavailable = 'The 3D view is not available in this browser. The career map works the same in 2D.';
   if (typeof THREE === 'undefined' || !webglAvailable()) {
-    showAtlasFallback('Interactive 3D is unavailable in this browser; the career map remains available in 2D.');
+    showAtlasFallback(unavailable);
+    return;
+  }
+  if (!force && atlasShouldStartIn2D()) {
+    showAtlasFallback('Showing the 2D map to save memory and data on this device.', { offerThreeD: true });
     return;
   }
   const atlas = new CareerAtlas(canvas, wrapper);
   if (!atlas.init()) {
     atlas.dispose();
-    showAtlasFallback('Interactive 3D is unavailable in this browser; the career map remains available in 2D.');
+    showAtlasFallback(unavailable);
     return;
   }
   careerAtlas = atlas;
   hideAtlasFallback();
+  syncAtlasZoomButtons();
   if (new URLSearchParams(window.location.search).has('debug3d')) window.careerAtlas = atlas; // developer inspection only
   loadCorpusSummary().then(() => {
     if (careerAtlas) careerAtlas.refreshCounts();
-    if (!document.getElementById('atlas-fallback').hidden) showAtlasFallback(document.querySelector('.atlas-fallback-note')?.textContent || '');
+    const box = document.getElementById('atlas-fallback');
+    if (box && !box.hidden) {
+      const note = box.querySelector('.atlas-fallback-note');
+      showAtlasFallback(note ? note.textContent : unavailable, { offerThreeD: Boolean(box.querySelector('.atlas-load-3d')) });
+    }
   });
 }
 
@@ -2041,7 +2024,7 @@ function initAtlasControls() {
   const zoomOut = document.getElementById('btn-3d-zoom-out');
   const reset = document.getElementById('btn-3d-reset-cam-stage');
   if (zoomIn) zoomIn.addEventListener('click', () => careerAtlas && careerAtlas.zoomBy(0.86));
-  if (zoomOut) zoomOut.addEventListener('click', () => careerAtlas && careerAtlas.zoomBy(1.16));
+  if (zoomOut) zoomOut.addEventListener('click', () => careerAtlas && careerAtlas.zoomBy(1 / 0.86));
   if (reset) reset.addEventListener('click', reset3DCamera);
 
   // Legend items preview their node on hover and keyboard focus.
@@ -2083,7 +2066,7 @@ function init3DCardTilt() {
   if (!canHover) return;
 
   // Forms, reports and long text stay still; tilt is for small showcase cards only.
-  const cardSelector = '.archetype-card, .company-card, .btn-lab-item, .card-3d-tilt, .spatial-tilt-card';
+  const cardSelector = '.archetype-card, .company-card, .btn-lab-item';
   const tiltCards = document.querySelectorAll(cardSelector);
 
   tiltCards.forEach(card => {
@@ -2117,36 +2100,18 @@ function init3DCardTilt() {
     });
 
     card.addEventListener('mouseleave', () => {
-      card.style.transform = 'perspective(1000px) rotateX(0deg) rotateY(0deg) scale3d(1, 1, 1)';
+      card.style.transform = '';
       glare.style.opacity = '0';
     });
   });
 }
 
+// Icon buttons give the optional interface click when sound is on.
+// Nothing moves under the pointer: a target that shifts is harder to hit.
 function initHoverButtons() {
-  if (appState.motionMode === 'reduced') return;
-  const canHover = window.matchMedia('(hover: hover) and (pointer: fine)').matches;
-  if (!canHover) return;
-
-  const magneticBtns = document.querySelectorAll('.btn-magnetic-glow, .btn-icon-circle');
-  magneticBtns.forEach(btn => {
-    if (btn.dataset.magneticBound) return;
-    btn.dataset.magneticBound = 'true';
-
-    btn.addEventListener('mousemove', (e) => {
-      if (appState.motionMode === 'reduced') return;
-      const rect = btn.getBoundingClientRect();
-      const x = e.clientX - rect.left - rect.width / 2;
-      const y = e.clientY - rect.top - rect.height / 2;
-      const clampedX = Math.max(-5.0, Math.min(5.0, x * 0.15));
-      const clampedY = Math.max(-5.0, Math.min(5.0, y * 0.15));
-      btn.style.transform = `translate(${clampedX.toFixed(1)}px, ${clampedY.toFixed(1)}px) scale(1.02)`;
-    }, { passive: true });
-
-    btn.addEventListener('mouseleave', () => {
-      btn.style.transform = 'translate(0px, 0px) scale(1)';
-    });
-
+  document.querySelectorAll('.btn-magnetic-glow, .btn-icon-circle').forEach(btn => {
+    if (btn.dataset.clickSoundBound) return;
+    btn.dataset.clickSoundBound = 'true';
     btn.addEventListener('click', () => {
       if (window.spatialAudio) window.spatialAudio.click();
     });
@@ -2162,77 +2127,63 @@ function initNeumorphicLightingPuck() {
   const angleLabel = document.getElementById('neu-light-angle-label');
   if (!well || !puck) return;
 
-  let isPuckDragging = false;
+  const COMPASS = ['east', 'south-east', 'south', 'south-west', 'west', 'north-west', 'north', 'north-east'];
+  const SHORT = ['E', 'SE', 'S', 'SW', 'W', 'NW', 'N', 'NE'];
+  let degrees = 225;
+  let reach = 0.8;
 
-  function updatePuck(clientX, clientY) {
-    const rect = well.getBoundingClientRect();
-    const centerX = rect.left + rect.width / 2;
-    const centerY = rect.top + rect.height / 2;
-
-    const dx = clientX - centerX;
-    const dy = clientY - centerY;
-    const maxR = rect.width / 2 - 18;
-
-    const distance = Math.min(maxR, Math.sqrt(dx * dx + dy * dy));
-    const angleRad = Math.atan2(dy, dx);
-
-    const px = Math.cos(angleRad) * distance;
-    const py = Math.sin(angleRad) * distance;
-
-    puck.style.transform = `translate(${px}px, ${py}px)`;
-
-    let degrees = Math.round((angleRad * 180) / Math.PI);
-    if (degrees < 0) degrees += 360;
-
-    const shadowDist = Math.max(3, Math.round((distance / maxR) * 14));
-    const shadowX = Math.round(Math.cos(angleRad) * shadowDist);
-    const shadowY = Math.round(Math.sin(angleRad) * shadowDist);
-
-    document.documentElement.style.setProperty('--neu-shadow-x', `${shadowX}px`);
-    document.documentElement.style.setProperty('--neu-shadow-y', `${shadowY}px`);
-
-    const compass = ['E', 'SE', 'S', 'SW', 'W', 'NW', 'N', 'NE'];
-    const compassIdx = Math.round(degrees / 45) % 8;
-    if (angleLabel) {
-      angleLabel.textContent = `${degrees}° (${compass[compassIdx]})`;
-    }
+  // Draws the puck and moves the sample card's shadow. Nothing outside that card changes.
+  function apply() {
+    const radians = (degrees * Math.PI) / 180;
+    const maxReach = well.clientWidth / 2 - 18;
+    puck.style.transform = `translate(${(Math.cos(radians) * maxReach * reach).toFixed(1)}px, ${(Math.sin(radians) * maxReach * reach).toFixed(1)}px)`;
+    sampleShadow.degrees = degrees;
+    renderSampleShadow();
+    const index = Math.round(degrees / 45) % 8;
+    if (angleLabel) angleLabel.textContent = `${degrees}° (${SHORT[index]})`;
+    puck.setAttribute('aria-valuenow', String(degrees));
+    puck.setAttribute('aria-valuetext', `${degrees} degrees, ${COMPASS[index]}`);
   }
 
-  well.addEventListener('mousedown', (e) => {
-    isPuckDragging = true;
-    updatePuck(e.clientX, e.clientY);
+  function fromPointer(clientX, clientY) {
+    const rect = well.getBoundingClientRect();
+    const dx = clientX - (rect.left + rect.width / 2);
+    const dy = clientY - (rect.top + rect.height / 2);
+    const maxReach = rect.width / 2 - 18;
+    reach = Math.min(1, Math.hypot(dx, dy) / maxReach);
+    degrees = (Math.round((Math.atan2(dy, dx) * 180) / Math.PI) + 360) % 360;
+    apply();
+  }
+
+  // Pointer capture ties the drag to this control, so nothing listens on the window between drags
+  // and touch scrolling elsewhere on the page is never held up.
+  well.addEventListener('pointerdown', (e) => {
+    well.setPointerCapture(e.pointerId);
+    fromPointer(e.clientX, e.clientY);
+    puck.focus({ preventScroll: true });
+  });
+  well.addEventListener('pointermove', (e) => {
+    if (well.hasPointerCapture(e.pointerId)) fromPointer(e.clientX, e.clientY);
+  });
+  well.addEventListener('pointerup', () => {
+    if (window.spatialAudio) window.spatialAudio.click();
   });
 
-  window.addEventListener('mousemove', (e) => {
-    if (isPuckDragging) {
-      updatePuck(e.clientX, e.clientY);
+  puck.addEventListener('keydown', (e) => {
+    const steps = { ArrowRight: 15, ArrowUp: 15, ArrowLeft: -15, ArrowDown: -15 };
+    if (e.key in steps) {
+      degrees = (degrees + steps[e.key] + 360) % 360;
+    } else if (e.key === 'Home') {
+      degrees = 0;
+    } else if (e.key === 'End') {
+      degrees = 359;
+    } else {
+      return;
     }
+    e.preventDefault();
+    apply();
   });
-
-  window.addEventListener('mouseup', () => {
-    if (isPuckDragging) {
-      isPuckDragging = false;
-      if (window.spatialAudio) window.spatialAudio.click();
-    }
-  });
-
-  well.addEventListener('touchstart', (e) => {
-    if (e.touches.length === 1) {
-      isPuckDragging = true;
-      updatePuck(e.touches[0].clientX, e.touches[0].clientY);
-      e.preventDefault();
-    }
-  }, { passive: false });
-
-  window.addEventListener('touchmove', (e) => {
-    if (isPuckDragging && e.touches.length === 1) {
-      updatePuck(e.touches[0].clientX, e.touches[0].clientY);
-    }
-  }, { passive: false });
-
-  window.addEventListener('touchend', () => {
-    isPuckDragging = false;
-  });
+  apply();
 }
 
 
@@ -2278,6 +2229,12 @@ async function checkBackendHealth() {
 // ==============================================================================
 // 9. RESUME ANALYZER WORKSPACE CONTROLLER
 // ==============================================================================
+const RESUME_MAX_BYTES = 10 * 1024 * 1024; // services/pdf_ingestion.py MAX_FILE_BYTES
+// /analyze takes the job description in its query string. Measured on uvicorn, 32,000
+// characters pass and 60,000 get a plain-text 400, so the form stops well short of that.
+const JD_MAX_CHARS = 20000;
+const JD_MAX_QUERY_LENGTH = 30000;
+
 function initResumeAnalyzer() {
   const dropzone = document.getElementById('resume-dropzone');
   const fileInput = document.getElementById('resume-file-input');
@@ -2320,30 +2277,26 @@ function initResumeAnalyzer() {
     }
   });
 
-  // Clear file
+  // Clear file. The input is removed from the pill's way, so focus returns to it.
   if (clearFileBtn) {
     clearFileBtn.addEventListener('click', (e) => {
       e.stopPropagation();
       resetFileSelection();
+      fileInput.focus();
     });
   }
 
-  // Character counter
+  // Counter, length check and state all follow the textarea's input event.
   if (jdTextarea && charCounter) {
-    jdTextarea.addEventListener('input', () => {
-      const len = jdTextarea.value.length;
-      charCounter.textContent = `${len.toLocaleString()} characters`;
-      appState.analyzer.jobDescription = jdTextarea.value;
-      hideFieldError('jd-error-msg');
-    });
+    jdTextarea.addEventListener('input', syncJobDescription);
   }
 
   // Clear JD action
   if (clearJdBtn && jdTextarea) {
     clearJdBtn.addEventListener('click', () => {
       jdTextarea.value = '';
-      charCounter.textContent = '0 characters';
-      appState.analyzer.jobDescription = '';
+      syncJobDescription();
+      jdTextarea.focus();
       showToast('Job description cleared.');
     });
   }
@@ -2360,9 +2313,7 @@ function initResumeAnalyzer() {
           }
         }
         jdTextarea.value = company.sampleJd;
-        appState.analyzer.jobDescription = company.sampleJd;
-        charCounter.textContent = `${company.sampleJd.length.toLocaleString()} characters`;
-        hideFieldError('jd-error-msg');
+        jdTextarea.dispatchEvent(new Event('input', { bubbles: true }));
         showToast(`Loaded the sample job description for ${company.name}.`);
       }
     });
@@ -2373,7 +2324,7 @@ function initResumeAnalyzer() {
     demoToggle.addEventListener('change', (e) => {
       appState.analyzer.demoMode = e.target.checked;
       checkBackendHealth();
-      showToast(appState.analyzer.demoMode ? 'Explicit Demo Mode Enabled' : 'Live Backend Mode Enabled');
+      showToast(appState.analyzer.demoMode ? 'Demo mode on. Analyze plays the bundled sample report.' : 'Demo mode off. Analyze uses your resume.');
     });
   }
 
@@ -2386,39 +2337,44 @@ function initResumeAnalyzer() {
 
   // Cancel in-flight request
   if (cancelBtn) {
-    cancelBtn.addEventListener('click', () => {
-      if (appState.analyzer.abortController) {
-        appState.analyzer.abortController.abort();
-        appState.analyzer.abortController = null;
-        showToast('Analysis request cancelled.');
-        resetAnalyzerState();
-      }
-    });
+    cancelBtn.addEventListener('click', cancelAnalysis);
   }
 }
 
+function formatFileSize(bytes) {
+  if (bytes < 1024 * 1024) return `${Math.max(1, Math.round(bytes / 1024))} KB`;
+  return `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
+}
+
+function resumeFileProblem(file) {
+  if (!file.name.toLowerCase().endsWith('.pdf') && file.type !== 'application/pdf') {
+    return 'This file is not a PDF. Choose a .pdf file.';
+  }
+  if (file.size === 0) return 'This PDF is empty (0 bytes). Choose another file.';
+  if (file.size > RESUME_MAX_BYTES) {
+    return `This PDF is ${formatFileSize(file.size)}, over the 10 MB limit. Choose a smaller file.`;
+  }
+  return '';
+}
+
 function validateAndSetFile(file) {
-  const errorElem = document.getElementById('file-error-msg');
+  const fileInput = document.getElementById('resume-file-input');
   const selectedPill = document.getElementById('selected-file-pill');
   const fileNameDisplay = document.getElementById('selected-filename');
 
   hideFieldError('file-error-msg');
+  // Choosing the same file again must fire change, whatever happens to this one.
+  if (fileInput) fileInput.value = '';
 
-  // Validate PDF extension/mime
-  if (!file.name.toLowerCase().endsWith('.pdf') && file.type !== 'application/pdf') {
-    showFieldError('file-error-msg', 'Please upload a valid PDF document (.pdf format only).');
-    return;
-  }
-
-  // Validate size (10 MB max)
-  const maxSize = 10 * 1024 * 1024;
-  if (file.size > maxSize) {
-    showFieldError('file-error-msg', 'File size exceeds 10 MB limit. Please upload a smaller PDF.');
+  const problem = resumeFileProblem(file);
+  if (problem) {
+    const kept = appState.analyzer.selectedFile;
+    showFieldError('file-error-msg', kept ? `${problem} ${kept.name} is still attached.` : problem);
     return;
   }
 
   appState.analyzer.selectedFile = file;
-  fileNameDisplay.textContent = `${file.name} (${(file.size / 1024).toFixed(0)} KB)`;
+  fileNameDisplay.textContent = `${file.name} (${formatFileSize(file.size)})`;
   selectedPill.style.display = 'inline-flex';
   showToast(`Resume attached: ${file.name}`);
 }
@@ -2432,12 +2388,44 @@ function resetFileSelection() {
   hideFieldError('file-error-msg');
 }
 
+function jobDescriptionProblem(jd) {
+  if (!jd) return 'Enter a job description or choose a sample.';
+  if (jd.length > JD_MAX_CHARS) {
+    return `This job description is over the ${JD_MAX_CHARS.toLocaleString()} character limit. Shorten it to continue.`;
+  }
+  if (new URLSearchParams({ job_description: jd }).toString().length > JD_MAX_QUERY_LENGTH) {
+    return 'This job description has too many symbols or non-English characters to send in one request. Shorten it to continue.';
+  }
+  return '';
+}
+
+function syncJobDescription() {
+  const jdTextarea = document.getElementById('jd-textarea');
+  const counter = document.getElementById('jd-char-count');
+  if (!jdTextarea) return;
+  const value = jdTextarea.value;
+  appState.analyzer.jobDescription = value;
+  // An empty field is only an error once someone tries to run.
+  const problem = value.trim() ? jobDescriptionProblem(value.trim()) : '';
+  if (counter) {
+    counter.textContent = `${value.length.toLocaleString()} of ${JD_MAX_CHARS.toLocaleString()} characters`;
+    counter.classList.toggle('is-over-limit', Boolean(problem));
+  }
+  if (problem) showFieldError('jd-error-msg', problem);
+  else hideFieldError('jd-error-msg');
+}
+
+const FIELD_ERROR_INPUTS = { 'file-error-msg': 'resume-file-input', 'jd-error-msg': 'jd-textarea' };
+
 function showFieldError(id, msg) {
   const elem = document.getElementById(id);
   if (elem) {
-    elem.textContent = msg;
+    // Unchanged text is left alone so a live region does not repeat itself on every keystroke.
+    if (elem.textContent !== msg) elem.textContent = msg;
     elem.classList.add('visible');
   }
+  const input = document.getElementById(FIELD_ERROR_INPUTS[id]);
+  if (input) input.setAttribute('aria-invalid', 'true');
 }
 
 function hideFieldError(id) {
@@ -2446,55 +2434,303 @@ function hideFieldError(id) {
     elem.classList.remove('visible');
     elem.textContent = '';
   }
+  const input = document.getElementById(FIELD_ERROR_INPUTS[id]);
+  if (input) input.removeAttribute('aria-invalid');
 }
 
-async function executeAnalysis() {
-  const jdTextarea = document.getElementById('jd-textarea');
+// --- Analysis runs -----------------------------------------------------------
+// A run owns its AbortController and timers, and only the current run may change anything.
+// The report on screen (state and DOM) stays untouched until a new one has been validated,
+// so a failed or cancelled run cannot erase it.
+
+const ANALYSIS_STAGES = {
+  sending: {
+    title: 'Sending your resume',
+    detail: 'Uploading the PDF and job description to the server.'
+  },
+  analyzing: {
+    title: 'Analyzing on the server',
+    detail: 'The server sends the whole report when it finishes, so there is no percentage to show. This can take up to a minute.'
+  },
+  demo: {
+    title: 'Playing the illustrative demo',
+    detail: 'A bundled sample report. Nothing is uploaded or analyzed.'
+  }
+};
+
+// Server wording that is written for people. Anything else may carry exception text or paths,
+// so it never reaches the page.
+const ANALYSIS_SAFE_MESSAGES = [
+  { pattern: /could not extract text/i, field: 'file', message: 'No text could be read from this PDF. It may be scanned or image-based. Try a PDF with selectable text.' },
+  { pattern: /is empty \(0 bytes\)/i, field: 'file', message: 'This PDF is empty (0 bytes). Choose another file.' },
+  { pattern: /exceeds the \d+\s*MB/i, field: 'file', message: 'This PDF is over the 10 MB limit. Choose a smaller file.' },
+  { pattern: /not a valid PDF/i, field: 'file', message: 'This file is not a valid PDF, even though its name may end in .pdf. Choose another file.' },
+  { pattern: /encrypted/i, field: 'file', message: 'This PDF is password protected. Remove the password and upload it again.' },
+  { pattern: /page count .*exceeds/i, field: 'file', message: 'This PDF is over the 15 page limit. Upload a shorter version.' },
+  { pattern: /failed to parse pdf/i, field: 'file', message: 'This PDF could not be read and may be damaged. Export it again and retry.' },
+  { pattern: /job description is missing/i, field: 'jd', message: 'Enter a job description or choose a sample.' }
+];
+// /analyze answers HTTP 200 and then streams these instead of a report.
+const ANALYSIS_STREAM_FAILURE = /^(Analysis Error:|Server streaming error:|Analysis finished, but no response)/;
+
+function analysisFailure(message, field = '') {
+  return Object.assign(new Error(message), { userFacing: true, field });
+}
+
+function safeAnalysisFailure(serverText, fallback) {
+  const known = ANALYSIS_SAFE_MESSAGES.find(entry => entry.pattern.test(serverText || ''));
+  return known ? analysisFailure(known.message, known.field) : analysisFailure(fallback);
+}
+
+async function analysisHttpFailure(response) {
+  let detail = '';
+  try {
+    const body = await response.clone().json();
+    detail = typeof body.detail === 'string' ? body.detail : '';
+  } catch (notJson) {
+    detail = await response.text().catch(() => '');
+  }
+  // Oversized request lines are refused before FastAPI runs, as a plain-text 400 or a 414/431.
+  if (response.status === 414 || response.status === 431 || /invalid http request/i.test(detail)) {
+    return analysisFailure('The server would not accept a job description this long. Shorten it and try again.', 'jd');
+  }
+  if (response.status === 413) {
+    return analysisFailure('The server would not accept a file this large. Choose a smaller PDF.', 'file');
+  }
+  if (response.status >= 500) {
+    return safeAnalysisFailure(detail, 'The server could not finish the analysis. Try again in a moment.');
+  }
+  return safeAnalysisFailure(detail, `The server refused this request (status ${response.status}). Check the file and job description, then try again.`);
+}
+
+function isCurrentRun(run) {
+  return appState.analyzer.activeRun === run && !run.controller.signal.aborted;
+}
+
+function hasCommittedReport() {
+  return Boolean(appState.analyzer.streamBuffer);
+}
+
+function setAnalysisStage(stageKey) {
+  const stage = ANALYSIS_STAGES[stageKey];
+  const title = document.getElementById('analysis-progress-title');
+  const detail = document.getElementById('analysis-progress-detail');
+  if (title) title.textContent = stage.title;
+  if (detail) detail.textContent = stage.detail;
+
+  const list = document.getElementById('analysis-stage-list');
+  if (!list) return;
+  list.hidden = stageKey === 'demo';
+  const items = [...list.querySelectorAll('li')];
+  const activeIndex = items.findIndex(item => item.dataset.stage === stageKey);
+  items.forEach((item, index) => {
+    item.dataset.state = index < activeIndex ? 'done' : index === activeIndex ? 'active' : 'pending';
+    if (index === activeIndex) item.setAttribute('aria-current', 'step');
+    else item.removeAttribute('aria-current');
+  });
+}
+
+function showStreamPreview(text) {
+  const preview = document.getElementById('analysis-stream-preview');
+  if (!preview || ANALYSIS_STREAM_FAILURE.test(text.trimStart())) return;
+  const visible = text.split('<!-- STRUCTURED_REPORT_START')[0];
+  preview.hidden = !visible.trim();
+  preview.textContent = visible;
+  preview.scrollTop = preview.scrollHeight;
+}
+
+function showAnalysisAlert(message) {
+  const alertCard = document.getElementById('analyzer-alert-card');
+  if (!alertCard) return;
+  alertCard.textContent = message;
+  alertCard.style.display = 'block';
+}
+
+function hideAnalysisAlert() {
+  const alertCard = document.getElementById('analyzer-alert-card');
+  if (!alertCard) return;
+  alertCard.textContent = '';
+  alertCard.style.display = 'none';
+}
+
+const RESULTS_EMPTY_COPY = {
+  'pane-diagnostic-report': {
+    title: 'Your report will appear here',
+    desc: 'Add a resume PDF and a job description, then run the analysis. The report covers the score components, matched and missing evidence, reference resumes from the corpus and suggested rewrites.'
+  },
+  'pane-executive-review': {
+    title: 'The executive review comes with a report',
+    desc: 'Run an analysis and this tab shows how the review lens you chose reads your resume. The lens changes the critique, never the score.'
+  },
+  'pane-interactive-tailoring': {
+    title: 'Tailoring comes with a report',
+    desc: 'Run an analysis and this tab shows your resume text with each suggested change marked, ready to apply, undo or export.'
+  }
+};
+
+// The one place that decides what the results panel shows.
+function renderResultsView() {
+  const running = Boolean(appState.analyzer.activeRun);
+  const hasReport = hasCommittedReport();
+  const activeTab = document.querySelector('.results-tab-btn[aria-selected="true"]');
+  const activePane = activeTab ? activeTab.getAttribute('aria-controls') : 'pane-diagnostic-report';
+  // The coach works without a report; the other views have nothing to show until there is one.
+  const showBody = hasReport || activePane === 'pane-career-coach';
+
+  const placeholder = document.getElementById('results-placeholder');
+  const resultsArea = document.getElementById('streaming-results-area');
+  const progress = document.getElementById('analysis-progress-panel');
+  const body = document.getElementById('analysis-report-body');
+  const banner = document.getElementById('score-banner-box');
+  const card = document.querySelector('.analyzer-results-card');
+
+  if (placeholder) placeholder.style.display = !running && !showBody ? 'flex' : 'none';
+  if (resultsArea) resultsArea.style.display = running || showBody ? 'flex' : 'none';
+  if (progress) progress.hidden = !running;
+  if (body) body.hidden = running;
+  if (banner) banner.hidden = !hasReport;
+  if (card) {
+    if (running) card.setAttribute('aria-busy', 'true');
+    else card.removeAttribute('aria-busy');
+  }
+
+  const copy = RESULTS_EMPTY_COPY[activePane];
+  const emptyTitle = document.getElementById('results-empty-title');
+  const emptyDesc = document.getElementById('results-empty-desc');
+  if (copy && emptyTitle) emptyTitle.textContent = copy.title;
+  if (copy && emptyDesc) emptyDesc.textContent = copy.desc;
+}
+
+function startAnalysisRun(stageKey) {
+  const analyzer = appState.analyzer;
+  if (analyzer.activeRun) {
+    analyzer.activeRun.controller.abort();
+    stopRunTimers(analyzer.activeRun);
+  }
+  const controller = new AbortController();
+  const run = { controller, clock: null, demoTimer: null };
+  analyzer.activeRun = run;
+  analyzer.abortController = controller;
+  analyzer.status = 'submitting';
+
+  hideAnalysisAlert();
+  setAnalysisStage(stageKey);
+  showStreamPreview('');
+
+  const elapsed = document.getElementById('analysis-progress-elapsed');
+  if (elapsed) elapsed.textContent = '';
+  if (stageKey !== 'demo') {
+    const startedAt = performance.now();
+    run.clock = setInterval(() => {
+      if (elapsed) elapsed.textContent = `${Math.round((performance.now() - startedAt) / 1000)} s`;
+    }, 1000);
+  }
+
   const analyzeBtn = document.getElementById('btn-analyze-submit');
   const cancelBtn = document.getElementById('btn-cancel-request');
   const btnText = document.getElementById('btn-analyze-text');
-  const placeholder = document.getElementById('results-placeholder');
-  const resultsArea = document.getElementById('streaming-results-area');
-  const markdownArea = document.getElementById('markdown-stream-output');
-  const alertCard = document.getElementById('analyzer-alert-card');
+  const hadFocus = document.activeElement === analyzeBtn;
+  if (analyzeBtn) analyzeBtn.disabled = true;
+  if (btnText) btnText.textContent = 'Analyzing…';
+  if (cancelBtn) {
+    cancelBtn.style.display = 'block';
+    if (hadFocus) cancelBtn.focus({ preventScroll: true });
+  }
+  renderResultsView();
 
-  // 1. Validation
-  let hasError = false;
+  // On narrow screens the panel can sit below the fold, where nothing would seem to happen.
+  const card = document.querySelector('.analyzer-results-card');
+  if (card && card.getBoundingClientRect().top >= window.innerHeight) {
+    card.scrollIntoView({ block: 'nearest', behavior: appState.motionMode === 'reduced' ? 'auto' : 'smooth' });
+  }
+  return run;
+}
+
+function stopRunTimers(run) {
+  clearInterval(run.clock);
+  clearInterval(run.demoTimer);
+  run.clock = null;
+  run.demoTimer = null;
+}
+
+function endAnalysisRun(run, status, buttonLabel = 'Analyze resume') {
+  stopRunTimers(run);
+  const analyzer = appState.analyzer;
+  analyzer.activeRun = null;
+  analyzer.abortController = null;
+  analyzer.status = status;
+
+  const cancelBtn = document.getElementById('btn-cancel-request');
+  const analyzeBtn = document.getElementById('btn-analyze-submit');
+  const btnText = document.getElementById('btn-analyze-text');
+  const focusWasOnCancel = document.activeElement === cancelBtn || document.activeElement === document.body;
+  if (analyzeBtn) analyzeBtn.disabled = false;
+  if (btnText) btnText.textContent = buttonLabel;
+  if (cancelBtn) cancelBtn.style.display = 'none';
+  if (focusWasOnCancel && analyzeBtn) analyzeBtn.focus({ preventScroll: true });
+  renderResultsView();
+}
+
+function cancelAnalysis() {
+  const run = appState.analyzer.activeRun;
+  if (!run) return;
+  run.controller.abort();
+  endAnalysisRun(run, 'cancelled');
+  showToast(hasCommittedReport() ? 'Analysis cancelled. Your earlier report is unchanged.' : 'Analysis cancelled.');
+}
+
+function failAnalysisRun(run, failure) {
+  console.warn('Analysis did not finish:', failure.message);
+  endAnalysisRun(run, 'error', 'Try again');
+  const message = failure.message + (hasCommittedReport() ? ' Your earlier report is unchanged.' : '');
+  const fieldErrors = { file: ['file-error-msg', 'resume-file-input'], jd: ['jd-error-msg', 'jd-textarea'] };
+  const fieldError = fieldErrors[failure.field];
+  if (fieldError) {
+    showFieldError(fieldError[0], message);
+    const input = document.getElementById(fieldError[1]);
+    if (input) input.focus();
+  } else {
+    showAnalysisAlert(message);
+  }
+}
+
+// A new report shows on its own tab, without moving focus away from where the person is.
+function completeAnalysisRun(run, toastMessage) {
+  endAnalysisRun(run, 'complete');
+  switchResultsTab('pane-diagnostic-report');
+  showToast(toastMessage);
+}
+
+async function executeAnalysis({ demo = false } = {}) {
+  const analyzer = appState.analyzer;
+  const jdTextarea = document.getElementById('jd-textarea');
+  const useDemo = demo || analyzer.demoMode;
+
+  // 1. Validation: each problem appears beside its field, and focus goes to the first one.
   const jd = (jdTextarea ? jdTextarea.value : '').trim();
-  const file = appState.analyzer.selectedFile;
+  const file = analyzer.selectedFile;
+  const fileProblem = !file && !useDemo ? 'Add your resume PDF to begin.' : '';
+  const jdProblem = jobDescriptionProblem(jd);
 
-  if (!jd) {
-    showFieldError('jd-error-msg', 'Please enter or select a target Job Description.');
-    hasError = true;
-  }
-  if (!file && !appState.analyzer.demoMode) {
-    showFieldError('file-error-msg', 'Please upload your resume PDF to begin.');
-    hasError = true;
-  }
-
-  if (hasError) return;
-
-  // 2. State setup
-  appState.analyzer.status = 'analyzing';
-  appState.analyzer.streamBuffer = '';
-  appState.analyzer.abortController = new AbortController();
-
-  if (alertCard) alertCard.style.display = 'none';
-  if (placeholder) placeholder.style.display = 'none';
-  if (resultsArea) resultsArea.style.display = 'flex';
-  if (markdownArea) markdownArea.textContent = 'Connecting to inference engine...';
-
-  analyzeBtn.disabled = true;
-  btnText.textContent = 'Comparing with the alumni corpus…';
-  if (cancelBtn) cancelBtn.style.display = 'block';
-
-  // 3. Demo Mode Route
-  if (appState.analyzer.demoMode) {
-    runDemoAnalysis();
+  hideFieldError('file-error-msg');
+  hideFieldError('jd-error-msg');
+  if (fileProblem) showFieldError('file-error-msg', fileProblem);
+  if (jdProblem) showFieldError('jd-error-msg', jdProblem);
+  if (fileProblem || jdProblem) {
+    const firstInvalid = document.getElementById(fileProblem ? 'resume-file-input' : 'jd-textarea');
+    if (firstInvalid) firstInvalid.focus();
     return;
   }
 
-  // 4. Live API Streaming Route
+  // 2. Demo route: local only, nothing is sent.
+  if (useDemo) {
+    runDemoAnalysis(startAnalysisRun('demo'));
+    return;
+  }
+
+  // 3. Live route.
+  const run = startAnalysisRun('sending');
+  let responded = false;
   try {
     const formData = new FormData();
     formData.append('resume_file', file);
@@ -2509,65 +2745,59 @@ async function executeAnalysis() {
     const response = await fetch(url.toString(), {
       method: 'POST',
       body: formData,
-      signal: appState.analyzer.abortController.signal
+      signal: run.controller.signal
     });
+    if (!isCurrentRun(run)) return;
+    responded = true;
 
-    if (!response.ok) {
-      let errDetail = `Server returned status ${response.status} (${response.statusText})`;
-      try {
-        const errJson = await response.json();
-        if (errJson.detail) errDetail = errJson.detail;
-      } catch (e) {}
-      throw new Error(errDetail);
-    }
+    if (!response.ok) throw await analysisHttpFailure(response);
 
-    markdownArea.textContent = 'Synthesizing placement patterns...';
+    analyzer.status = 'streaming';
+    setAnalysisStage('analyzing');
     const reader = response.body.pipeThrough(new TextDecoderStream()).getReader();
-
+    let buffer = '';
     while (true) {
       const { value, done } = await reader.read();
+      if (!isCurrentRun(run)) {
+        reader.cancel().catch(() => {});
+        return;
+      }
       if (done) break;
-
-      appState.analyzer.streamBuffer += value;
-      // Show plain text stream (without raw structured comment if present)
-      const cleanStream = appState.analyzer.streamBuffer.replace(/<!-- STRUCTURED_REPORT_START -->[\s\S]*?<!-- STRUCTURED_REPORT_END -->/g, '');
-      markdownArea.textContent = cleanStream + ' ...';
+      buffer += value;
+      showStreamPreview(buffer);
     }
 
-    // Finished streaming: Parse structured report and safe render Markdown
-    parseAndHydrateStructuredReport(appState.analyzer.streamBuffer);
-    renderSafeMarkdown(appState.analyzer.streamBuffer, false);
-    updateScoreRing(appState.analyzer.streamBuffer);
-    showToast('Analysis complete.');
+    const streamed = buffer.trimStart();
+    if (ANALYSIS_STREAM_FAILURE.test(streamed)) {
+      throw safeAnalysisFailure(streamed, 'The analysis stopped because of a problem on the server. Try again in a moment.');
+    }
+    const report = readStructuredReport(buffer);
+    if (!report) {
+      throw analysisFailure('The server finished without sending a usable report. Try again in a moment.');
+    }
 
+    analyzer.streamBuffer = buffer;
+    analyzer.reportJobDescription = jd;
+    hydrateStructuredReport(report);
+    renderSafeMarkdown(buffer, false);
+    updateScoreRing();
+    completeAnalysisRun(run, `Report ready. Alignment score ${analyzer.extractedScore} of 100.`);
   } catch (err) {
-    if (err.name === 'AbortError') {
-      console.log('User cancelled request.');
-      return;
+    // Cancelled or replaced: whoever did that has already updated the view.
+    if (!isCurrentRun(run)) return;
+    if (err.userFacing) {
+      failAnalysisRun(run, err);
+    } else if (responded) {
+      failAnalysisRun(run, analysisFailure('The connection closed before the report finished. Try again.'));
+    } else {
+      failAnalysisRun(run, analysisFailure('The analysis server could not be reached. Check that it is running, then try again. The illustrative demo works without it.'));
     }
-    console.error('Analysis failed:', err);
-    if (alertCard) {
-      alertCard.textContent = `Live analysis error: ${err.message}. You can switch to Demo Mode below to test the interface without a running backend.`;
-      alertCard.style.display = 'block';
-    }
-    // Offer demo option in results area
-    markdownArea.innerHTML = `
-      <div style="padding:16px;background:rgba(var(--terracotta-rgb),0.1);border-radius:8px;border:1px solid rgba(var(--terracotta-rgb),0.3);">
-        <strong style="color:var(--accent-coral);">Connection to Backend Failed</strong>
-        <p style="margin-top:6px;font-size:0.88rem;">Check that the API server is running and reachable from this page, or switch on <strong>Demo mode</strong> to preview the report layout.</p>
-        <button type="button" class="btn-preset-chip" style="margin-top:10px;" onclick="enableDemoAndRun()">Run Illustrative Demo Analysis</button>
-      </div>
-    `;
-  } finally {
-    resetAnalyzerButtons();
   }
 }
 
+// Plays the bundled report once. Demo mode itself stays as it was, so the next Analyze
+// click cannot quietly play the sample over a real resume.
 function enableDemoAndRun() {
-  const demoToggle = document.getElementById('demo-mode-toggle');
-  if (demoToggle) demoToggle.checked = true;
-  appState.analyzer.demoMode = true;
-
   // One click must be enough: an empty JD gets the first sample role, through
   // the textarea's own input handling so the counter and validation stay in sync.
   const jdTextarea = document.getElementById('jd-textarea');
@@ -2578,80 +2808,53 @@ function enableDemoAndRun() {
       jdTextarea.dispatchEvent(new Event('input', { bubbles: true }));
     }
   }
-  checkBackendHealth();
-  executeAnalysis();
+  executeAnalysis({ demo: true });
 }
 
-function runDemoAnalysis() {
-  const markdownArea = document.getElementById('markdown-stream-output');
+function runDemoAnalysis(run) {
   const demoText = `
 **1. Overall Score (out of 100):** 86/100
 
 **2. What's Good:**
-* **Strong Algorithmic & Systems Foundation:** Your demonstrated experience in backend API development (FastAPI/Python) and containerization mirrors top-tier placement profiles in the **General CS & Software Development** alumni archetype.
-* **Quantifiable Metrics:** Including achievements like *"reduced response latency by 35%"* directly parallels successful candidates placed at **Microsoft** and **Amazon**.
+* **Measured results:** The search project states a baseline and a result, reducing p95 latency from 240ms to 125ms across 100k documents, with the tools named.
+* **Test evidence:** The unit test suite gives a count and a coverage figure, which is easier to check than a claim of quality.
 
 **3. Actionable Recommendations:**
-* **Highlight High-Throughput & Distributed Cache Patterns:** Placed engineers in this cluster heavily emphasize distributed memory caching (Redis, Memcached) and message broker decoupling (Kafka / RabbitMQ). Add these to your primary project descriptions.
-* **Deepen Cloud Infrastructure Context:** Emphasize container orchestration (Kubernetes or AWS ECS) rather than basic Docker standalone usage, reflecting the target role's production deployment requirements.
-* **Quantify Architectural Impact:** Explicitly link system architectural choices to business throughput (e.g., *"Scaled database queries to 10k+ QPS with read-replicas"*).
+* **Replace the vague bullets:** "Worked on data loading" and "team player responsible for deployment" do not say what you did. Name the task, the tool and the result.
+* **Remove the buzzword bullet:** The line about blockchain and quantum algorithms has no dataset, baseline or result behind it.
+* **Name the cloud service:** "AWS cloud infrastructure" could mean many things. Say which service you used and what you configured.
 
-**4. Key Skills to Add:**
-* **Distributed Systems Concurrency & Goroutines/AsyncIO Patterns**
-* **Kafka Event-Driven Architecture & Message Streaming**
-* **CI/CD Automated Deployment Pipelines (GitHub Actions / Terraform)**
+**4. Key Skills to Add, If You Have Used Them:**
+* **Kubernetes:** the sample job description asks for container orchestration.
+* **Kafka:** preferred by the sample job description.
 `;
 
-  // Stops when Cancel aborts the shared controller, like the live stream does.
-  const signal = appState.analyzer.abortController ? appState.analyzer.abortController.signal : null;
+  const finish = () => {
+    if (!isCurrentRun(run)) return;
+    appState.analyzer.streamBuffer = demoText;
+    appState.analyzer.reportJobDescription = (document.getElementById('jd-textarea') || {}).value || '';
+    hydrateDemoStructuredReport();
+    renderSafeMarkdown(demoText, true);
+    updateScoreRing();
+    completeAnalysisRun(run, 'Illustrative demo report ready. Its score of 86 is a sample.');
+  };
+
+  // Calm mode gets the result straight away instead of watching it type.
+  if (appState.motionMode === 'reduced') {
+    setTimeout(finish, 0);
+    return;
+  }
+
   let idx = 0;
-  const interval = setInterval(() => {
-    if (signal && signal.aborted) {
-      clearInterval(interval);
-      return;
-    }
+  run.demoTimer = setInterval(() => {
+    if (!isCurrentRun(run)) return;
     if (idx < demoText.length) {
-      appState.analyzer.streamBuffer += demoText.slice(idx, idx + 5);
-      markdownArea.textContent = appState.analyzer.streamBuffer + ' ...';
       idx += 5;
+      showStreamPreview(demoText.slice(0, idx));
     } else {
-      clearInterval(interval);
-      appState.analyzer.streamBuffer = demoText;
-      hydrateDemoStructuredReport();
-      renderSafeMarkdown(demoText, true);
-      updateScoreRing(demoText);
-      showToast('Illustrative demo report loaded.');
-      resetAnalyzerButtons();
+      finish();
     }
   }, 20);
-}
-
-function resetAnalyzerButtons() {
-  const analyzeBtn = document.getElementById('btn-analyze-submit');
-  const cancelBtn = document.getElementById('btn-cancel-request');
-  const btnText = document.getElementById('btn-analyze-text');
-
-  if (analyzeBtn) {
-    analyzeBtn.disabled = false;
-  }
-  if (btnText) {
-    btnText.textContent = 'Analyze resume';
-  }
-  if (cancelBtn) {
-    cancelBtn.style.display = 'none';
-  }
-  appState.analyzer.status = 'idle';
-}
-
-function resetAnalyzerState() {
-  resetAnalyzerButtons();
-  const placeholder = document.getElementById('results-placeholder');
-  const resultsArea = document.getElementById('streaming-results-area');
-  const markdownArea = document.getElementById('markdown-stream-output');
-
-  if (placeholder) placeholder.style.display = 'flex';
-  if (resultsArea) resultsArea.style.display = 'none';
-  if (markdownArea) markdownArea.textContent = '';
 }
 
 function renderSafeMarkdown(rawText, isDemo) {
@@ -2662,10 +2865,13 @@ function renderSafeMarkdown(rawText, isDemo) {
   if (provenanceTag) {
     if (isDemo) {
       provenanceTag.className = 'provenance-tag provenance-demo';
-      provenanceTag.textContent = 'Illustrative Demo Output — Not Generated from Live Resume';
+      provenanceTag.textContent = 'Illustrative demo. Not generated from a resume.';
     } else {
       provenanceTag.className = 'provenance-tag provenance-live';
-      provenanceTag.textContent = 'Live analysis — compared with the alumni reference corpus';
+      const writer = activeEngine
+        ? (activeEngine.isLocal ? 'feedback from the local engine, no language model' : `feedback written by ${activeEngine.name}`)
+        : '';
+      provenanceTag.textContent = `Live analysis, compared with the alumni reference corpus${writer ? `; ${writer}` : ''}`;
     }
   }
 
@@ -2674,16 +2880,20 @@ function renderSafeMarkdown(rawText, isDemo) {
   // Strip internal structured report JSON comment so it does not appear in human-readable markdown
   const cleanMarkdown = (rawText || '').replace(/<!-- STRUCTURED_REPORT_START -->[\s\S]*?<!-- STRUCTURED_REPORT_END -->/g, '').trim();
 
+  markdownArea.innerHTML = markdownToSafeHtml(cleanMarkdown);
+  updateCoachContextNote();
+}
+
+// If marked or DOMPurify is missing, the text is shown escaped: a weaker filter is never used.
+function markdownToSafeHtml(text) {
   if (typeof marked !== 'undefined') {
     try {
-      const parsed = marked.parse(cleanMarkdown);
-      markdownArea.innerHTML = sanitizeHtmlSafe(parsed);
-    } catch (e) {
-      markdownArea.textContent = cleanMarkdown;
+      return sanitizeHtmlSafe(marked.parse(text));
+    } catch (err) {
+      console.warn('Markdown could not be parsed; showing plain text.');
     }
-  } else {
-    markdownArea.textContent = cleanMarkdown;
   }
+  return escapeHtml(text);
 }
 
 // Client-side DOM Sanitizer against scripts, iframes, inline event handlers, and data/javascript URIs
@@ -2715,17 +2925,11 @@ function sanitizeHtmlSafe(dirtyHtml) {
   return escapeHtml(dirtyHtml);
 }
 
-function updateScoreRing(text) {
-  if (appState.reportData && typeof appState.reportData.deterministic_score === 'number') {
-    return updateScoreRingFromNumber(appState.reportData.deterministic_score);
-  }
-  // Fallback when the structured report has no deterministic_score. Match the
-  // "N/100" form: a bare "Score…N" pattern captures the denominator in
-  // "Overall Score (out of 100): 86/100" and reports 100.
-  const match = text.match(/Overall Score[^\n]*?(\d{1,3})\s*\/\s*100/i) ||
-                text.match(/\b(\d{1,3})\s*\/\s*100\b/);
-  const score = match ? parseInt(match[1], 10) : NaN;
-  if (Number.isFinite(score) && score >= 0 && score <= 100) {
+// The ring shows only the structured report's overall_score (models.PlacementBenchmarkingReport).
+// Numbers in the narrative text are never parsed: a provider can write any "N/100" in prose.
+function updateScoreRing() {
+  const score = appState.reportData ? appState.reportData.overall_score : null;
+  if (typeof score === 'number' && score >= 0 && score <= 100) {
     updateScoreRingFromNumber(score);
   } else {
     clearScoreRing(); // never display an invented score
@@ -2748,6 +2952,7 @@ function clearScoreRing() {
 function updateScoreRingFromNumber(score) {
   score = Math.max(0, Math.min(100, Math.round(score)));
   appState.analyzer.extractedScore = score;
+  updateCoachContextNote();
   const scoreElem = document.getElementById('mini-score-val');
   const ring = document.getElementById('mini-progress-ring');
 
@@ -2761,11 +2966,7 @@ function updateScoreRingFromNumber(score) {
     const offset = circumference - (score / 100) * circumference;
     ring.style.strokeDasharray = `${circumference} ${circumference}`;
     ring.style.strokeDashoffset = offset;
-
-    if (score >= 80) ring.style.stroke = 'var(--accent-emerald)';
-    else if (score >= 65) ring.style.stroke = 'var(--accent-cyan)';
-    else if (score >= 50) ring.style.stroke = 'var(--accent-amber)';
-    else ring.style.stroke = 'var(--accent-coral)';
+    ring.style.stroke = 'var(--color-forest)';
   }
 }
 
@@ -2973,13 +3174,11 @@ function populateSampleJdFromArchetype(id) {
       }
     }
     jdTextarea.value = arch.sampleJd;
-    appState.analyzer.jobDescription = arch.sampleJd;
-    const charCounter = document.getElementById('jd-char-count');
-    if (charCounter) charCounter.textContent = `${arch.sampleJd.length.toLocaleString()} characters`;
+    jdTextarea.dispatchEvent(new Event('input', { bubbles: true }));
     showToast(`Loaded ${arch.name} sample Job Description.`);
 
     const analyzerSection = document.getElementById('analyzer');
-    if (analyzerSection) analyzerSection.scrollIntoView({ behavior: 'smooth' });
+    if (analyzerSection) analyzerSection.scrollIntoView({ behavior: appState.motionMode === 'reduced' ? 'auto' : 'smooth' });
   }
 }
 
@@ -3012,31 +3211,32 @@ function renderComparisonModalContent() {
         <select class="sort-select" data-compare-index="1">${options(archB.id)}</select>
       </label>
     </div>
+    ${archA.id === archB.id ? '<p class="compare-same" role="status">Both sides show the same archetype. Choose a different one to compare.</p>' : ''}
 
-    <table class="comparison-table">
+    <table class="comparison-table" role="table">
       <caption class="sr-only">Comparison of two career archetypes</caption>
-      <thead>
-        <tr>
-          <th scope="col"><span class="sr-only">Attribute</span></th>
-          <th scope="col">${head(archA)}</th>
-          <th scope="col">${head(archB)}</th>
+      <thead role="rowgroup">
+        <tr role="row">
+          <th scope="col" role="columnheader"><span class="sr-only">Attribute</span></th>
+          <th scope="col" role="columnheader">${head(archA)}</th>
+          <th scope="col" role="columnheader">${head(archB)}</th>
         </tr>
       </thead>
-      <tbody>
-        <tr>
-          <th scope="row">Records in corpus</th>
-          <td>${formatCorpusCount(archA, true)}</td>
-          <td>${formatCorpusCount(archB, true)}</td>
+      <tbody role="rowgroup">
+        <tr role="row">
+          <th scope="row" role="rowheader">Records in corpus</th>
+          <td role="cell">${formatCorpusCount(archA, true)}</td>
+          <td role="cell">${formatCorpusCount(archB, true)}</td>
         </tr>
-        <tr>
-          <th scope="row">Representative skills <span>curated</span></th>
-          <td>${archA.keySkills.slice(0, 5).map(escapeHTML).join(', ')}</td>
-          <td>${archB.keySkills.slice(0, 5).map(escapeHTML).join(', ')}</td>
+        <tr role="row">
+          <th scope="row" role="rowheader">Representative skills <span>curated</span></th>
+          <td role="cell">${archA.keySkills.slice(0, 5).map(escapeHTML).join(', ')}</td>
+          <td role="cell">${archB.keySkills.slice(0, 5).map(escapeHTML).join(', ')}</td>
         </tr>
-        <tr>
-          <th scope="row">Typical roles <span>illustrative</span></th>
-          <td>${archA.typicalRoles.slice(0, 3).map(escapeHTML).join(', ')}</td>
-          <td>${archB.typicalRoles.slice(0, 3).map(escapeHTML).join(', ')}</td>
+        <tr role="row">
+          <th scope="row" role="rowheader">Typical roles <span>illustrative</span></th>
+          <td role="cell">${archA.typicalRoles.slice(0, 3).map(escapeHTML).join(', ')}</td>
+          <td role="cell">${archB.typicalRoles.slice(0, 3).map(escapeHTML).join(', ')}</td>
         </tr>
       </tbody>
     </table>
@@ -3224,6 +3424,7 @@ function renderCompanyDirectory() {
 
   const sourceDate = snap && snap.source_snapshot_date ? formatSnapshotDate(snap.source_snapshot_date) : '';
   container.innerHTML = `
+    <div class="company-table-scroll" role="region" tabindex="0" aria-label="Company directory table">
     <table class="company-table">
       <caption class="sr-only">Curated companies, with figures from the 2026 placement snapshot where the company appears in it</caption>
       <thead>
@@ -3260,7 +3461,8 @@ function renderCompanyDirectory() {
         </tr>`;
         }).join('')}
       </tbody>
-    </table>`;
+    </table>
+    </div>`;
 }
 
 function resetCompanyFilters() {
@@ -3389,6 +3591,10 @@ function initPromptStudio() {
   const list = document.getElementById('frameworks-list-scroll');
   if (list) {
     list.addEventListener('click', (e) => {
+      if (e.target.closest('.btn-registry-retry')) {
+        startPromptStudio();
+        return;
+      }
       const item = e.target.closest('[data-framework-id]');
       if (item) selectFramework(item.getAttribute('data-framework-id'));
     });
@@ -3409,10 +3615,7 @@ function initPromptStudio() {
   const coachBtn = document.getElementById('btn-prompt-to-coach');
   if (coachBtn) coachBtn.addEventListener('click', usePromptFrameworkInCoach);
 
-  loadFrameworkRegistry().then(() => {
-    renderFrameworksList();
-    selectFramework(appState.promptStudio.selectedFrameworkId);
-  });
+  startPromptStudio();
 }
 
 const normalizeFieldKey = (name) => String(name).toLowerCase().replace(/[^a-z]/g, '');
@@ -3434,8 +3637,10 @@ function buildStudioFramework(entry) {
         key: name,
         label: name,
         letter: name.charAt(0).toUpperCase(),
-        placeholder: g.placeholder || `Write the ${name.toLowerCase()} for this prompt…`,
-        hint: g.hint || '',
+        // Help stays visible beside the field. Where the guide only wrote one line of help,
+        // it is the hint: a placeholder disappears as soon as someone starts typing.
+        placeholder: g.hint ? g.placeholder : '',
+        hint: g.hint || g.placeholder || `Write the ${name.toLowerCase()} for this prompt.`,
         example: guide && guide.sample && g.key ? (guide.sample[g.key] || '') : ''
       };
     })
@@ -3455,16 +3660,59 @@ function loadFrameworkRegistry() {
       appState.promptStudio.frameworks = entries.map(buildStudioFramework);
       appState.promptStudio.registrySource = 'api';
       if (note) note.textContent = `${entries.length} frameworks · registry v${data.version || '?'}`;
+      populateCoachFrameworkOptions();
     })
     .catch(err => {
-      console.warn('Framework registry unavailable, using the bundled guide list:', err);
-      appState.promptStudio.frameworks = promptFrameworksRegistry.map(g => buildStudioFramework({
-        id: g.id, name: g.name, group: 'Bundled list', acronym: g.expansion, best_use: g.bestFor,
-        fields: g.fields.map(f => f.key), recommended_scenarios: []
-      }));
-      appState.promptStudio.registrySource = 'bundled';
-      if (note) note.textContent = 'The framework registry could not be loaded; showing the bundled list.';
+      console.warn('The framework registry could not be loaded:', err.message);
+      appState.promptStudio.frameworks = [];
+      appState.promptStudio.registrySource = 'unavailable';
+      if (note) note.textContent = 'The framework registry could not be loaded.';
     });
+}
+
+function renderFrameworkRegistryError() {
+  const list = document.getElementById('frameworks-list-scroll');
+  const title = document.getElementById('builder-fw-title');
+  const desc = document.getElementById('builder-fw-desc');
+  const preview = document.getElementById('prompt-preview-code');
+  if (list) {
+    list.innerHTML = `<p class="frameworks-empty">The frameworks could not be loaded from the server.</p>
+      <button type="button" class="btn-secondary btn-sm btn-registry-retry">Try again</button>`;
+  }
+  if (title) title.textContent = 'Frameworks unavailable';
+  if (desc) desc.textContent = 'Prompt Studio reads its frameworks from the server. Check that it is running, then try again.';
+  if (preview) preview.textContent = '';
+  ['btn-fw-example', 'btn-fw-reset', 'btn-copy-prompt', 'btn-prompt-to-coach'].forEach(id => {
+    const btn = document.getElementById(id);
+    if (btn) btn.hidden = true;
+  });
+}
+
+function startPromptStudio() {
+  return loadFrameworkRegistry().then(() => {
+    if (!appState.promptStudio.frameworks.length) {
+      renderFrameworkRegistryError();
+      return;
+    }
+    ['btn-fw-reset', 'btn-copy-prompt', 'btn-prompt-to-coach'].forEach(id => {
+      const btn = document.getElementById(id);
+      if (btn) btn.hidden = false;
+    });
+    renderFrameworksList();
+    selectFramework(appState.promptStudio.selectedFrameworkId);
+  });
+}
+
+// The coach's framework list is the registry's, in the registry's order.
+function populateCoachFrameworkOptions() {
+  const select = document.getElementById('coach-framework-select');
+  if (!select) return;
+  const current = select.value;
+  [...select.options].forEach(option => { if (option.value) option.remove(); });
+  appState.promptStudio.frameworks.forEach(fw => {
+    select.add(new Option(`${fw.id}: ${fw.expansion}`, fw.id));
+  });
+  select.value = [...select.options].some(option => option.value === current) ? current : '';
 }
 
 function getStudioFramework(id) {
@@ -3621,8 +3869,14 @@ function legacyCopy(text) {
 function copyPromptToClipboard() {
   const previewBox = document.getElementById('prompt-preview-code');
   if (!previewBox) return;
+  const fw = getStudioFramework(appState.promptStudio.selectedFrameworkId);
+  const blanks = fw ? fw.fields.filter(field => !(appState.promptStudio.formData[field.key] || '').trim()).length : 0;
   copyText(previewBox.textContent).then(ok => {
-    showToast(ok ? 'Prompt copied to clipboard.' : 'Copy failed. Select the preview text and copy it manually.');
+    if (!ok) {
+      showToast('Copy failed. Select the preview text and copy it manually.');
+      return;
+    }
+    showToast(blanks ? `Prompt copied, with ${blanks} ${blanks === 1 ? 'field' : 'fields'} still blank.` : 'Prompt copied to clipboard.');
   });
 }
 
@@ -3641,25 +3895,20 @@ function getAnalysisReportMarkdown() {
 function copyAnalysisToClipboard() {
   const text = getAnalysisReportMarkdown();
   if (!text) {
-    showToast('No report yet — run an analysis first.');
+    showToast('No report yet. Run an analysis first.');
     return;
   }
-
-  if (navigator.clipboard && navigator.clipboard.writeText) {
-    navigator.clipboard.writeText(text).then(() => {
-      showToast('Report copied to clipboard.');
-    }).catch(() => {
-      fallbackCopy(text, 'Report copied to clipboard.');
-    });
-  } else {
-    fallbackCopy(text, 'Report copied to clipboard.');
-  }
+  // Copied text travels without the page around it, so a sample has to say what it is.
+  const labelled = appState.analyzer.reportIsDemo
+    ? `Illustrative demo output, not generated from a resume.\n\n${text}`
+    : text;
+  fallbackCopy(labelled, appState.analyzer.reportIsDemo ? 'Demo report copied, labelled as illustrative.' : 'Report copied to clipboard.');
 }
 
 function exportAnalysisReport() {
   const text = getAnalysisReportMarkdown();
   if (!text) {
-    showToast('No report yet — run an analysis first.');
+    showToast('No report yet. Run an analysis first.');
     return;
   }
 
@@ -3670,7 +3919,7 @@ function exportAnalysisReport() {
   const scoreLine = typeof score === 'number'
     ? `Resume–JD alignment score: ${score}/100 (textual alignment, not a hiring probability)\n`
     : '';
-  const mdContent = `# Resume Checker — Analysis Report
+  const mdContent = `# Hyperion Pathfinder — Analysis Report
 Export Date: ${new Date().toLocaleString()}
 Source: ${source}
 ${scoreLine}
@@ -3689,13 +3938,24 @@ ${text}
   a.click();
   document.body.removeChild(a);
   URL.revokeObjectURL(url);
-  showToast(`Downloaded ${filename}`);
+  showToast(`Download started: ${filename}`);
 }
 
-// Defined handoff: the Career Coach answers through the chosen framework.
+// The fields someone has filled in, in registry order, with no header or placeholders.
+function composeFrameworkQuestion(fw) {
+  return fw.fields
+    .map(field => [field.label, (appState.promptStudio.formData[field.key] || '').trim()])
+    .filter(([, value]) => value)
+    .map(([label, value]) => `${label}: ${value}`)
+    .join('\n');
+}
+
+// Defined handoff: sets the coach's framework and places the draft in its question box.
+// Nothing is sent until the person reviews it and presses Ask.
 function usePromptFrameworkInCoach() {
   const fw = getStudioFramework(appState.promptStudio.selectedFrameworkId);
   const select = document.getElementById('coach-framework-select');
+  const input = document.getElementById('coach-query-input');
   if (!fw || !select) return;
   if (![...select.options].some(o => o.value === fw.id)) {
     showToast(`The Career Coach has no ${fw.id} lens.`);
@@ -3706,7 +3966,19 @@ function usePromptFrameworkInCoach() {
   switchResultsTab('pane-career-coach');
   const results = document.querySelector('.analyzer-results-card');
   if (results) results.scrollIntoView({ behavior: appState.motionMode === 'reduced' ? 'auto' : 'smooth', block: 'start' });
-  showToast(`Career Coach will answer through the ${fw.id} framework.`);
+
+  const question = composeFrameworkQuestion(fw);
+  if (input) {
+    if (question) input.value = question;
+    input.focus({ preventScroll: true });
+  }
+  if (!question) {
+    showToast(`The coach will answer through ${fw.id}. Type your question and press Ask.`);
+  } else if (question.length > COACH_MESSAGE_MAX) {
+    showToast(`Your ${fw.id} draft is over the coach's ${COACH_MESSAGE_MAX.toLocaleString()} character limit. Shorten it, then press Ask.`);
+  } else {
+    showToast(`Your ${fw.id} draft is in the coach's question box. Review it, then press Ask.`);
+  }
 }
 
 function triggerFrameworkRecommendation(scenarioKey) {
@@ -3714,7 +3986,9 @@ function triggerFrameworkRecommendation(scenarioKey) {
   const box = document.getElementById('recommendation-explanation-box');
   if (!rec || !box) return;
   document.querySelectorAll('.btn-scenario-chip').forEach(chip => {
-    chip.classList.toggle('active', chip.getAttribute('data-scenario') === scenarioKey);
+    const selected = chip.getAttribute('data-scenario') === scenarioKey;
+    chip.classList.toggle('active', selected);
+    chip.setAttribute('aria-pressed', String(selected));
   });
   const primary = getStudioFramework(rec.primaryId);
   const alt = getStudioFramework(rec.altId);
@@ -3740,7 +4014,7 @@ function initInteractionLab() {
   if (samplePill) {
     samplePill.addEventListener('click', () => {
       samplePill.classList.toggle('active');
-      showToast(samplePill.classList.contains('active') ? 'Filter Tag: Active' : 'Filter Tag: Inactive');
+      showToast(`Sample filter ${samplePill.classList.contains('active') ? 'on' : 'off'}. No data is filtered.`);
     });
   }
 
@@ -3748,10 +4022,12 @@ function initInteractionLab() {
   const samplePreset = document.getElementById('lab-preset-chip');
   if (samplePreset) {
     samplePreset.addEventListener('click', () => {
-      showToast('Loaded preset template into buffer.');
+      showToast('Sample chip pressed. Nothing was loaded.');
     });
   }
 }
+
+let toastTimer = null;
 
 function showToast(msg) {
   const toast = document.getElementById('toast-notification');
@@ -3761,13 +4037,18 @@ function showToast(msg) {
   msgElem.textContent = msg;
   toast.classList.add('show');
 
-  setTimeout(() => {
+  // A new toast gets its full time on screen: the previous one's timer must not hide it.
+  clearTimeout(toastTimer);
+  toastTimer = setTimeout(() => {
     toast.classList.remove('show');
   }, 3200);
 }
 
 function triggerConfetti() {
-  if (appState.motionMode === 'reduced') return;
+  if (appState.motionMode === 'reduced') {
+    showToast('Calm motion is on, so the celebration effect is off.');
+    return;
+  }
   if (typeof confetti === 'function') {
     confetti({
       particleCount: 75,
@@ -3840,35 +4121,52 @@ function setTheme(theme, { persist = true } = {}) {
   }
 }
 
-function initSpatialScrollReveals() {
-  if (typeof IntersectionObserver !== 'undefined') {
-    const revealObserver = new IntersectionObserver((entries) => {
-      entries.forEach(entry => {
-        if (entry.isIntersecting) {
-          entry.target.classList.add('in-view');
-        }
-      });
-    }, { threshold: 0.12, rootMargin: '0px 0px -40px 0px' });
+/* ==============================================================================
+   Editorial reveal system
+   One quiet entrance per discovery panel, the first time it scrolls into view.
+   The hero copy and the working tools (analyzer, directories, Prompt Studio) never
+   wait for an animation, and anything already on screen at load is left alone.
+   The observer owns its elements: each is unhooked when revealed, and the observer
+   disconnects with the last one. Reduced-motion readers get everything immediately.
+   ==============================================================================
+*/
+const REVEAL_SELECTOR = '.section-head, .evidence-panel, .process-step, .story-panel, .faq-item';
 
-    document.querySelectorAll('.reveal-spatial, .step-card, .btn-lab-item, .recruiter-chip').forEach(el => {
-      revealObserver.observe(el);
-    });
-  }
+function initEditorialRevealSystem() {
+  if (appState.motionMode === 'reduced' || typeof IntersectionObserver === 'undefined') return;
 
-  // Recruiter Logo Fly-By Marquee interactive click interactions
-  document.querySelectorAll('.recruiter-chip').forEach(chip => {
-    chip.addEventListener('click', () => {
-      const companyName = chip.querySelector('strong')?.textContent || 'Company';
-      showToast(`Selected ${companyName} Placement Intelligence`);
-      const searchInput = document.getElementById('company-search-input');
-      if (searchInput) {
-        searchInput.value = companyName;
-        searchInput.dispatchEvent(new Event('input', { bubbles: true }));
-      }
-      const intelSec = document.getElementById('company-intel');
-      if (intelSec) intelSec.scrollIntoView({ behavior: 'smooth' });
+  const targets = [...document.querySelectorAll(REVEAL_SELECTOR)]
+    .filter(el => el.getBoundingClientRect().top > window.innerHeight);
+  let remaining = targets.length;
+
+  const observer = new IntersectionObserver((entries) => {
+    entries.forEach(entry => {
+      if (!entry.isIntersecting) return;
+      entry.target.classList.add('hp-reveal-visible');
+      observer.unobserve(entry.target);
+      remaining -= 1;
     });
+    if (remaining <= 0) observer.disconnect();
+  }, { threshold: 0.12, rootMargin: '0px 0px -36px 0px' });
+
+  targets.forEach((el, index) => {
+    el.classList.add('hp-reveal');
+    el.style.setProperty('--hp-reveal-delay', `${(index % 3) * 50}ms`);
+    observer.observe(el);
   });
+}
+
+// The one thing the preview controls change: the shadow of the sample card.
+const sampleShadow = { depth: 8, degrees: 225 };
+
+function renderSampleShadow() {
+  const surface = document.getElementById('neu-preview-surface');
+  if (!surface) return;
+  // The shadow falls away from the light.
+  const radians = ((sampleShadow.degrees + 180) * Math.PI) / 180;
+  const x = Math.round(Math.cos(radians) * sampleShadow.depth);
+  const y = Math.round(Math.sin(radians) * sampleShadow.depth);
+  surface.style.boxShadow = `${x}px ${y}px ${Math.round(sampleShadow.depth * 2.2)}px var(--neu-shadow-dark)`;
 }
 
 function initNeumorphicWorkbench() {
@@ -3882,14 +4180,8 @@ function initNeumorphicWorkbench() {
       const depth = parseInt(e.target.value, 10);
       depthValLabel.textContent = `${depth}px`;
 
-      const darkBlur = Math.round(depth * 2.2);
-      const lightOffset = Math.max(2, Math.round(depth * 0.75));
-      const lightBlur = Math.round(depth * 1.8);
-
-      const previewSurface = document.getElementById('neu-preview-surface');
-      if (previewSurface) {
-        previewSurface.style.boxShadow = `${depth}px ${depth}px ${darkBlur}px var(--neu-shadow-dark), -${lightOffset}px -${lightOffset}px ${lightBlur}px var(--neu-shadow-light)`;
-      }
+      sampleShadow.depth = depth;
+      renderSampleShadow();
     });
   }
 
@@ -3898,9 +4190,9 @@ function initNeumorphicWorkbench() {
       const isChecked = toggleWrapper.classList.toggle('checked');
       toggleWrapper.setAttribute('aria-checked', isChecked);
       if (toggleLabel) {
-        toggleLabel.textContent = isChecked ? 'State: Active (Glow)' : 'State: Inactive (Sunken)';
+        toggleLabel.textContent = isChecked ? 'On' : 'Off';
       }
-      showToast(isChecked ? 'Tactile Switch: Active' : 'Tactile Switch: Inactive');
+      showToast(`Sample switch ${isChecked ? 'on' : 'off'}. Nothing else changes.`);
     });
 
     toggleWrapper.addEventListener('keydown', (e) => {
@@ -3922,24 +4214,16 @@ function setNeuPreviewShape(shape) {
   if (!surface) return;
 
   surface.classList.remove('neu-card-convex', 'neu-card-concave', 'neu-inset-panel');
-  document.querySelectorAll('.neu-segmented-btn').forEach(b => b.classList.remove('active'));
+  if (shape === 'inset') surface.classList.add('neu-inset-panel');
+  if (shape === 'convex') surface.classList.add('neu-card-convex');
 
-  const btnRaised = document.getElementById('btn-neu-shape-raised');
-  const btnInset = document.getElementById('btn-neu-shape-inset');
-  const btnConvex = document.getElementById('btn-neu-shape-convex');
-
-  if (shape === 'inset') {
-    surface.classList.add('neu-inset-panel');
-    if (btnInset) btnInset.classList.add('active');
-    showToast('Applied Inset Recessed Surface');
-  } else if (shape === 'convex') {
-    surface.classList.add('neu-card-convex');
-    if (btnConvex) btnConvex.classList.add('active');
-    showToast('Applied Convex Extruded Surface');
-  } else {
-    if (btnRaised) btnRaised.classList.add('active');
-    showToast('Applied Raised Pill Surface');
-  }
+  const buttons = { raised: 'btn-neu-shape-raised', inset: 'btn-neu-shape-inset', convex: 'btn-neu-shape-convex' };
+  Object.entries(buttons).forEach(([name, id]) => {
+    const btn = document.getElementById(id);
+    if (!btn) return;
+    btn.classList.toggle('active', name === shape);
+    btn.setAttribute('aria-pressed', String(name === shape));
+  });
 }
 
 // Motion preference: System (follows prefers-reduced-motion), Calm or Full.
@@ -3971,7 +4255,7 @@ function applyMotionSetting(setting, { persist = true, announce = false } = {}) 
   if (typeof careerAtlas !== 'undefined' && careerAtlas) careerAtlas.setReducedMotion(calm);
   if (calm) {
     // drop any tilt or magnetic offset already applied
-    document.querySelectorAll('[data-tilt-bound], [data-magnetic-bound]').forEach(el => { el.style.transform = ''; });
+    document.querySelectorAll('[data-tilt-bound]').forEach(el => { el.style.transform = ''; });
   } else {
     init3DCardTilt();
     initHoverButtons();
@@ -4028,39 +4312,48 @@ function initAccessibilityAndMotion() {
 // ==============================================================================
 
 // --- 16.1 RESULTS WORKSPACE TABS CONTROLLER ---
+function selectResultsTab(btn, { focus = false } = {}) {
+  const targetPaneId = btn.getAttribute('aria-controls');
+  if (!targetPaneId) return;
+
+  document.querySelectorAll('.results-tab-btn').forEach(tab => {
+    const selected = tab === btn;
+    tab.classList.toggle('active', selected);
+    tab.setAttribute('aria-selected', String(selected));
+    tab.tabIndex = selected ? 0 : -1;
+  });
+  document.querySelectorAll('.results-tab-pane').forEach(pane => {
+    const selected = pane.id === targetPaneId;
+    pane.classList.toggle('active', selected);
+    pane.style.display = selected ? 'block' : 'none';
+  });
+  renderResultsView();
+  if (focus) btn.focus();
+}
+
 function initResultsWorkspaceTabs() {
-  const tabBtns = document.querySelectorAll('.results-tab-btn');
-  tabBtns.forEach(btn => {
-    btn.addEventListener('click', () => {
-      const targetPaneId = btn.getAttribute('aria-controls');
-      if (!targetPaneId) return;
-
-      // Update active states on tab buttons
-      tabBtns.forEach(b => {
-        b.classList.remove('active');
-        b.setAttribute('aria-selected', 'false');
-      });
-      btn.classList.add('active');
-      btn.setAttribute('aria-selected', 'true');
-
-      // Update active states on tab panes
-      document.querySelectorAll('.results-tab-pane').forEach(pane => {
-        pane.classList.remove('active');
-        pane.style.display = 'none';
-      });
-
-      const targetPane = document.getElementById(targetPaneId);
-      if (targetPane) {
-        targetPane.classList.add('active');
-        targetPane.style.display = 'block';
-      }
+  const tabBtns = [...document.querySelectorAll('.results-tab-btn')];
+  tabBtns.forEach((btn, index) => {
+    btn.tabIndex = btn.getAttribute('aria-selected') === 'true' ? 0 : -1;
+    btn.addEventListener('click', () => selectResultsTab(btn));
+    btn.addEventListener('keydown', (e) => {
+      const targets = {
+        ArrowRight: tabBtns[(index + 1) % tabBtns.length],
+        ArrowLeft: tabBtns[(index - 1 + tabBtns.length) % tabBtns.length],
+        Home: tabBtns[0],
+        End: tabBtns[tabBtns.length - 1]
+      };
+      const target = targets[e.key];
+      if (!target) return;
+      e.preventDefault();
+      selectResultsTab(target, { focus: true });
     });
   });
 }
 
 function switchResultsTab(paneId) {
   const btn = document.querySelector(`.results-tab-btn[aria-controls="${paneId}"]`);
-  if (btn) btn.click();
+  if (btn) selectResultsTab(btn);
 }
 
 // --- 16.2 EXECUTIVE PERSONA CONTROLLER ---
@@ -4092,8 +4385,15 @@ function renderExecutiveReview(review) {
   const questionsList = document.getElementById('exec-questions-list');
   const prioritiesList = document.getElementById('exec-priorities-list');
 
-  if (titleElem) titleElem.textContent = review.persona_title || 'Executive Reviewer';
-  if (roleElem) roleElem.textContent = `Target Role: ${review.target_role || 'Software Engineer'}`;
+  if (titleElem) titleElem.textContent = review.persona_title || 'Simulated reviewer';
+  if (roleElem) roleElem.textContent = review.target_role ? `Target role: ${review.target_role}` : '';
+  const lensNote = document.getElementById('exec-lens-note');
+  if (lensNote) {
+    // Only a real run inferred anything; the demo's lens is part of its fixture.
+    const auto = appState.executiveReview.selectedPersonaId === 'auto' && !appState.analyzer.reportIsDemo;
+    lensNote.hidden = !auto || !review.persona_title;
+    lensNote.textContent = auto ? 'Auto chose this lens from keywords in the job description.' : '';
+  }
 
   if (verdictElem) {
     verdictElem.className = 'verdict-badge';
@@ -4105,41 +4405,35 @@ function renderExecutiveReview(review) {
     } else {
       verdictElem.classList.add('verdict-needs-proof');
     }
-    verdictElem.textContent = (review.verdict || 'EVALUATING').replace(/_/g, ' ').toUpperCase();
+    verdictElem.textContent = (review.verdict || 'not stated').replace(/_/g, ' ');
   }
 
   if (reactionElem) {
     reactionElem.textContent = review.reaction_summary || 'Review generated based on submitted evidence.';
   }
 
-  // Attention list
+  // Observations: models.EvidenceObservation also carries missing_evidence and
+  // suggested_action, which say what is absent and what to add.
+  const observation = (obs, tone, whyLabel) => `
+        <div class="exec-obs-item ${tone}">
+          <div class="obs-bullet-title">${escapeHTML(obs.statement)}</div>
+          ${obs.why_it_matters ? `<div class="obs-why-it-matters"><strong>${whyLabel}</strong> ${escapeHTML(obs.why_it_matters)}</div>` : ''}
+          ${obs.missing_evidence ? `<div class="obs-why-it-matters"><strong>Missing evidence:</strong> ${escapeHTML(obs.missing_evidence)}</div>` : ''}
+          ${obs.suggested_action ? `<div class="obs-why-it-matters"><strong>What to add:</strong> ${escapeHTML(obs.suggested_action)}</div>` : ''}
+        </div>`;
+
   if (attentionList) {
     const items = review.what_catches_attention || [];
-    if (items.length === 0) {
-      attentionList.innerHTML = '<p class="empty-hint">No high-impact metrics verified yet.</p>';
-    } else {
-      attentionList.innerHTML = items.map(obs => `
-        <div class="exec-obs-item obs-positive">
-          <div class="obs-bullet-title">${escapeHTML(obs.statement)}</div>
-          <div class="obs-why-it-matters"><strong>Why it matters:</strong> ${escapeHTML(obs.why_it_matters || '')}</div>
-        </div>
-      `).join('');
-    }
+    attentionList.innerHTML = items.length === 0
+      ? '<p class="empty-hint">Nothing stood out in this review.</p>'
+      : items.map(obs => observation(obs, 'obs-positive', 'Why it matters:')).join('');
   }
 
-  // Skepticism list
   if (skepticismList) {
     const items = review.skepticism_points || [];
-    if (items.length === 0) {
-      skepticismList.innerHTML = '<p class="empty-hint">No major red-flag evidence gaps flagged.</p>';
-    } else {
-      skepticismList.innerHTML = items.map(obs => `
-        <div class="exec-obs-item obs-skeptical">
-          <div class="obs-bullet-title">${escapeHTML(obs.statement)}</div>
-          <div class="obs-why-it-matters"><strong>Senior scrutiny:</strong> ${escapeHTML(obs.why_it_matters || '')}</div>
-        </div>
-      `).join('');
-    }
+    skepticismList.innerHTML = items.length === 0
+      ? '<p class="empty-hint">This review raised no questions.</p>'
+      : items.map(obs => observation(obs, 'obs-skeptical', 'Why it would be questioned:')).join('');
   }
 
   // Architecture questions list
@@ -4152,24 +4446,25 @@ function renderExecutiveReview(review) {
     }
   }
 
-  // Strategic priorities list
+  // Next steps, in the reviewer's order. The server's ActionablePriority sends
+  // expected_impact and acceptance_condition (models.py); the older names are still read.
   if (prioritiesList) {
-    const priorities = review.strategic_priorities || [];
+    const priorities = [...(review.strategic_priorities || [])]
+      .sort((a, b) => (a.priority_rank ?? Infinity) - (b.priority_rank ?? Infinity));
     if (priorities.length === 0) {
       prioritiesList.innerHTML = '<p class="empty-hint">No next actions specified.</p>';
     } else {
-      prioritiesList.innerHTML = priorities.map((p, idx) => `
-        <div class="exec-priority-card">
-          <div class="priority-step-num">0${idx + 1}</div>
+      const detail = (label, value) => (value ? `<p class="priority-detail"><span>${label}</span> ${escapeHTML(value)}</p>` : '');
+      prioritiesList.innerHTML = `<ol class="exec-priority-steps">${priorities.map((p, idx) => `
+        <li class="exec-priority-card">
+          <span class="priority-step-num" aria-hidden="true">${String(idx + 1).padStart(2, '0')}</span>
           <div class="priority-info">
-            <div class="priority-action">${escapeHTML(p.action || p.priority || '')}</div>
-            <div class="priority-meta">
-              <span class="meta-tag tag-impact">${escapeHTML(p.expected_improvement || p.impact || 'High Impact')}</span>
-              ${p.prerequisites ? `<span class="meta-tag tag-prereq">Prereq: ${escapeHTML(p.prerequisites)}</span>` : ''}
-            </div>
+            <p class="priority-action">${escapeHTML(p.action || p.priority || '')}</p>
+            ${detail('Expected effect', p.expected_impact || p.expected_improvement || p.impact)}
+            ${detail('Before you start', p.prerequisites)}
+            ${detail('Done when', p.acceptance_condition)}
           </div>
-        </div>
-      `).join('');
+        </li>`).join('')}</ol>`;
     }
   }
 
@@ -4193,17 +4488,67 @@ function initResumeTailoringController() {
   if (undoBtn) undoBtn.addEventListener('click', undoDraftEdit);
   if (redoBtn) redoBtn.addEventListener('click', redoDraftEdit);
   if (diffToggleBtn) diffToggleBtn.addEventListener('click', toggleDiffDrawer);
-  if (diffCloseBtn) diffCloseBtn.addEventListener('click', toggleDiffDrawer);
+  if (diffCloseBtn) diffCloseBtn.addEventListener('click', () => {
+    toggleDiffDrawer();
+    if (diffToggleBtn) diffToggleBtn.focus();
+  });
+  const diffUndoBtn = document.getElementById('btn-diff-undo');
+  if (diffUndoBtn) diffUndoBtn.addEventListener('click', undoDraftEdit);
   if (recalcBtn) recalcBtn.addEventListener('click', recalculateDraftFit);
   if (exportBtn) exportBtn.addEventListener('click', exportDraftAsMarkdown);
-  if (popoverCloseBtn) popoverCloseBtn.addEventListener('click', closeMarkupPopover);
-  if (popoverDismissBtn) popoverDismissBtn.addEventListener('click', closeMarkupPopover);
+  if (popoverCloseBtn) popoverCloseBtn.addEventListener('click', () => closeMarkupPopover());
+  if (popoverDismissBtn) popoverDismissBtn.addEventListener('click', () => closeMarkupPopover());
   if (popoverApplyBtn) popoverApplyBtn.addEventListener('click', applyMarkupReplacement);
 
-  // Close popover on Escape key
+  const rewriteInput = document.getElementById('popover-rewrite-input');
+  if (rewriteInput) rewriteInput.addEventListener('input', () => hideInlineError('popover-error'));
+
   document.addEventListener('keydown', (e) => {
-    if (e.key === 'Escape') closeMarkupPopover();
+    if (e.key === 'Escape' && markupPopoverOpen()) closeMarkupPopover();
   });
+  // A press outside closes it, and a press on another mark goes on to open that one.
+  document.addEventListener('pointerdown', (e) => {
+    if (!markupPopoverOpen()) return;
+    if (e.target.closest('#markup-detail-popover') || e.target.closest('.doc-markup-span')) return;
+    closeMarkupPopover({ restoreFocus: false });
+  });
+}
+
+function markupPopoverOpen() {
+  const popover = document.getElementById('markup-detail-popover');
+  return Boolean(popover) && popover.style.display !== 'none';
+}
+
+function showInlineError(id, message) {
+  const elem = document.getElementById(id);
+  if (!elem) return;
+  elem.textContent = message;
+  elem.classList.add('visible');
+}
+
+function hideInlineError(id) {
+  const elem = document.getElementById(id);
+  if (!elem) return;
+  elem.textContent = '';
+  elem.classList.remove('visible');
+}
+
+// Backend categories (services/markup.py) in the words the legend uses.
+const MARKUP_CATEGORY_LABELS = {
+  metric_highlight: 'Metric proof',
+  passive_verb: 'Passive phrasing',
+  buzzword_gap: 'Critical gap'
+};
+
+function markupCategoryLabel(item) {
+  return MARKUP_CATEGORY_LABELS[item.category]
+    || String(item.category || 'Suggestion').replace(/_/g, ' ').replace(/^\w/, c => c.toUpperCase());
+}
+
+// A green mark praises evidence that is already good. Its text is advice, not replacement
+// wording, so there is nothing to apply.
+function markupIsReplaceable(item) {
+  return item.color_tag !== 'green';
 }
 
 function hydrateResumeTailoring(report) {
@@ -4218,27 +4563,55 @@ function hydrateResumeTailoring(report) {
   appState.resumeDraft.currentRevisionId = report.revision_id || 'rev_0';
   appState.resumeDraft.markupItems = markups;
   appState.resumeDraft.selectedMarkupId = null;
+  appState.resumeDraft.documentId = report.document_id || '';
   appState.resumeDraft.draftHistory = [{
     revisionId: appState.resumeDraft.currentRevisionId,
     text: displayText,
     markups: markups,
-    score: report.overall_score
+    score: report.overall_score,
+    breakdown: report.score_breakdown || null,
+    evidence: report.evidence || null,
+    scored: true,
+    rescored: false,
+    edits: []
   }];
   appState.resumeDraft.historyIndex = 0;
+  appState.resumeDraft.lastRevisionNumber = 0;
 
-  // Update Badge
+  closeMarkupPopover({ restoreFocus: false });
+  const drawer = document.getElementById('draft-diff-drawer');
+  if (drawer && drawer.style.display !== 'none') toggleDiffDrawer();
+
+  renderDraftStatus();
+  renderDocumentViewer(displayText, markups);
+}
+
+function currentDraftEntry() {
+  const draft = appState.resumeDraft;
+  return draft.draftHistory[draft.historyIndex] || null;
+}
+
+// The badge, tab count, undo and redo all read the current revision, so they cannot disagree.
+function renderDraftStatus() {
+  const draft = appState.resumeDraft;
+  const entry = currentDraftEntry();
   const revBadge = document.getElementById('draft-revision-badge');
-  if (revBadge) revBadge.textContent = `Draft: ${appState.resumeDraft.currentRevisionId} (Original)`;
-
-  // Update tab badge count
+  if (revBadge && entry) {
+    if (!entry.scored) {
+      revBadge.textContent = `Draft: ${entry.revisionId}, edited. Score not updated; recalculate to re-score.`;
+    } else if (entry.rescored) {
+      revBadge.textContent = `Draft: ${entry.revisionId}, re-scored ${entry.score} of 100`;
+    } else {
+      revBadge.textContent = `Draft: ${entry.revisionId}, original text`;
+    }
+  }
   const countBadge = document.getElementById('tab-markup-count-badge');
   if (countBadge) {
-    countBadge.textContent = markups.length;
-    countBadge.style.display = markups.length > 0 ? 'inline-block' : 'none';
+    countBadge.textContent = draft.markupItems.length;
+    countBadge.style.display = draft.markupItems.length > 0 ? 'inline-block' : 'none';
   }
-
   updateUndoRedoButtons();
-  renderDocumentViewer(displayText, markups);
+  renderDiffDrawer();
 }
 
 function renderDocumentViewer(text, markups) {
@@ -4273,8 +4646,10 @@ function renderDocumentViewer(text, markups) {
     markEl.setAttribute('tabindex', '0');
     markEl.setAttribute('role', 'button');
     markEl.setAttribute('aria-haspopup', 'dialog');
-    markEl.setAttribute('title', `${item.category}: ${item.critique}`);
+    markEl.setAttribute('title', `${markupCategoryLabel(item)}: ${item.critique}`);
     markEl.textContent = text.substring(item.start_char, item.end_char);
+    // The category is available as text: colour and underline style only repeat it.
+    markEl.setAttribute('aria-label', `${markupCategoryLabel(item)}: ${markEl.textContent}. Open the suggestion.`);
 
     markEl.addEventListener('click', (e) => {
       e.stopPropagation();
@@ -4307,132 +4682,203 @@ function openMarkupPopover(markupId, anchorEl) {
   const popover = document.getElementById('markup-detail-popover');
   if (!item || !popover) return;
 
+  document.querySelectorAll('.doc-markup-span.selected').forEach(el => el.classList.remove('selected'));
+  if (anchorEl) anchorEl.classList.add('selected');
   appState.resumeDraft.selectedMarkupId = markupId;
+  appState.resumeDraft.popoverAnchorId = markupId;
+  hideInlineError('popover-error');
 
-  // Populate data
   const dot = document.getElementById('popover-color-dot');
   const catTag = document.getElementById('popover-category-tag');
   const sevTag = document.getElementById('popover-severity-tag');
   const quoteText = document.getElementById('popover-quoted-text');
   const critiqueText = document.getElementById('popover-critique-text');
   const rewriteInput = document.getElementById('popover-rewrite-input');
+  const rewriteBox = document.getElementById('popover-rewrite-box');
+  const applyBtn = document.getElementById('popover-apply-btn');
+  const closeBtn = document.getElementById('popover-dismiss-btn');
+  const replaceable = markupIsReplaceable(item);
 
   if (dot) dot.className = `legend-dot ${item.color_tag || 'yellow'}`;
-  if (catTag) catTag.textContent = (item.category || 'Feedback').replace(/_/g, ' ').toUpperCase();
-  if (sevTag) sevTag.textContent = (item.severity || 'Review').toUpperCase();
+  if (catTag) catTag.textContent = markupCategoryLabel(item);
+  if (sevTag) sevTag.textContent = String(item.severity || 'Review').replace(/^\w/, c => c.toUpperCase());
   if (quoteText) quoteText.textContent = `"${item.original_text}"`;
-  if (critiqueText) critiqueText.textContent = item.critique;
-  if (rewriteInput) rewriteInput.value = item.suggested_rewrite;
+  if (critiqueText) critiqueText.textContent = replaceable ? item.critique : `${item.critique} ${item.suggested_rewrite}`;
+  if (rewriteInput) rewriteInput.value = replaceable ? item.suggested_rewrite : '';
+  if (rewriteBox) rewriteBox.hidden = !replaceable;
+  if (applyBtn) applyBtn.hidden = !replaceable;
 
-  // Position popover
-  const viewport = document.getElementById('resume-document-viewport');
-  if (viewport && anchorEl) {
-    const vRect = viewport.getBoundingClientRect();
-    const aRect = anchorEl.getBoundingClientRect();
-
-    let top = (aRect.bottom - vRect.top) + viewport.scrollTop + 8;
-    let left = (aRect.left - vRect.left) + viewport.scrollLeft;
-
-    // Constrain within viewport width
-    if (left + 360 > vRect.width) {
-      left = Math.max(16, vRect.width - 380);
-    }
-    popover.style.top = `${top}px`;
-    popover.style.left = `${left}px`;
-  }
-
-  popover.style.display = 'block';
-  if (rewriteInput) rewriteInput.focus();
+  popover.style.display = 'flex';
+  setVoiceWidgetCovered(true);
+  positionMarkupPopover(popover, anchorEl);
+  if (replaceable && rewriteInput) rewriteInput.focus();
+  else if (closeBtn) closeBtn.focus();
 }
 
-function closeMarkupPopover() {
+// The page wrapper is its own stacking context, so the phone bottom sheet cannot rise above
+// the fixed voice button; the button steps aside while the sheet is open (phones only, in CSS).
+function setVoiceWidgetCovered(covered) {
+  const widget = document.getElementById('voice-assistant-widget');
+  if (widget) widget.classList.toggle('is-covered', covered);
+}
+
+// Beside the span on wide screens; below 640 px the stylesheet makes it a bottom sheet.
+function positionMarkupPopover(popover, anchorEl) {
+  popover.style.top = '';
+  popover.style.left = '';
+  if (!anchorEl || window.matchMedia('(max-width: 640px)').matches) return;
+  const parent = popover.offsetParent || document.body;
+  const parentRect = parent.getBoundingClientRect();
+  const anchorRect = anchorEl.getBoundingClientRect();
+  const gap = 8;
+  const left = Math.max(gap, Math.min(anchorRect.left - parentRect.left, parentRect.width - popover.offsetWidth - gap));
+  const fitsBelow = anchorRect.bottom + gap + popover.offsetHeight <= window.innerHeight;
+  const fitsAbove = anchorRect.top - gap - popover.offsetHeight >= 0;
+  const top = !fitsBelow && fitsAbove
+    ? anchorRect.top - parentRect.top - popover.offsetHeight - gap
+    : anchorRect.bottom - parentRect.top + gap;
+  popover.style.left = `${left}px`;
+  popover.style.top = `${top}px`;
+}
+
+function closeMarkupPopover({ restoreFocus = true } = {}) {
   const popover = document.getElementById('markup-detail-popover');
+  const wasOpen = markupPopoverOpen();
   if (popover) popover.style.display = 'none';
-  appState.resumeDraft.selectedMarkupId = null;
+  setVoiceWidgetCovered(false);
+  const draft = appState.resumeDraft;
+  const anchorId = draft.popoverAnchorId;
+  draft.selectedMarkupId = null;
+  draft.popoverAnchorId = null;
+  document.querySelectorAll('.doc-markup-span.selected').forEach(el => el.classList.remove('selected'));
+  if (wasOpen && restoreFocus && anchorId) {
+    const anchor = document.querySelector(`.doc-markup-span[data-markup-id="${CSS.escape(anchorId)}"]`);
+    if (anchor) anchor.focus();
+  }
+}
+
+// Marks after the edit move with it; marks that touched the replaced span no longer apply.
+function rebaseMarkups(markups, start, end, delta, appliedId) {
+  return markups
+    .filter(m => m.markup_id !== appliedId && (m.end_char <= start || m.start_char >= end))
+    .map(m => (m.start_char >= end
+      ? { ...m, start_char: m.start_char + delta, end_char: m.end_char + delta }
+      : m));
 }
 
 function applyMarkupReplacement() {
-  const markupId = appState.resumeDraft.selectedMarkupId;
-  const item = appState.resumeDraft.markupItems.find(m => m.markup_id === markupId);
+  const draft = appState.resumeDraft;
+  const item = draft.markupItems.find(m => m.markup_id === draft.selectedMarkupId);
   const rewriteInput = document.getElementById('popover-rewrite-input');
   if (!item || !rewriteInput) return;
 
-  const currentText = appState.resumeDraft.displayText;
+  const currentText = draft.displayText;
   const newSegment = rewriteInput.value.trim();
 
-  // Validate that the target span still matches original_text
-  const existingSlice = currentText.substring(item.start_char, item.end_char);
-  if (existingSlice !== item.original_text) {
-    showToast('Document text was modified since this suggestion was created. Please Recalculate Fit.');
-    closeMarkupPopover();
+  if (!newSegment) {
+    showInlineError('popover-error', 'Enter the replacement text first. Nothing was changed.');
+    rewriteInput.focus();
+    return;
+  }
+  if (/\[insert\b/i.test(newSegment)) {
+    showInlineError('popover-error', 'Replace the text in [brackets] with your own facts first, or remove it. Nothing was changed.');
+    rewriteInput.focus();
+    return;
+  }
+  // The exact span must still hold the text this suggestion was made for. Offsets are the
+  // only way to find it: a similar phrase elsewhere is never touched.
+  if (currentText.substring(item.start_char, item.end_char) !== item.original_text) {
+    showInlineError('popover-error', 'This passage has changed since the suggestion was made, so nothing was applied. Recalculate to get fresh suggestions.');
     return;
   }
 
-  // Exact surgical replacement in browser memory
   const revisedText = currentText.substring(0, item.start_char) + newSegment + currentText.substring(item.end_char);
+  const delta = newSegment.length - (item.end_char - item.start_char);
+  const markups = rebaseMarkups(draft.markupItems, item.start_char, item.end_char, delta, item.markup_id);
+  const previous = currentDraftEntry();
+  draft.lastRevisionNumber += 1;
+  const newRevisionId = `rev_${draft.lastRevisionNumber}`;
 
-  // Increment revision count
-  const nextRevNum = appState.resumeDraft.draftHistory.length;
-  const newRevisionId = `rev_${nextRevNum}`;
-
-  appState.resumeDraft.displayText = revisedText;
-  appState.resumeDraft.currentRevisionId = newRevisionId;
-  appState.resumeDraft.markupItems = []; // Invalidate stale offsets until recalculation
-
-  // Append snapshot to history
-  appState.resumeDraft.draftHistory = appState.resumeDraft.draftHistory.slice(0, appState.resumeDraft.historyIndex + 1);
-  appState.resumeDraft.draftHistory.push({
+  draft.displayText = revisedText;
+  draft.currentRevisionId = newRevisionId;
+  draft.markupItems = markups;
+  draft.draftHistory = draft.draftHistory.slice(0, draft.historyIndex + 1);
+  draft.draftHistory.push({
     revisionId: newRevisionId,
     text: revisedText,
-    markups: [],
-    score: appState.analyzer.extractedScore
+    markups,
+    score: previous ? previous.score : null,
+    breakdown: previous ? previous.breakdown : null,
+    evidence: previous ? previous.evidence : null,
+    scored: false,
+    rescored: false,
+    edits: [...(previous ? previous.edits : []), { before: item.original_text, after: newSegment }]
   });
-  appState.resumeDraft.historyIndex = appState.resumeDraft.draftHistory.length - 1;
+  draft.historyIndex = draft.draftHistory.length - 1;
 
-  // Update UI revision badge
-  const revBadge = document.getElementById('draft-revision-badge');
-  if (revBadge) revBadge.textContent = `Draft: ${newRevisionId} (Unsaved edits — Recalculate recommended)`;
+  closeMarkupPopover({ restoreFocus: false });
+  renderDocumentViewer(revisedText, markups);
+  renderDraftStatus();
 
-  closeMarkupPopover();
-  renderDocumentViewer(revisedText, []);
-  updateUndoRedoButtons();
-  showToast(`Replacement applied. Revision updated to ${newRevisionId}.`);
+  // Focus moves on to the next suggestion, or back to the document if none is left.
+  const next = [...markups].sort((a, b) => a.start_char - b.start_char).find(m => m.start_char >= item.start_char);
+  const nextEl = next && document.querySelector(`.doc-markup-span[data-markup-id="${CSS.escape(next.markup_id)}"]`);
+  const viewport = document.getElementById('resume-document-viewport');
+  if (nextEl) nextEl.focus();
+  else if (viewport) viewport.focus();
+  showToast(`Replacement applied as ${newRevisionId}. The score is not updated until you recalculate.`);
+}
+
+function restoreDraftRevision(index, verb) {
+  const draft = appState.resumeDraft;
+  draft.historyIndex = index;
+  const entry = draft.draftHistory[index];
+  draft.displayText = entry.text;
+  draft.currentRevisionId = entry.revisionId;
+  draft.markupItems = entry.markups || [];
+
+  // The ring and rubric follow the revision they belong to.
+  if (typeof entry.score === 'number') updateScoreRingFromNumber(entry.score);
+  updateRubricBreakdown(entry.breakdown);
+  renderSkillEvidence(entry.evidence);
+
+  closeMarkupPopover({ restoreFocus: false });
+  renderDocumentViewer(entry.text, draft.markupItems);
+  renderDraftStatus();
+  showToast(`${verb} to ${entry.revisionId}.`);
+}
+
+// The button that was used can become disabled at the end of the history.
+function keepFocusAfterHistoryMove(usedId, otherId) {
+  const used = document.getElementById(usedId);
+  const other = document.getElementById(otherId);
+  if (used && used.disabled && document.activeElement === used && other) other.focus();
 }
 
 function undoDraftEdit() {
-  if (appState.resumeDraft.historyIndex <= 0) return;
-  appState.resumeDraft.historyIndex -= 1;
-  const snapshot = appState.resumeDraft.draftHistory[appState.resumeDraft.historyIndex];
-
-  appState.resumeDraft.displayText = snapshot.text;
-  appState.resumeDraft.currentRevisionId = snapshot.revisionId;
-  appState.resumeDraft.markupItems = snapshot.markups || [];
-
-  const revBadge = document.getElementById('draft-revision-badge');
-  if (revBadge) revBadge.textContent = `Draft: ${snapshot.revisionId} (Restored via Undo)`;
-
-  renderDocumentViewer(snapshot.text, snapshot.markups || []);
-  updateUndoRedoButtons();
-  closeMarkupPopover();
-  showToast(`Undone to ${snapshot.revisionId}.`);
+  const draft = appState.resumeDraft;
+  if (draft.historyIndex <= 0) return;
+  const usedId = document.activeElement && document.activeElement.id;
+  restoreDraftRevision(draft.historyIndex - 1, 'Undone');
+  if (usedId === 'btn-draft-undo') {
+    const undoBtn = document.getElementById('btn-draft-undo');
+    const redoBtn = document.getElementById('btn-draft-redo');
+    if (undoBtn && undoBtn.disabled && redoBtn) redoBtn.focus();
+  } else if (usedId === 'btn-diff-undo') {
+    const closeDiff = document.getElementById('btn-close-diff');
+    const diffUndo = document.getElementById('btn-diff-undo');
+    if (diffUndo && diffUndo.disabled && closeDiff) closeDiff.focus();
+  }
 }
 
 function redoDraftEdit() {
-  if (appState.resumeDraft.historyIndex >= appState.resumeDraft.draftHistory.length - 1) return;
-  appState.resumeDraft.historyIndex += 1;
-  const snapshot = appState.resumeDraft.draftHistory[appState.resumeDraft.historyIndex];
-
-  appState.resumeDraft.displayText = snapshot.text;
-  appState.resumeDraft.currentRevisionId = snapshot.revisionId;
-  appState.resumeDraft.markupItems = snapshot.markups || [];
-
-  const revBadge = document.getElementById('draft-revision-badge');
-  if (revBadge) revBadge.textContent = `Draft: ${snapshot.revisionId} (Restored via Redo)`;
-
-  renderDocumentViewer(snapshot.text, snapshot.markups || []);
-  updateUndoRedoButtons();
-  closeMarkupPopover();
-  showToast(`Redone to ${snapshot.revisionId}.`);
+  const draft = appState.resumeDraft;
+  if (draft.historyIndex >= draft.draftHistory.length - 1) return;
+  const usedRedo = document.activeElement && document.activeElement.id === 'btn-draft-redo';
+  restoreDraftRevision(draft.historyIndex + 1, 'Redone');
+  const redoBtn = document.getElementById('btn-draft-redo');
+  const undoBtn = document.getElementById('btn-draft-undo');
+  if (usedRedo && redoBtn && redoBtn.disabled && undoBtn) undoBtn.focus();
 }
 
 function updateUndoRedoButtons() {
@@ -4445,28 +4891,57 @@ function updateUndoRedoButtons() {
 
 function toggleDiffDrawer() {
   const drawer = document.getElementById('draft-diff-drawer');
+  const toggle = document.getElementById('btn-toggle-diff');
   if (!drawer) return;
+  const open = drawer.style.display === 'none';
+  drawer.style.display = open ? 'block' : 'none';
+  appState.resumeDraft.diffOpen = open;
+  if (toggle) toggle.setAttribute('aria-expanded', String(open));
+  if (open) renderDiffDrawer();
+}
 
-  const isVisible = drawer.style.display !== 'none';
-  if (isVisible) {
-    drawer.style.display = 'none';
-    appState.resumeDraft.diffOpen = false;
-  } else {
-    // Populate diff
-    const origBox = document.getElementById('diff-original-content');
-    const editBox = document.getElementById('diff-edited-content');
-    if (origBox) origBox.textContent = appState.resumeDraft.originalText;
-    if (editBox) editBox.textContent = appState.resumeDraft.displayText;
+// Lists each applied change in words, beside the two full texts, and follows undo and redo.
+function renderDiffDrawer() {
+  const draft = appState.resumeDraft;
+  const entry = currentDraftEntry();
+  const edits = entry ? entry.edits : [];
 
-    drawer.style.display = 'block';
-    appState.resumeDraft.diffOpen = true;
-    showToast('Opened Revision Diff Drawer');
+  const undoBtn = document.getElementById('btn-diff-undo');
+  if (undoBtn) undoBtn.disabled = draft.historyIndex <= 0;
+  if (!draft.diffOpen) return;
+
+  const summary = document.getElementById('diff-summary');
+  if (summary) {
+    summary.textContent = edits.length
+      ? `${edits.length} ${edits.length === 1 ? 'change' : 'changes'} in this draft, held in this browser only. Your uploaded PDF is not changed.`
+      : 'No changes yet. Apply a suggestion and it will be listed here. Your uploaded PDF is never changed.';
   }
+  const list = document.getElementById('diff-change-list');
+  if (list) {
+    list.hidden = edits.length === 0;
+    list.textContent = '';
+    edits.forEach(edit => {
+      const row = document.createElement('li');
+      const before = document.createElement('del');
+      before.className = 'diff-removal';
+      before.textContent = edit.before;
+      const after = document.createElement('ins');
+      after.className = 'diff-addition';
+      after.textContent = edit.after;
+      row.append(before, ' became ', after);
+      list.appendChild(row);
+    });
+  }
+  const origBox = document.getElementById('diff-original-content');
+  const editBox = document.getElementById('diff-edited-content');
+  if (origBox) origBox.textContent = draft.originalText;
+  if (editBox) editBox.textContent = draft.displayText;
 }
 
 async function recalculateDraftFit() {
   const recalcBtn = document.getElementById('btn-recalculate-draft');
-  const jd = (appState.analyzer.jobDescription || '').trim();
+  // Re-score against the job description this report was made for, not whatever the form holds now.
+  const jd = (appState.analyzer.reportJobDescription || '').trim();
   const editedText = appState.resumeDraft.displayText;
 
   if (!editedText) {
@@ -4482,11 +4957,11 @@ async function recalculateDraftFit() {
 
   try {
     const payload = {
-      analysis_id: appState.reportData?.analysis_id || ('rec_' + Date.now()),
-      target_job_description: jd || 'Software Engineer',
       edited_text: editedText,
-      base_revision_id: appState.resumeDraft.currentRevisionId
+      job_description: jd,
+      revision_id: appState.resumeDraft.currentRevisionId
     };
+    if (appState.resumeDraft.documentId) payload.document_id = appState.resumeDraft.documentId;
 
     const response = await fetch(apiUrl('/api/markup/recalculate'), {
       method: 'POST',
@@ -4499,26 +4974,40 @@ async function recalculateDraftFit() {
     }
 
     const data = await response.json();
-    appState.resumeDraft.currentRevisionId = data.new_revision_id;
-    appState.resumeDraft.textHash = data.text_hash;
-    appState.resumeDraft.markupItems = data.active_markups || [];
+    const snapshot = data.document_snapshot || {};
+    // Markup offsets refer to the snapshot's canonical text, which may differ from the
+    // edited text after normalization and redaction.
+    const text = typeof snapshot.canonical_display_text === 'string' ? snapshot.canonical_display_text : editedText;
+    const markups = data.resume_markups || [];
+    appState.resumeDraft.textHash = snapshot.text_hash || '';
+    appState.resumeDraft.displayText = text;
+    appState.resumeDraft.markupItems = markups;
 
-    // Update revision badge
-    const revBadge = document.getElementById('draft-revision-badge');
-    if (revBadge) revBadge.textContent = `Draft: ${data.new_revision_id} (Re-scored: ${data.recalculated_score}/100)`;
+    // The score now belongs to this revision, so undo and redo can bring it back with the text.
+    const entry = currentDraftEntry();
+    if (entry) {
+      entry.text = text;
+      entry.markups = markups;
+      entry.score = data.overall_score;
+      entry.breakdown = data.score_breakdown;
+      entry.evidence = skillEvidenceFrom(data);
+      entry.scored = true;
+      entry.rescored = true;
+    }
 
-    // Update score ring
-    appState.analyzer.extractedScore = data.recalculated_score;
-    const scoreVal = document.getElementById('mini-score-val');
-    if (scoreVal) scoreVal.textContent = data.recalculated_score;
+    // The ring and the rubric follow the re-scored draft together, so the total matches its parts.
+    updateScoreRingFromNumber(data.overall_score);
+    updateRubricBreakdown(data.score_breakdown);
+    renderSkillEvidence(entry ? entry.evidence : skillEvidenceFrom(data));
 
-    // Update tailoring view
-    renderDocumentViewer(editedText, data.active_markups || []);
-    showToast(`Recalculation complete! Fit score: ${data.recalculated_score}/100.`);
+    closeMarkupPopover({ restoreFocus: false });
+    renderDocumentViewer(text, markups);
+    renderDraftStatus();
+    showToast(`Draft re-scored: ${data.overall_score} of 100.`);
 
   } catch (err) {
-    console.error('Recalculation error:', err);
-    showToast(`Recalculation note: ${err.message}. Showing local draft changes.`);
+    console.warn('The draft could not be re-scored:', err.message);
+    showToast('The draft could not be re-scored. Your edits are kept. Try again in a moment.');
   } finally {
     if (recalcBtn) {
       recalcBtn.disabled = false;
@@ -4535,12 +5024,18 @@ function exportDraftAsMarkdown() {
     return;
   }
 
-  const score = appState.analyzer.extractedScore || 'N/A';
+  const entry = currentDraftEntry();
   const rev = appState.resumeDraft.currentRevisionId || 'rev_0';
-  const mdContent = `# Resume Checker — Tailored Resume Draft (${rev})
+  const scoreLine = entry && entry.scored && typeof entry.score === 'number'
+    ? `Alignment score for this revision: ${entry.score}/100 (textual alignment, not a hiring probability)`
+    : 'Alignment score: not updated since the last edit';
+  const sourceLine = appState.analyzer.reportIsDemo
+    ? 'Source: illustrative demo text, not a real resume'
+    : 'Source: edited in this browser. Your uploaded PDF was not changed.';
+  const mdContent = `# Hyperion Pathfinder — Tailored Resume Draft (${rev})
 Export Date: ${new Date().toLocaleString()}
-Placement Alignment Score: ${score}/100
-Note: Exported from in-browser tailoring session. Original PDF layout is preserved separately.
+${scoreLine}
+${sourceLine}
 
 ================================================================================
 ${text}
@@ -4556,112 +5051,139 @@ ${text}
   a.click();
   document.body.removeChild(a);
   URL.revokeObjectURL(url);
-  showToast(`Exported tailored draft as resume_tailored_${rev}.md`);
+  showToast(`Download started: resume_tailored_${rev}.md`);
 }
 
 // --- 16.4 VOICE ASSISTANT CONTROLLER (STT & TTS) ---
+function voiceEls() {
+  const ids = {
+    orb: 'voice-orb-btn',
+    drawer: 'voice-assistant-drawer',
+    record: 'voice-record-btn',
+    recordText: 'voice-record-btn-text',
+    apply: 'voice-apply-btn',
+    preview: 'voice-transcript-preview',
+    desc: 'voice-live-status-desc',
+    dot: 'voice-status-dot',
+    pill: 'voice-status-badge',
+    surface: 'voice-pulse-surface',
+    dest: 'voice-dest-select',
+    source: 'voice-source-indicator'
+  };
+  return Object.fromEntries(Object.entries(ids).map(([key, id]) => [key, document.getElementById(id)]));
+}
+
+// One place opens and closes the panel, so the button, the panel and the microphone cannot
+// disagree: closing always stops listening.
+function setVoiceDrawerOpen(open, { returnFocus = false } = {}) {
+  const { orb, drawer, record } = voiceEls();
+  if (!drawer) return;
+  drawer.hidden = !open;
+  drawer.classList.toggle('open', open);
+  if (orb) {
+    orb.setAttribute('aria-expanded', String(open));
+    orb.setAttribute('aria-label', open ? 'Close dictation and spoken briefing' : 'Open dictation and spoken briefing');
+  }
+  if (!open) {
+    stopVoiceRecognition();
+    if (returnFocus && orb) orb.focus();
+    return;
+  }
+  if (window.lucide) window.lucide.createIcons();
+  if (record && !record.disabled) record.focus({ preventScroll: true });
+}
+
+function syncVoiceApplyButton() {
+  const { apply, preview } = voiceEls();
+  if (apply && preview) apply.disabled = !preview.value.trim();
+}
+
 function initVoiceAssistantController() {
-  const orbBtn = document.getElementById('voice-orb-btn');
-  const drawer = document.getElementById('voice-assistant-drawer');
+  const { orb, drawer, record, apply, preview, dest, desc, source } = voiceEls();
   const closeBtn = document.getElementById('voice-drawer-close-btn');
-  const recordBtn = document.getElementById('voice-record-btn');
-  const applyBtn = document.getElementById('voice-apply-btn');
   const discardBtn = document.getElementById('voice-discard-btn');
   const quickDictateBtn = document.getElementById('btn-quick-dictate-jd');
-  const destSelect = document.getElementById('voice-dest-select');
   const localeSelect = document.getElementById('voice-locale-select');
 
-  // Toggle drawer
-  if (orbBtn && drawer) {
-    orbBtn.addEventListener('click', () => {
-      drawer.classList.toggle('open');
-      const isOpen = drawer.classList.contains('open');
-      orbBtn.setAttribute('aria-expanded', isOpen);
-    });
+  if (orb && drawer) {
+    orb.addEventListener('click', () => setVoiceDrawerOpen(drawer.hidden));
   }
+  if (closeBtn) closeBtn.addEventListener('click', () => setVoiceDrawerOpen(false, { returnFocus: true }));
+  document.addEventListener('keydown', (e) => {
+    if (e.key === 'Escape' && drawer && !drawer.hidden && !document.querySelector('.modal-backdrop.open')) {
+      setVoiceDrawerOpen(false, { returnFocus: true });
+    }
+  });
 
-  if (closeBtn && drawer) {
-    closeBtn.addEventListener('click', () => {
-      drawer.classList.remove('open');
-      if (orbBtn) orbBtn.setAttribute('aria-expanded', 'false');
-      stopVoiceRecognition();
-    });
-  }
-
-  // Quick Dictate from JD box
-  if (quickDictateBtn && drawer) {
+  // Quick dictate from the job description field
+  if (quickDictateBtn) {
     quickDictateBtn.addEventListener('click', () => {
-      drawer.classList.add('open');
-      if (destSelect) destSelect.value = 'append_jd';
-      if (orbBtn) orbBtn.setAttribute('aria-expanded', 'true');
+      if (dest) dest.value = 'append_jd';
+      setVoiceDrawerOpen(true);
       startVoiceRecognition();
     });
   }
 
-  // Destination / Locale changes
-  if (destSelect) {
-    destSelect.addEventListener('change', (e) => {
-      appState.voice.destination = e.target.value;
-    });
-  }
+  if (dest) dest.addEventListener('change', (e) => { appState.voice.destination = e.target.value; });
   if (localeSelect) {
     localeSelect.addEventListener('change', (e) => {
       appState.voice.locale = e.target.value;
-      if (appState.voice.recognition) {
-        appState.voice.recognition.lang = e.target.value;
-      }
+      if (appState.voice.recognition) appState.voice.recognition.lang = e.target.value;
     });
   }
 
-  // Recording controls
-  if (recordBtn) {
-    recordBtn.addEventListener('click', () => {
-      if (appState.voice.status === 'listening') {
-        stopVoiceRecognition();
-      } else {
-        startVoiceRecognition();
-      }
+  if (record) {
+    record.addEventListener('click', () => {
+      if (appState.voice.status === 'listening') stopVoiceRecognition();
+      else startVoiceRecognition();
+    });
+  }
+  if (apply) apply.addEventListener('click', applyVoiceTranscript);
+  if (discardBtn) discardBtn.addEventListener('click', discardVoiceTranscript);
+
+  // Typing is always available, with or without a microphone.
+  if (preview) {
+    preview.addEventListener('input', () => {
+      if (source) source.textContent = 'Typed or edited';
+      syncVoiceApplyButton();
     });
   }
 
-  if (applyBtn) {
-    applyBtn.addEventListener('click', applyVoiceTranscript);
-  }
-
-  if (discardBtn) {
-    discardBtn.addEventListener('click', discardVoiceTranscript);
-  }
-
-  // Check Web Speech API Support
   const SpeechRec = window.SpeechRecognition || window.webkitSpeechRecognition;
+  appState.voice.sttSupport = SpeechRec ? 'supported' : 'unsupported';
   if (!SpeechRec) {
-    appState.voice.sttSupport = 'unsupported';
-    const statusDesc = document.getElementById('voice-live-status-desc');
-    if (statusDesc) {
-      statusDesc.textContent = 'Browser SpeechRecognition unavailable. You can type or use server transcription.';
-    }
-  } else {
-    appState.voice.sttSupport = 'supported';
+    if (record) record.disabled = true;
+    if (desc) desc.textContent = 'This browser has no speech recognition. Type your text below, then press Insert.';
+    if (source) source.textContent = 'Typing only';
   }
 }
+
+const VOICE_ERROR_MESSAGES = {
+  'not-allowed': 'Microphone access was refused. Allow it in your browser settings, or type below.',
+  'service-not-allowed': 'Speech recognition is blocked in this browser. Type below instead.',
+  'no-speech': 'No speech was heard. Check your microphone and try again, or type below.',
+  'audio-capture': 'No microphone was found. Connect one and try again, or type below.',
+  network: 'Speech recognition needs a network connection in this browser. Try again, or type below.',
+  'language-not-supported': 'This language is not available here. Choose another, or type below.'
+};
 
 function startVoiceRecognition() {
   const SpeechRec = window.SpeechRecognition || window.webkitSpeechRecognition;
   if (!SpeechRec) {
-    showToast('SpeechRecognition is not supported in this browser. Please use text input.');
+    updateVoiceUI('error', 'This browser has no speech recognition. Type your text below, then press Insert.');
     return;
   }
+  if (appState.voice.status === 'listening') return;
 
   try {
     if (!appState.voice.recognition) {
       const rec = new SpeechRec();
       rec.continuous = true;
       rec.interimResults = true;
-      rec.lang = appState.voice.locale || 'en-IN';
 
       rec.onstart = () => {
         appState.voice.status = 'listening';
-        updateVoiceUI('listening', 'Listening... Speak clearly into your microphone.');
+        updateVoiceUI('listening', 'Listening. Your browser may be sending this audio to its speech service.');
       };
 
       rec.onresult = (event) => {
@@ -4674,32 +5196,23 @@ function startVoiceRecognition() {
           }
         }
         appState.voice.interimTranscript = interim;
-
-        const preview = document.getElementById('voice-transcript-preview');
-        if (preview) {
-          preview.value = (appState.voice.finalTranscript + ' ' + interim).trim();
-        }
-
-        const applyBtn = document.getElementById('voice-apply-btn');
-        if (applyBtn) applyBtn.disabled = (appState.voice.finalTranscript.trim().length === 0 && interim.trim().length === 0);
+        const { preview, source } = voiceEls();
+        if (preview) preview.value = (appState.voice.finalTranscript + ' ' + interim).trim();
+        if (source) source.textContent = 'From browser speech recognition';
+        syncVoiceApplyButton();
       };
 
       rec.onerror = (event) => {
-        console.warn('SpeechRecognition error:', event.error);
+        console.warn('Speech recognition stopped:', event.error);
+        if (event.error === 'aborted') return;
         appState.voice.status = 'error';
-        let msg = `Microphone error: ${event.error}`;
-        if (event.error === 'not-allowed') {
-          msg = 'Microphone permission was denied. Please allow microphone access in browser settings.';
-        } else if (event.error === 'no-speech') {
-          msg = 'No speech detected. Please check your microphone.';
-        }
-        updateVoiceUI('error', msg);
+        updateVoiceUI('error', VOICE_ERROR_MESSAGES[event.error] || 'Speech recognition stopped. Try again, or type below.');
       };
 
       rec.onend = () => {
         if (appState.voice.status === 'listening') {
           appState.voice.status = 'transcript_ready';
-          updateVoiceUI('transcript_ready', 'Microphone paused. Review and apply your transcript.');
+          updateVoiceUI('transcript_ready', 'Stopped listening. Review the text, then press Insert.');
         }
       };
 
@@ -4708,91 +5221,88 @@ function startVoiceRecognition() {
 
     appState.voice.recognition.lang = appState.voice.locale || 'en-IN';
     appState.voice.recognition.start();
-
   } catch (err) {
-    console.error('Failed to start speech recognition:', err);
-    showToast('Unable to start microphone. Please check permissions.');
+    console.warn('Speech recognition could not start:', err.message);
+    updateVoiceUI('error', 'The microphone could not start. Check its permission, or type below.');
   }
 }
 
 function stopVoiceRecognition() {
   if (appState.voice.recognition && appState.voice.status === 'listening') {
-    appState.voice.recognition.stop();
     appState.voice.status = 'transcript_ready';
-    updateVoiceUI('transcript_ready', 'Listening stopped. Review transcript below.');
+    appState.voice.recognition.stop();
+    updateVoiceUI('transcript_ready', 'Stopped listening. Review the text, then press Insert.');
   }
 }
 
+// Visible state, on the panel and on the button that stays on screen when the panel is closed.
 function updateVoiceUI(status, label) {
-  const statusDesc = document.getElementById('voice-live-status-desc');
-  const btnText = document.getElementById('voice-record-btn-text');
-  const recordBtn = document.getElementById('voice-record-btn');
-  const pulseBars = document.querySelectorAll('.pulse-bar');
-  const orb = document.getElementById('voice-orb-btn');
+  const { orb, record, recordText, desc, dot, pill, surface } = voiceEls();
+  const listening = status === 'listening';
+  const pillText = { listening: 'Listening', transcript_ready: 'Stopped', error: 'Stopped', idle: 'Ready' };
 
-  if (statusDesc) statusDesc.textContent = label;
-
-  if (status === 'listening') {
-    if (btnText) btnText.textContent = 'Stop Listening';
-    if (recordBtn) recordBtn.classList.add('recording-active');
-    pulseBars.forEach(b => b.classList.add('live'));
-    if (orb) orb.classList.add('orb-listening');
-  } else {
-    if (btnText) btnText.textContent = 'Start Listening';
-    if (recordBtn) recordBtn.classList.remove('recording-active');
-    pulseBars.forEach(b => b.classList.remove('live'));
-    if (orb) orb.classList.remove('orb-listening');
-  }
+  if (desc) desc.textContent = label;
+  if (recordText) recordText.textContent = listening ? 'Stop listening' : 'Start listening';
+  if (record) record.classList.toggle('recording-active', listening);
+  if (surface) surface.classList.toggle('listening', listening);
+  if (orb) orb.classList.toggle('listening', listening);
+  if (dot) dot.className = `voice-status-dot ${listening ? 'listening' : 'idle'}`;
+  if (pill) pill.textContent = pillText[status] || 'Ready';
 }
 
 function applyVoiceTranscript() {
-  const preview = document.getElementById('voice-transcript-preview');
+  const { preview, dest } = voiceEls();
   const transcriptText = (preview ? preview.value : appState.voice.finalTranscript).trim();
   if (!transcriptText) {
-    showToast('No transcript text to insert.');
+    showToast('There is no text to insert.');
     return;
   }
 
-  const destSelect = document.getElementById('voice-dest-select');
-  const destination = destSelect ? destSelect.value : (appState.voice.destination || 'replace_jd');
+  const destination = dest ? dest.value : (appState.voice.destination || 'replace_jd');
+  let focusTarget = null;
 
-  if (destination === 'replace_jd') {
+  if (destination === 'replace_jd' || destination === 'append_jd') {
     const jdTextarea = document.getElementById('jd-textarea');
     if (jdTextarea) {
-      jdTextarea.value = transcriptText;
+      jdTextarea.value = destination === 'append_jd' && jdTextarea.value
+        ? `${jdTextarea.value}\n\n${transcriptText}`
+        : transcriptText;
       jdTextarea.dispatchEvent(new Event('input', { bubbles: true }));
-      showToast('Inserted transcript into Job Description (Replaced).');
-    }
-  } else if (destination === 'append_jd') {
-    const jdTextarea = document.getElementById('jd-textarea');
-    if (jdTextarea) {
-      jdTextarea.value = (jdTextarea.value ? jdTextarea.value + '\n\n' : '') + transcriptText;
-      jdTextarea.dispatchEvent(new Event('input', { bubbles: true }));
-      showToast('Appended transcript to Job Description.');
+      focusTarget = jdTextarea;
+      showToast(destination === 'append_jd' ? 'Text added to the job description.' : 'Text placed in the job description.');
     }
   } else if (destination === 'coach_message') {
     const coachInput = document.getElementById('coach-query-input');
     if (coachInput) {
       coachInput.value = transcriptText;
       switchResultsTab('pane-career-coach');
-      showToast('Inserted transcript into Career Coach.');
+      focusTarget = coachInput;
+      showToast('Text placed in the Career Coach question box. Press Ask to send it.');
     }
   }
 
-  // Close drawer after successful apply
-  const drawer = document.getElementById('voice-assistant-drawer');
-  if (drawer) drawer.classList.remove('open');
+  stopVoiceRecognition();
   discardVoiceTranscript();
+  setVoiceDrawerOpen(false);
+  if (focusTarget) {
+    focusTarget.focus({ preventScroll: true });
+    focusTarget.scrollIntoView({ block: 'center', behavior: appState.motionMode === 'reduced' ? 'auto' : 'smooth' });
+  }
 }
 
 function discardVoiceTranscript() {
   appState.voice.finalTranscript = '';
   appState.voice.interimTranscript = '';
-  const preview = document.getElementById('voice-transcript-preview');
+  const { preview, source } = voiceEls();
   if (preview) preview.value = '';
-  const applyBtn = document.getElementById('voice-apply-btn');
-  if (applyBtn) applyBtn.disabled = true;
-  updateVoiceUI('idle', 'Microphone ready. Click Start Listening to dictate.');
+  if (source) source.textContent = appState.voice.sttSupport === 'unsupported' ? 'Typing only' : 'Typed or dictated';
+  syncVoiceApplyButton();
+  if (appState.voice.status !== 'listening') {
+    appState.voice.status = 'idle';
+    updateVoiceUI('idle', appState.voice.sttSupport === 'unsupported'
+      ? 'This browser has no speech recognition. Type your text below, then press Insert.'
+      : 'Press Start listening to dictate, or type below.');
+  }
 }
 
 // --- 16.5 SPEECH SYNTHESIS (TTS) CONTROLLER ---
@@ -4813,20 +5323,32 @@ function initSpeechSynthesisController() {
   if (drawerPauseBtn) drawerPauseBtn.addEventListener('click', pauseSpokenBriefing);
   if (drawerStopBtn) drawerStopBtn.addEventListener('click', stopSpokenBriefing);
 
+  // Speech must not outlive the page, and a browser without it should not offer it.
+  window.addEventListener('pagehide', () => {
+    if (window.speechSynthesis) window.speechSynthesis.cancel();
+  });
+  if (!window.speechSynthesis) {
+    const panel = document.querySelector('.voice-tts-panel');
+    if (panel) panel.hidden = true;
+    if (quickTtsBtn) quickTtsBtn.hidden = true;
+  }
+
   speedBtns.forEach(btn => {
     btn.addEventListener('click', () => {
-      speedBtns.forEach(b => b.classList.remove('active'));
-      btn.classList.add('active');
+      speedBtns.forEach(b => {
+        b.classList.toggle('active', b === btn);
+        b.setAttribute('aria-pressed', String(b === btn));
+      });
       const rate = parseFloat(btn.getAttribute('data-rate')) || 1.0;
       appState.voice.ttsRate = rate;
-      showToast(`Spoken Briefing Speed: ${rate}x`);
+      showToast(`The briefing will play at ${rate}x.`);
     });
   });
 }
 
 function toggleSpokenBriefing() {
   if (!window.speechSynthesis) {
-    showToast('Browser SpeechSynthesis is not supported on this device.');
+    showToast('This browser cannot read text aloud.');
     return;
   }
 
@@ -4843,17 +5365,21 @@ function toggleSpokenBriefing() {
   }
 
   // Build spoken briefing text from current report
-  const score = appState.analyzer.extractedScore || 84;
+  const score = appState.analyzer.extractedScore;
+  if (typeof score !== 'number') {
+    showToast('No report yet. Run an analysis first.');
+    return;
+  }
   const review = appState.executiveReview.review;
   const personaTitle = review?.persona_title || 'Senior Engineering Reviewer';
-  const reaction = review?.reaction_summary || 'Your resume demonstrates concrete technical capability with areas for improvement.';
+  const reaction = review?.reaction_summary ? `Top impression: ${review.reaction_summary}.` : '';
 
   const spokenBriefingText = `
-    Executive diagnostic briefing from your ${personaTitle}.
-    Your resume-to-job evidence alignment score is ${score} out of 100.
-    Please note: this is an evidence alignment score, not a guarantee of employment.
-    Top impression: ${reaction}.
-    For concrete improvements, open the In-Document Tailoring tab to review actionable replacements.
+    Spoken briefing, written from the point of view of a simulated ${personaTitle}.
+    Your resume's alignment score against this job description is ${score} out of 100.
+    This measures how well the text matches. It is not a hiring probability.
+    ${reaction}
+    For suggested changes, open the Resume Tailoring tab.
   `;
 
   speakText(spokenBriefingText);
@@ -4918,8 +5444,8 @@ function updateTTSPlayButtons(isPlaying, isPaused = false) {
   const pauseBtn = document.getElementById('voice-tts-pause-btn');
   const stopBtn = document.getElementById('voice-tts-stop-btn');
 
-  if (quickLabel) quickLabel.textContent = isPlaying ? 'Pause Briefing' : (isPaused ? 'Resume Briefing' : 'Spoken Briefing');
-  if (drawerLabel) drawerLabel.textContent = isPlaying ? 'Pause' : (isPaused ? 'Resume' : 'Play Briefing');
+  if (quickLabel) quickLabel.textContent = isPlaying ? 'Pause briefing' : (isPaused ? 'Resume briefing' : 'Spoken briefing');
+  if (drawerLabel) drawerLabel.textContent = isPlaying ? 'Pause' : (isPaused ? 'Resume' : 'Play briefing');
   if (pauseBtn) pauseBtn.disabled = !isPlaying && !isPaused;
   if (stopBtn) stopBtn.disabled = !isPlaying && !isPaused;
 }
@@ -4934,37 +5460,49 @@ function initCareerCoachController() {
 
   if (sendBtn && inputElem) {
     sendBtn.addEventListener('click', () => submitCoachQuery());
+    // Enter asks; Shift+Enter starts a new line.
     inputElem.addEventListener('keydown', (e) => {
-      if (e.key === 'Enter') submitCoachQuery();
+      if (e.key === 'Enter' && !e.shiftKey) {
+        e.preventDefault();
+        submitCoachQuery();
+      }
     });
   }
+  updateCoachContextNote();
 
   if (fwSelect) {
     fwSelect.addEventListener('change', () => {
       const val = fwSelect.value;
       if (fwBadge) {
-        fwBadge.textContent = val ? `${val} Active` : 'Standard Mode';
-        fwBadge.style.color = val ? 'var(--accent-cyan)' : 'var(--text-muted)';
+        fwBadge.textContent = val ? `Using ${val}` : '';
+        fwBadge.hidden = !val;
+        fwBadge.classList.toggle('is-active', Boolean(val));
       }
-      showToast(val ? `Framework Lens set to: ${val}` : 'Framework Lens: Standard Advice');
+      showToast(val ? `The coach will answer through ${val}.` : 'The coach will give direct advice.');
     });
   }
 
   if (voiceBtn) {
     voiceBtn.addEventListener('click', () => {
-      const drawer = document.getElementById('voice-assistant-drawer');
       const destSelect = document.getElementById('voice-dest-select');
-      if (drawer) drawer.classList.add('open');
       if (destSelect) destSelect.value = 'coach_message';
+      setVoiceDrawerOpen(true);
       startVoiceRecognition();
     });
   }
 }
 
+// models.CoachChatRequest.message
+const COACH_MESSAGE_MAX = 2000;
+
 async function submitCoachQuery(overrideText) {
   const inputElem = document.getElementById('coach-query-input');
   const question = (overrideText || (inputElem ? inputElem.value : '')).trim();
   if (!question) return;
+  if (question.length > COACH_MESSAGE_MAX) {
+    showToast(`This question is over the ${COACH_MESSAGE_MAX.toLocaleString()} character limit. Shorten it, then press Ask.`);
+    return;
+  }
 
   if (inputElem) inputElem.value = '';
 
@@ -4979,16 +5517,22 @@ async function submitCoachQuery(overrideText) {
   appendCoachThinking(thinkingId);
 
   try {
+    // Only what the current report really contains: no default score, role or skills.
+    const report = appState.reportData;
     const payload = {
-      analysis_id: appState.reportData?.analysis_id || ('coach_' + Date.now()),
+      analysis_id: report?.analysis_id || ('coach_' + Date.now()),
       user_message: question,
       selected_persona_id: appState.executiveReview.selectedPersonaId || 'auto',
-      current_score: appState.analyzer.extractedScore || 84,
-      target_role: 'Software Engineer',
       relevant_markup_ids: [],
+      matched_skills: (report?.matched_skills || []).map(skill => skill.canonical),
+      missing_skills: report?.missing_required_skills || [],
       prompt_framework_id: chosenFramework,
       framework_id: chosenFramework
     };
+    const score = appState.analyzer.extractedScore;
+    if (typeof score === 'number') payload.current_score = score;
+    const targetRole = report?.persona_review?.target_role;
+    if (targetRole) payload.target_role = targetRole;
 
     const response = await fetch(apiUrl('/api/coach/chat'), {
       method: 'POST',
@@ -5000,16 +5544,35 @@ async function submitCoachQuery(overrideText) {
 
     if (response.ok) {
       const data = await response.json();
-      appendCoachMessage('assistant', data.answer, data.referenced_evidence_ids, data.spoken_briefing);
+      appendCoachMessage('assistant', data.answer, data.evidence_refs, data.spoken_briefing);
     } else {
       throw new Error(`HTTP ${response.status}`);
     }
 
   } catch (err) {
+    console.warn('The coach service did not answer:', err.message);
     removeCoachThinking(thinkingId);
-    // Grounded offline/demo fallback with framework structure
-    const fallbackAnswer = generateGroundedCoachReply(question, chosenFramework);
-    appendCoachMessage('assistant', fallbackAnswer);
+    appendCoachMessage('assistant', coachFallbackReply(chosenFramework));
+  }
+}
+
+// Tells the person what each answer can draw on.
+function updateCoachContextNote() {
+  const note = document.getElementById('coach-context-note');
+  if (!note) return;
+  const report = appState.reportData;
+  const score = appState.analyzer.extractedScore;
+  const engine = activeEngine && activeEngine.isLocal
+    ? ' With no language model configured, answers come from templates.'
+    : '';
+  if (!report || typeof score !== 'number') {
+    note.textContent = `No report yet, so answers are general guidance. Run an analysis to base them on your resume.${engine}`;
+  } else if (appState.analyzer.reportIsDemo) {
+    note.textContent = `Each question is sent with the illustrative demo report, not a real resume.${engine}`;
+  } else {
+    const matched = (report.matched_skills || []).length;
+    const missing = (report.missing_required_skills || []).length;
+    note.textContent = `Each question is sent with your latest report: ${score} of 100, ${matched} matched and ${missing} missing required skills.${engine}`;
   }
 }
 
@@ -5035,9 +5598,17 @@ function appendCoachMessage(sender, text, evidenceIds = [], spokenText = '') {
   const contentDiv = document.createElement('div');
   contentDiv.className = 'msg-content';
 
-  const p = document.createElement('p');
-  p.textContent = text;
-  contentDiv.appendChild(p);
+  if (sender === 'assistant') {
+    // The coach answers in Markdown; it goes through the same sanitizer as the report.
+    const body = document.createElement('div');
+    body.className = 'coach-msg-body';
+    body.innerHTML = markdownToSafeHtml(text);
+    contentDiv.appendChild(body);
+  } else {
+    const p = document.createElement('p');
+    p.textContent = text;
+    contentDiv.appendChild(p);
+  }
 
   // If coach message, add TTS audio button
   if (sender === 'assistant') {
@@ -5053,8 +5624,8 @@ function appendCoachMessage(sender, text, evidenceIds = [], spokenText = '') {
 
     if (evidenceIds && evidenceIds.length > 0) {
       const tag = document.createElement('span');
-      tag.className = 'meta-tag';
-      tag.textContent = `Evidence: ${evidenceIds.join(', ')}`;
+      tag.className = 'coach-msg-basis';
+      tag.textContent = `Based on: ${evidenceIds.map(id => String(id).replace(/_/g, ' ')).join(', ')}`;
       actionsBar.appendChild(tag);
     }
 
@@ -5077,7 +5648,7 @@ function appendCoachThinking(id) {
   div.className = 'coach-msg coach-msg-assistant';
   div.innerHTML = `
     <div class="msg-avatar"><i data-lucide="bot" style="width:14px;height:14px;"></i></div>
-    <div class="msg-content"><p class="coach-thinking-dots">Consulting placement patterns<span>.</span><span>.</span><span>.</span></p></div>
+    <div class="msg-content"><p class="coach-thinking-dots">Preparing an answer<span>.</span><span>.</span><span>.</span></p></div>
   `;
   transcript.appendChild(div);
   transcript.scrollTop = transcript.scrollHeight;
@@ -5089,123 +5660,153 @@ function removeCoachThinking(id) {
   if (el) el.remove();
 }
 
-function generateGroundedCoachReply(question, framework = '') {
-  const q = question.toLowerCase();
-  const score = appState.analyzer.extractedScore || 84;
-  const fw = (framework || '').toUpperCase().trim();
-
-  if (fw === 'RACE') {
-    return `As per the RACE (Role, Action, Context, Expectation) framework:
-• Role: Executive Career Coach & Placement Evaluator.
-• Action: Quantify your project metrics and define interface boundary ownership.
-• Context: Technical campus placements evaluate distributed systems scale and concurrency handling.
-• Expectation: Replace subjective phrasing with measurable latency improvements (e.g. from 240ms to 125ms).`;
+// Shown only when the coach service fails. It says so, knows nothing about the resume, and
+// contains no example figures that could be mistaken for the person's own results.
+function coachFallbackReply(frameworkId) {
+  const intro = 'The coach service did not respond, so this is general guidance, not an answer based on your resume.';
+  const framework = frameworkId ? getStudioFramework(frameworkId) : null;
+  if (framework) {
+    const parts = framework.fields.map(field => `- **${field.label}**`).join('\n');
+    return `${intro}\n\nTo answer through ${framework.id} (${framework.expansion}), cover each part with facts from your own work:\n\n${parts}`;
   }
-  if (fw === 'STAR') {
-    return `As per the STAR (Situation, Task, Action, Result) framework:
-• Situation: Target job descriptions expect demonstrable scale and performance tuning under production load.
-• Task: Take architectural ownership of query caching and asynchronous batch processing.
-• Action: Integrated FastAPI and Redis connection pooling with 92% automated unit test coverage.
-• Result: Measured a 35% reduction in p95 latency while supporting 10,000 concurrent users.`;
-  }
-  if (fw === 'PAR') {
-    return `As per the PAR (Problem, Action, Result) framework:
-• Problem: Unoptimized database scans caused response degradation under peak placement traffic.
-• Action: Restructured relational indexing and introduced Redis distributed caching.
-• Result: Decreased p95 response time from 280ms to 65ms at 15k QPS.`;
-  }
-  if (fw === 'CLEAR') {
-    return `As per the CLEAR (Context, Logic, Expectations, Action, Restriction) framework:
-• Context: Technical Placement Preparation for Core SDE / AI Engineering roles.
-• Logic: High-impact metrics establish authentic technical credibility over generic skill lists.
-• Expectations: Provide measurable throughput and scale benchmarks.
-• Action: Update your primary project descriptions to cite concrete testing depth.
-• Restriction: Avoid unverified buzzwords; use verified metrics only.`;
-  }
-  if (fw === 'SMART') {
-    return `As per the SMART (Specific, Measurable, Achievable, Relevant, Time-bound) framework:
-• Specific: Target required skills in distributed caching, concurrency, and cloud deployment.
-• Measurable: Aim for an alignment score above 85/100 by eliminating all passive phrasing.
-• Achievable: Leverage your existing Python and algorithms coursework to build verified projects.
-• Relevant: Directly maps to Super Dream placement expectations (₹20+ LPA).
-• Time-bound: Complete bullet point revisions and draft recalculation within 48 hours.`;
-  }
-  if (fw) {
-    return `As per the ${fw} framework:
-• Guidance: Focus on measurable engineering throughput, test coverage, and clear component ownership.
-• Structure: Format your project narratives using concrete technical benchmarks.`;
-  }
-
-  if (q.includes('quantif') || q.includes('metric')) {
-    return `To quantify project impact effectively: state the baseline metric, the technical mechanism used, and the measured result. For example: "Reduced p95 search latency from 240ms to 125ms across 100k records by implementing FAISS IndexFlatL2." Avoid guessing unverified numbers.`;
-  }
-  if (q.includes('gap') || q.includes('skeptic')) {
-    return `The senior review lens scrutinized vague responsibility claims (such as "assisted with pipelines") and buzzwords without implementation proof. Replace general statements with your specific code contributions.`;
-  }
-  if (q.includes('skill') || q.includes('missing')) {
-    return `Review the Missing Required Skills section in your Diagnostic Report. If you have coursework or personal projects using those technologies, add a bullet detailing your implementation; never list isolated keywords without project evidence.`;
-  }
-  return `Based on your alignment score of ${score}/100, your systems and algorithmic projects are solid. Focus on eliminating passive phrasing in your secondary bullets and specifying exact cloud/framework versions.`;
+  return `${intro}\n\nA strong resume bullet names the starting point, what you did, and the measured result. Use only numbers you can defend in an interview.`;
 }
 
 
-function updateRubricBreakdown(breakdown, overallScore) {
-  if (!breakdown && typeof overallScore === 'number') {
-    const r = overallScore / 100;
-    breakdown = [
-      { key: 'required_skills', points_earned: Math.round(35 * r), max_points: 35 },
-      { key: 'project_evidence', points_earned: Math.round(25 * r), max_points: 25 },
-      { key: 'domain_responsibilities', points_earned: Math.round(20 * r), max_points: 20 },
-      { key: 'metrics_density', points_earned: Math.round(10 * r), max_points: 10 },
-      { key: 'completeness_readability', points_earned: Math.round(10 * r), max_points: 10 }
-    ];
-  }
+// Rubric meters, keyed by the component keys services/scoring.py emits. Caps come from
+// each component's max_points; nothing is shown until a report supplies the values.
+const RUBRIC_METERS = {
+  required_skills: { id: 'skills', max: 35 },
+  project_evidence: { id: 'projects', max: 25 },
+  domain_responsibilities: { id: 'domain', max: 20 },
+  metrics_density: { id: 'metrics', max: 10 },
+  completeness_readability: { id: 'structure', max: 10 }
+};
+
+function formatRubricPoints(points) {
+  return Number.isInteger(points) ? String(points) : points.toFixed(1);
+}
+
+function setRubricMeter(meter, points, max, detail) {
+  const valEl = document.getElementById(`meter-val-${meter.id}`);
+  const fillEl = document.getElementById(`meter-fill-${meter.id}`);
+  const detailEl = document.getElementById(`meter-detail-${meter.id}`);
+  const known = typeof points === 'number';
+  if (valEl) valEl.innerHTML = `${known ? formatRubricPoints(points) : '—'}<small>/${max}</small>`;
+  if (fillEl) fillEl.style.width = known && max > 0 ? `${Math.min(100, (points / max) * 100)}%` : '0%';
+  if (detailEl) detailEl.textContent = known && detail ? detail : '';
+}
+
+function resetRubricBreakdown() {
+  Object.values(RUBRIC_METERS).forEach(meter => setRubricMeter(meter, null, meter.max, ''));
+}
+
+// Components missing from the report stay "—": a total is never split into invented parts.
+function updateRubricBreakdown(breakdown) {
+  resetRubricBreakdown();
   if (!Array.isArray(breakdown)) return;
-
-  const mapping = {
-    required_skills: { val: 'meter-val-skills', fill: 'meter-fill-skills' },
-    project_evidence: { val: 'meter-val-projects', fill: 'meter-fill-projects' },
-    domain_responsibilities: { val: 'meter-val-domain', fill: 'meter-fill-domain' },
-    metrics_density: { val: 'meter-val-metrics', fill: 'meter-fill-metrics' },
-    completeness_readability: { val: 'meter-val-structure', fill: 'meter-fill-structure' }
-  };
-
   breakdown.forEach(item => {
-    const target = mapping[item.key];
-    if (!target) return;
-    const valEl = document.getElementById(target.val);
-    const fillEl = document.getElementById(target.fill);
-    const pts = Math.round(item.points_earned);
-    const max = item.max_points || 10;
-    if (valEl) valEl.innerHTML = `${pts}<small>/${max}</small>`;
-    if (fillEl) fillEl.style.width = `${Math.min(100, Math.round((pts / max) * 100))}%`;
+    const meter = RUBRIC_METERS[item.key];
+    if (!meter || typeof item.points_earned !== 'number') return;
+    setRubricMeter(meter, item.points_earned, item.max_points || meter.max, item.detail);
   });
 }
 
-// --- 16.7 STRUCTURED REPORT PARSING & DEMO HYDRATION ---
-function parseAndHydrateStructuredReport(streamBuffer) {
-  if (!streamBuffer) return;
-  const match = streamBuffer.match(/<!-- STRUCTURED_REPORT_START -->([\s\S]*?)<!-- STRUCTURED_REPORT_END -->/);
-  if (!match || !match[1]) return;
+// What the server found per skill (models.SkillEvidenceItem). The wording keeps "not found in this
+// document" apart from "does not have the skill", and nothing here affects the score.
+const SKILL_EVIDENCE_GROUPS = [
+  { status: 'demonstrated', label: 'Demonstrated with results' },
+  { status: 'used', label: 'Used in projects' },
+  { status: 'mentioned', label: 'Mentioned only' }
+];
 
+function skillEvidenceFrom(source) {
+  return {
+    matched: Array.isArray(source.matched_skills) ? source.matched_skills : [],
+    missingRequired: Array.isArray(source.missing_required_skills) ? source.missing_required_skills : [],
+    missingPreferred: Array.isArray(source.missing_preferred_skills) ? source.missing_preferred_skills : []
+  };
+}
+
+function renderSkillEvidence(evidence) {
+  const panel = document.getElementById('skill-evidence-panel');
+  const groups = document.getElementById('skill-evidence-groups');
+  const context = document.getElementById('skill-evidence-context');
+  if (!panel || !groups) return;
+
+  const hasAny = evidence && (evidence.matched.length || evidence.missingRequired.length || evidence.missingPreferred.length);
+  panel.hidden = !hasAny;
+  if (!hasAny) return;
+
+  const row = (label, names, variant) => `
+    <div class="skill-evidence-group${variant ? ` ${variant}` : ''}">
+      <dt>${escapeHTML(label)} <span class="skill-evidence-count">${names.length}</span></dt>
+      <dd><ul class="skill-chips">${names.map(name => `<li>${escapeHTML(String(name))}</li>`).join('')}</ul></dd>
+    </div>`;
+  const rows = SKILL_EVIDENCE_GROUPS
+    .map(group => [group.label, evidence.matched.filter(s => s.evidence_status === group.status).map(s => s.canonical)])
+    .filter(([, names]) => names.length)
+    .map(([label, names]) => row(label, names));
+  if (evidence.missingRequired.length) rows.push(row('Required, not found in this document', evidence.missingRequired, 'is-missing'));
+  if (evidence.missingPreferred.length) rows.push(row('Preferred, not found in this document', evidence.missingPreferred, 'is-missing'));
+  groups.innerHTML = rows.join('');
+
+  if (context) {
+    const report = appState.reportData || {};
+    const parts = [];
+    if (appState.analyzer.reportIsDemo) {
+      parts.push('Illustrative sample, not computed from a resume.');
+    } else {
+      if (typeof report.alumni_precedents_used === 'number') parts.push(`Compared with ${report.alumni_precedents_used} alumni resumes for reference.`);
+      if (report.detected_archetype) {
+        parts.push(`Closest archetype: ${report.detected_archetype}${report.is_archetype_uncertain ? ' (uncertain)' : ''}.`);
+      }
+    }
+    context.textContent = parts.join(' ');
+    context.hidden = !parts.length;
+  }
+}
+
+// The backend nests the canonical text and its revision in document_snapshot
+// (models.ResumeDocumentSnapshot); markup offsets refer to that text.
+function tailoringSourceFromReport(report) {
+  const snapshot = report && report.document_snapshot;
+  if (!snapshot || typeof snapshot.canonical_display_text !== 'string') return null;
+  return {
+    canonical_display_text: snapshot.canonical_display_text,
+    revision_id: snapshot.revision_id,
+    text_hash: snapshot.text_hash,
+    document_id: snapshot.document_id,
+    resume_markups: report.resume_markups || [],
+    overall_score: report.overall_score,
+    score_breakdown: report.score_breakdown,
+    evidence: skillEvidenceFrom(report)
+  };
+}
+
+// --- 16.7 STRUCTURED REPORT PARSING & DEMO HYDRATION ---
+// Parsing has no side effects, so a response that fails it leaves the current report alone.
+function readStructuredReport(streamBuffer) {
+  const match = (streamBuffer || '').match(/<!-- STRUCTURED_REPORT_START -->([\s\S]*?)<!-- STRUCTURED_REPORT_END -->/);
+  if (!match || !match[1]) return null;
   try {
     const report = JSON.parse(match[1]);
-    appState.reportData = report;
-
-    if (typeof report.deterministic_score === 'number') {
-      updateScoreRingFromNumber(report.deterministic_score);
-      updateRubricBreakdown(report.deterministic_score_breakdown, report.deterministic_score);
-    }
-
-    if (report.persona_review) {
-      renderExecutiveReview(report.persona_review);
-    }
-    if (report.canonical_display_text) {
-      hydrateResumeTailoring(report);
-    }
+    return typeof report.overall_score === 'number' ? report : null;
   } catch (err) {
-    console.error('Failed to parse structured report JSON:', err);
+    console.warn('The structured report was not valid JSON.');
+    return null;
   }
+}
+
+function hydrateStructuredReport(report) {
+  appState.reportData = report;
+  appState.analyzer.reportIsDemo = false;
+  updateScoreRingFromNumber(report.overall_score);
+  updateRubricBreakdown(report.score_breakdown);
+  if (report.persona_review) renderExecutiveReview(report.persona_review);
+  const tailoringSource = tailoringSourceFromReport(report);
+  if (tailoringSource) hydrateResumeTailoring(tailoringSource);
+  renderSkillEvidence(skillEvidenceFrom(report));
 }
 
 function hydrateDemoStructuredReport() {
@@ -5323,32 +5924,58 @@ Distributed RAG & Embedding Search Engine
     ],
     strategic_priorities: [
       {
+        priority_rank: 1,
         action: 'Replace buzzword bullet with concrete evaluation metrics and dataset split details',
-        expected_improvement: 'High Impact — Eliminates red flags in senior interview panels',
-        prerequisites: 'Identify actual test dataset and metric'
+        expected_impact: 'High impact: removes the claim a senior panel would challenge first',
+        prerequisites: 'Identify the actual test dataset and metric'
       },
       {
+        priority_rank: 2,
         action: 'Specify AWS service (ECS/EKS/Lambda) and Docker containerization parameters',
-        expected_improvement: 'Medium Impact — Solidifies cloud engineering credibility',
-        prerequisites: 'Review actual deployment configuration'
+        expected_impact: 'Medium impact: makes the cloud experience checkable',
+        prerequisites: 'Review the actual deployment configuration'
       }
     ]
   };
 
+  // Same shape as the backend report. The breakdown is an illustrative fixture whose
+  // components add up to the demo score; nothing here is computed from a resume.
+  const demoDetail = 'Illustrative demo value, not computed from a resume.';
   const mockReport = {
     analysis_id: 'demo_analysis_' + Date.now(),
     overall_score: 86,
-    canonical_display_text: demoResumeText,
+    score_breakdown: [
+      { key: 'required_skills', name: 'Required Skills Coverage', points_earned: 30, max_points: 35, detail: demoDetail },
+      { key: 'project_evidence', name: 'Practical Project Evidence', points_earned: 22, max_points: 25, detail: demoDetail },
+      { key: 'domain_responsibilities', name: 'Role Domain Responsibilities', points_earned: 17, max_points: 20, detail: demoDetail },
+      { key: 'metrics_density', name: 'Quantified Achievement Metrics', points_earned: 9, max_points: 10, detail: demoDetail },
+      { key: 'completeness_readability', name: 'Completeness & Readability', points_earned: 8, max_points: 10, detail: demoDetail }
+    ],
+    document_snapshot: {
+      document_id: 'demo_document',
+      revision_id: 'rev_0',
+      text_hash: 'demo_sha256_hash',
+      canonical_display_text: demoResumeText
+    },
     resume_markups: demoMarkups,
     persona_review: demoReview,
-    revision_id: 'rev_0',
-    text_hash: 'demo_sha256_hash'
+    matched_skills: [
+      { canonical: 'FastAPI', evidence_status: 'demonstrated' },
+      { canonical: 'FAISS', evidence_status: 'demonstrated' },
+      { canonical: 'PyTorch', evidence_status: 'demonstrated' },
+      { canonical: 'Docker', evidence_status: 'used' },
+      { canonical: 'AWS', evidence_status: 'mentioned' }
+    ],
+    missing_required_skills: ['Kubernetes'],
+    missing_preferred_skills: ['Kafka']
   };
 
   appState.reportData = mockReport;
-  updateRubricBreakdown(null, 86);
+  appState.analyzer.reportIsDemo = true;
+  updateRubricBreakdown(mockReport.score_breakdown);
   renderExecutiveReview(demoReview);
-  hydrateResumeTailoring(mockReport);
+  hydrateResumeTailoring(tailoringSourceFromReport(mockReport));
+  renderSkillEvidence(skillEvidenceFrom(mockReport));
 }
 
 function escapeHTML(str) {
@@ -5406,6 +6033,7 @@ function setDesignheadMode(mode, triggerToast = true) {
 // 15. LLM SERVICE RUNTIME MANAGEMENT & TELEMETRY HUB
 // ==============================================================================
 let cachedLLMProviders = [];
+let activeEngine = null; // { name, isLocal } from GET /api/llm/providers
 
 function initLLMControlHub() {
   const openBtn = document.getElementById('btn-llm-control-hub');
@@ -5423,10 +6051,22 @@ function initLLMControlHub() {
 
 // Read-only view of GET /api/llm/providers. Switching engines is a server
 // configuration task; the browser never sends or stores provider credentials.
+function showEngineStatusUnavailable() {
+  const navLabel = document.getElementById('nav-active-llm-label');
+  const activeName = document.getElementById('llm-active-name');
+  const activeNote = document.getElementById('llm-active-note');
+  if (navLabel) navLabel.textContent = 'Status unavailable';
+  if (activeName) activeName.textContent = 'Status unavailable';
+  if (activeNote) activeNote.textContent = 'The server did not report which engine is active. Analysis may still work.';
+}
+
 async function refreshLLMProvidersList() {
   try {
     const res = await fetch(apiUrl('/api/llm/providers'));
-    if (!res.ok) return;
+    if (!res.ok) {
+      showEngineStatusUnavailable();
+      return;
+    }
     const data = await res.json();
     cachedLLMProviders = data.providers || [];
 
@@ -5434,6 +6074,8 @@ async function refreshLLMProvidersList() {
     // model; say so instead of showing a model name. Detect it by its stable
     // model id rather than by a display string.
     const isLocalEngine = data.active_model === 'deterministic-fallback';
+    activeEngine = { name: data.active_provider, isLocal: isLocalEngine };
+    updateCoachContextNote();
     const navLabel = document.getElementById('nav-active-llm-label');
     const activeName = document.getElementById('llm-active-name');
     const activeModel = document.getElementById('llm-active-model-tag');
@@ -5467,6 +6109,7 @@ async function refreshLLMProvidersList() {
     }
   } catch (err) {
     console.warn('Unable to query /api/llm/providers:', err);
+    showEngineStatusUnavailable();
   }
 }
 
@@ -5518,9 +6161,13 @@ function initPlacementSnapshot() {
 
 function filterSnapshotTable(query) {
   const q = (query || '').toLowerCase().trim();
+  let shown = 0;
   document.querySelectorAll('#snapshot-table-body tr').forEach(row => {
     row.hidden = q !== '' && !(row.getAttribute('data-company') || '').toLowerCase().includes(q);
+    if (!row.hidden) shown += 1;
   });
+  const empty = document.getElementById('snapshot-empty');
+  if (empty) empty.hidden = shown > 0;
 }
 
 // Hand a recruiter from the snapshot to the analyzer as the target context.
@@ -5751,11 +6398,17 @@ function renderAtlasLegend() {
         count.textContent = String(entry.count);
         count.setAttribute('aria-label', `${entry.count} records`);
       }
+      // The bar shows the cluster's share of the corpus, from the same summary as the count.
+      if (typeof entry.count === 'number' && summary.total_indexed_vectors) {
+        item.style.setProperty('--legend-share', `${(entry.count / summary.total_indexed_vectors) * 100}%`);
+      }
     });
   }
   document.querySelectorAll('.atlas-legend-item').forEach(item => {
     const id = parseInt(item.getAttribute('data-archetype-id'), 10);
-    item.classList.toggle('is-selected', id === appState.genome.selectedArchetypeId);
+    const selected = id === appState.genome.selectedArchetypeId;
+    item.classList.toggle('is-selected', selected);
+    item.setAttribute('aria-pressed', String(selected));
   });
 }
 
@@ -5765,6 +6418,11 @@ function initAtlasLegend() {
       const id = parseInt(item.getAttribute('data-archetype-id'), 10);
       if (!Number.isNaN(id) && typeof selectArchetype === 'function') selectArchetype(id);
       renderAtlasLegend();
+      const arch = archetypesDatabase.find(a => a.id === id);
+      if (arch) {
+        const c = getArchetypeCorpusCount(arch);
+        announceAtlasStatus(`Selected ${getArchetypeLabel(arch)}${c ? `: ${c.count} resumes, ${c.pct}% of the corpus` : ''}.`);
+      }
     });
   });
   renderAtlasLegend();
@@ -5824,7 +6482,7 @@ document.addEventListener('DOMContentLoaded', () => {
   // 3. Card Parallax Tilt & Specular Glare Physics
   init3DCardTilt();
   initHoverButtons();
-  initSpatialScrollReveals();
+  initEditorialRevealSystem();
 
   // 4. Backend Health Check & LLM Hub
   checkBackendHealth();
@@ -5858,6 +6516,7 @@ document.addEventListener('DOMContentLoaded', () => {
   initVoiceAssistantController();
   initSpeechSynthesisController();
   initCareerCoachController();
+  initSpatialAudioController();
 
 });
 
