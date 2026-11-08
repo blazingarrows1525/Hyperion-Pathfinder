@@ -11,19 +11,20 @@ Field data (CrUX, RUM), real phones and real GPUs are not available here.
 
 ## 2. Load
 
-`scripts/ui_probes/load_performance.js`, one run per width **[browser]**:
+`scripts/ui_probes/load_performance.js` on the final commit (`5b1d5e4`), one cold run per width, each in a fresh
+browser profile **[browser]**:
 
-| Measure | 1440 x 900 | Baseline 1440 |
-|---|---|---|
-| First and largest contentful paint (LCP element: the hero `h1`) | 748 ms | 1,324 ms |
-| DOMContentLoaded / load | 888 ms / 1,166 ms | |
-| CLS at load | 0.0044 to 0.0057 over three runs (0.0279 before the fallback faces) | 0.0008 |
-| Long tasks | 3, 702 ms in total | 3, 876 ms |
-| Requests / JS heap | 14, none failing / 8.8 MB | 14 / 8.3 MB |
+| Measure | 1440 x 900 | Baseline 1440 | 375 x 812 | Baseline 375 |
+|---|---|---|---|---|
+| First and largest contentful paint (LCP element: the hero `h1`) | 736 ms | 1,324 ms | 724 ms | 1,440 ms |
+| DOMContentLoaded / load | 898 / 1,158 ms | | 907 / 1,217 ms | |
+| CLS at load | 0.0051 (0.0044 to 0.0057 over earlier runs; 0.0279 before the fallback faces) | 0.0008 | 0 | 0.0016 |
+| Long tasks | 3, 672 ms in total | 3, 876 ms | 3, 584 ms | 3, 721 ms |
+| Requests / JS heap | 14, none failing / 8.9 MB | 14 / 8.3 MB | 14 / 7.5 MB | 14 / 7.5 MB |
 
-At 375 x 812 CLS was 0 in every run; the last full 375 load run (before the final font and border commits) gave
-LCP 676 ms against a baseline of 1,440 ms. Targets: LCP 2.5 s and CLS 0.1 are met in the lab. A final 375 run of
-`load_performance.js` on the last commit is still to do.
+Targets: LCP 2.5 s and CLS 0.1 are met in the lab. Load CLS at 1440 is higher than at baseline (0.0051 against
+0.0008), because the redesigned hero sets more text in the web fonts; it stays far under 0.1. A second width in the
+same browser profile loads from a warm cache (LCP 248 ms at 375 after 1440), so each width here is its own run.
 
 What the long tasks are: with the same page loaded, re-running each initialiser costs `lucide.createIcons` 3 ms
 (102 icons), Atlas initialisation 10 to 11 ms, its first frame about 40 ms (shader compilation on the software
@@ -110,14 +111,23 @@ resume or job description text **[source]**. Server-side findings are in [11](11
 
 ## Test runs
 
-Recorded per probe during the work, against the keys-off server (latest run of each):
-analyzer_inputs 39/39; analyzer_states 79/79 at 1440 and 375; coach_and_sound 36 and 37; tailoring 80 and 82;
-reveal_motion 15/15 (also with reduced motion); atlas_lifecycle 149 and 148; prompt_studio 362/362; voice 56/56;
-navigation_and_data 172 at 1440 and 175 at 375; target_sizes pass at 1440, 768, 430, 375 and 320; keyboard_walk
-23/23; text_and_modes 23 to 26 at five widths; interaction_latency 2/2; workflow_live 67/67 at 1440 and 375;
-contrast_scan 6/6 in both themes at 1440 and 375. Python: `tests/test_ui_design_system.py` 15 passed; the last full
-`pytest -q` run without the browser suite gave 115 passed, 16 skipped.
+On the final code (`5b1d5e4`), against the keys-off server on 2026-11-08 **[test]**:
 
-**Still to run:** the whole browser suite in one pass
-(`UI_BROWSER_BASE_URL=http://127.0.0.1:8010/ .venv/Scripts/python.exe -m pytest tests/test_ui_browser.py -q`)
-and the full Python suite on the final commit, to record exact totals here.
+| Command | Result |
+|---|---|
+| `LIVE_API_BASE_URL=http://127.0.0.1:8010 .venv/Scripts/python.exe -m pytest -q` | 117 passed, 17 skipped (the browser probes, which need the next command), 3 deprecation warnings (FastAPI `on_event`, a pytest plugin alias), 40.6 s |
+| `UI_BROWSER_BASE_URL=http://127.0.0.1:8010/ .venv/Scripts/python.exe -m pytest tests/test_ui_browser.py -v` | 17 passed, 0 failed, 0 skipped, 1 warning, 7 min 46 s. Each test runs one probe at its widths and fails if any named check fails. |
+| `python scripts/frontend_inventory.py` | 276 IDs, 0 duplicates, 0 missing references, 8 inline handlers, 0 undefined |
+| `python scripts/check_colors.py` | 0 colour literals outside the token layer |
+| `python scripts/css_dead_selectors.py` | 0 rules that can match nothing |
+| `bash scripts/capture_redesign_matrix.sh docs/ui-refresh/after` | 63 runs, 105 screenshots; no overflow, console error or failed request in any run |
+
+Named checks per probe, from the latest individual run of each (the suite run above repeats them, all passing):
+analyzer_inputs 39; analyzer_states 79 at 1440 and 375; coach_and_sound 36 at 1440 and 37 at 375; tailoring 80 and
+82; reveal_motion 15, also with reduced motion; atlas_lifecycle 149 and 148; prompt_studio 362; voice 56;
+navigation_and_data 172 at 1440 and 175 at 375; target_sizes 2 per phone width, 1 at 768 and 1440; keyboard_walk
+23; text_and_modes 23 to 26 at five widths; interaction_latency 2; workflow_live 67 at 1440 and 375; contrast_scan 6
+per theme and width.
+
+Not run: HawkScan (no `HAWK_API_KEY` in this environment); screen readers, real devices and real GPUs (not
+available); field Core Web Vitals (no production traffic).
